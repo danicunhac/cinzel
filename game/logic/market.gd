@@ -16,7 +16,7 @@ const MIN_FACTOR := 0.4
 const RECOVERY := 0.5
 const WANTED_BONUS := 1.5
 ## Buying costs this much more than the market pays at factor 1.0.
-const BUY_MARKUP := 2.0
+const BUY_MARKUP := 1.6
 ## Kinds the market trades in (outfits are sold apart, see outfits()).
 const TRADE_KINDS: Array[StringName] = [&"weapon", &"armor", &"helm", &"backpack", &"relic", &"material"]
 const STOCK_KINDS: Array[StringName] = [&"weapon", &"armor", &"helm", &"backpack", &"relic"]

@@ -21,7 +21,7 @@ var move_speed: float = 120.0
 var roll_distance: float = 72.0
 var lifesteal: float = 0.0
 var heal_delay: float = 1.5
-var heal_per_sec: float = 8.0
+var heal_per_sec: float = 6.0
 var trail_damage: int = 0
 var block_per_room: int = 0
 

@@ -10,9 +10,9 @@ signal boss_hp(hp: int, max_hp: int)
 
 enum State { CHASE, WINDUP, STRIKE, RECOVER, SHOCK }
 
-const HP_MULT := 8
+const HP_MULT := 12
 const GOLD_MULT := 6
-const SHOCK_INTERVAL := 5.0
+const SHOCK_INTERVAL := 4.5
 # Crawler base: bite.
 const CHASE_SPEED := 57.0
 const BITE_RANGE := 39.0

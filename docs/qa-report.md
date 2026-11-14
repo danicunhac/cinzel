@@ -11,6 +11,8 @@ godot --headless --fixed-fps 60 --path game -s res://tools/run_node.gd -- --node
 
 No modo `win` o robô começa com espada de cavaleiro, cota de malha e elmo de ferro (kit de quem já forjou na cidade). Com o kit inicial ele morre no andar 1 na maior parte das vezes: ele não esquiva bem (rola só em ataque telegrafado e no anel do chefe).
 
+Atualização (balanço, 14/11): o robô agora rola nos avisos com tempo de reação, cura parado e usa o kit inicial por padrão (`--kit=forged` para o kit acima). Resultados e números em `docs/balance.md`.
+
 ## Vencer o chefe do andar 1 (`--mode=win`)
 
 3 execuções depois das correções: 2 completas sem nenhuma falha, 1 morte na sala 0 (`f1_anel`, quatro inimigos com investida; limite do robô, não do jogo).
@@ -49,7 +51,7 @@ No modo `win` o robô começa com espada de cavaleiro, cota de malha e elmo de f
 
 ## Pendências (não corrigidas)
 
-- O kit inicial contra o andar 1 é duro para quem não rola: o robô sem esquiva perde com frequência. Vale olhar o balanço com gente jogando.
-- O Godot avisa "ObjectDB instances leaked" e "resources still in use" ao fechar, nos testes e nas capturas. Não quebra nada.
+- O kit inicial contra o andar 1 é duro para quem não rola: o robô sem esquiva perde com frequência. Vale olhar o balanço com gente jogando. (Feito em `docs/balance.md`; falta confirmar com gente.)
+- O Godot avisa "ObjectDB instances leaked" e "resources still in use" ao fechar, nos testes e nas capturas. Não quebra nada. (Resolvido: `Sfx.quit_clean` para o som e espera o mixer antes de fechar.)
 - As músicas saíram de 131 a 144 s do MiniMax e foram cortadas em 88 s com fade de 2 s; o laço tem uma pausa curta no ponto de volta. A loudness ficou entre -14 e -15 LUFS (alvo -16).
 - Os sliders de volume da pausa usam o estilo padrão do tema (cinza), sem moldura pixel art.
