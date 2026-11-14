@@ -61,9 +61,12 @@ func test_room_freed_before_the_chest_call_leaks_nothing() -> void:
 	_game().new_run()
 	var room := await _room("res://world/rooms/f1/f1_arena.tscn")
 	room.start(0, true, RandomNumberGenerator.new())
+	# Counted before the kills: an eagerly made chest would be an orphan
+	# from the last kill on.
+	var before := Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)
 	for e in room.enemies:
 		_kill(e)
-	var before := Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)
+	T.eq(room.chest, null, "no chest until the deferred call")
 	room.free()
 	await (Engine.get_main_loop() as SceneTree).process_frame
 	T.eq(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT), before, "no orphan chest")

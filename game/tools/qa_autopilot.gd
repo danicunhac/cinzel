@@ -339,7 +339,11 @@ func _clear_room(d: Dungeon) -> bool:
 	if not cleared and d.player.state != Player.State.DEAD:
 		for e in d.room.enemies:
 			if is_instance_valid(e) and not e.dead:
-				print("STUCK enemy %s at %s hp %d/%d; player at %s hp %d" % [e.name, e.global_position, e.health.hp, e.health.max_hp, d.player.global_position, d.player.health.hp])
+				var boss_state := ""
+				if e is BossBig:
+					var b := e as BossBig
+					boss_state = " boss state %s t %.2f shock_cd %.2f ring %s" % [BossBig.State.keys()[b.state], b._t, b._shock_cd, b.shockwave.is_running()]
+				print("STUCK enemy %s at %s hp %d/%d%s; player at %s hp %d state %d" % [e.name, e.global_position, e.health.hp, e.health.max_hp, boss_state, d.player.global_position, d.player.health.hp, d.player.state])
 	check("room_cleared_%d" % d.room_index, cleared)
 	return cleared
 
