@@ -52,7 +52,7 @@ func test_next_floor_portal_builds_floors_2_and_3() -> void:
 					break
 			T.ok(not drop.is_empty(), "%s drops something" % e.name)
 			if not drop.is_empty():
-				T.eq(drop[0].id, LootTable.ENEMY_MATERIALS[f][e.loot_type()], "%s drops the floor %d material" % [e.name, f])
+				T.ok((LootTable.ENEMY_MATERIALS[f][e.loot_type()] as Array).has(drop[0].id), "%s drops a floor %d material" % [e.name, f])
 	d.leave_to_town()
 	d.free()
 	await _tree().process_frame
