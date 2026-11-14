@@ -155,6 +155,7 @@ func summon() -> void:
 		if parent is Room:
 			pos = pos.clamp(ROOM_INNER.position, ROOM_INNER.end)
 		var c := CrawlerScene.instantiate() as EnemyBase
+		c.drops_loot = false
 		c.position = pos
 		parent.add_child(c)
 		minions.append(c)

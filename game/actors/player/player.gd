@@ -177,10 +177,16 @@ func _update_charge(delta: float) -> void:
 		special.cancel()
 		special.tick(delta, false)
 		return
-	if _just_pressed(&"attack"):
+	var held := Input.is_action_pressed(&"attack") and not UiKit.gameplay_input_blocked()
+	charge_step(delta, _just_pressed(&"attack"), held)
+
+
+## One step of the hold with the attack input given (tests drive it).
+func charge_step(delta: float, pressed: bool, held: bool) -> void:
+	if pressed:
 		special.press()
 	var was_holding := special.holding
-	var result := special.tick(delta, Input.is_action_pressed(&"attack"))
+	var result := special.tick(delta, held)
 	match result:
 		SpecialCharge.SPECIAL:
 			_start_special()
@@ -322,7 +328,8 @@ func _start_special() -> void:
 			b.kind = PlayerBlast.Kind.RAIN
 			b.radius = RAIN_RADIUS
 			b.global_position = global_position + _special_dir * RAIN_DIST
-			b.damage_roll = func() -> int: return _roll_damage(weapon.special_mult)
+			b.damage_roll = _blast_roll.bind(b, weapon.special_mult)
+			b.landed.connect(func(_h: Hurtbox) -> void: _lifesteal(b.damage))
 			_room().add_child(b)
 			_fx.line(hand, b.global_position + Vector2(0, -24), WeaponFx.SKILL_COLOR, 0.3, 2.0)
 
@@ -385,7 +392,8 @@ func _slam() -> void:
 	w.radius = WAVE_RADIUS
 	w.stun = WAVE_STUN
 	w.global_position = at
-	w.damage_roll = func() -> int: return _roll_damage(WAVE_MULT)
+	w.damage_roll = _blast_roll.bind(w, WAVE_MULT)
+	w.landed.connect(func(_h: Hurtbox) -> void: _lifesteal(w.damage))
 	_room().add_child(w)
 	_fx.ring(at + HAND, SLAM_RADIUS, WeaponFx.SKILL_COLOR, 0.35, 5.0)
 
@@ -415,6 +423,13 @@ func _roll_damage(mult: float) -> int:
 	var base := roundi(_stats.damage * mult)
 	var dmg := Combat.hit_damage(base, _stats.crit_chance, _stats.crit_mult, rng)
 	_last_crit = dmg != base
+	return dmg
+
+
+## Damage of one rain volley or the slam wave, with its own crit roll.
+func _blast_roll(blast: Hitbox, mult: float) -> int:
+	var dmg := _roll_damage(mult)
+	blast.crit = _last_crit
 	return dmg
 
 
@@ -586,8 +601,10 @@ func _on_hurt(from: Hitbox) -> void:
 	health.damage(Combat.reduce(from.damage, _stats.defense), from.global_position)
 
 
+## A hit that deals damage breaks the charge (a blocked hit does not).
 func _on_damaged(_n: int) -> void:
 	invincible_time = HURT_IFRAMES
+	special.cancel()
 	_exit.interrupt()
 	exit_progress.emit(0.0)
 	_exit_was_channeling = false

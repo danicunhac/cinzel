@@ -66,16 +66,19 @@ var _swap_open: bool = false
 ## Takes the item as loot (RunState.take_loot: free slot, else backpack;
 ## outfits unlock). When the backpack is full a relic opens the swap panel
 ## over the relic slots; anything else stays on the floor.
-## Returns {"taken": bool, "swapped_out": StringName}. "taken" is true when the
+## Returns {"taken": bool, "swapped_out": StringName, "busy": bool}. "busy" is
+## true when the swap panel is already open (nothing was tried). "taken" is true when the
 ## new item is now carried; "swapped_out" is the replaced item id
 ## (&"" when nothing was replaced). The caller must drop swapped_out as a pickup.
 ## Unknown ids, or a call while a panel is already open, return taken = false.
 func offer_item(id: StringName) -> Dictionary:
-	var none := {"taken": false, "swapped_out": &""}
-	if not ItemDB.has(id) or _swap_open:
+	var none := {"taken": false, "swapped_out": &"", "busy": false}
+	if _swap_open:
+		return {"taken": false, "swapped_out": &"", "busy": true}
+	if not ItemDB.has(id):
 		return none
 	if run.take_loot(id) == 0:
-		return {"taken": true, "swapped_out": &""}
+		return {"taken": true, "swapped_out": &"", "busy": false}
 	if ItemDB.kind(id) != &"relic":
 		return none
 	_swap_open = true
@@ -84,4 +87,4 @@ func offer_item(id: StringName) -> Dictionary:
 	panel.open(id)
 	var old: StringName = await panel.closed
 	_swap_open = false
-	return {"taken": old != &"", "swapped_out": old}
+	return {"taken": old != &"", "swapped_out": old, "busy": false}

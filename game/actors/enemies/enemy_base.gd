@@ -28,6 +28,8 @@ const TELEGRAPH_RED := Color(1.0, 0.25, 0.25)
 ## frame_size px each. Art faces right; flip_h turns it left.
 @export var frame_size: int = 24
 @export var frames_per_row: int = 6
+## False for summons (the final boss's crawlers): no material drops.
+@export var drops_loot: bool = true
 
 @onready var sprite: Sprite2D = $Sprite
 @onready var health: Health = $Health
@@ -208,6 +210,8 @@ func _drop_gold() -> void:
 ## Bosses roll LootTable.roll_boss, the rest roll_enemy by loot_type(). Each
 ## drop is a PickupItem around the body.
 func roll_loot() -> Array[LootDrop]:
+	if not drops_loot:
+		return []
 	if loot_rng == null:
 		loot_rng = RandomNumberGenerator.new()
 		loot_rng.randomize()

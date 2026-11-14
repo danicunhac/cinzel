@@ -9,6 +9,8 @@ extends Area2D
 const YELLOW := Color(1.0, 0.85, 0.2)
 const MATERIAL_COLOR := Color(0.55, 0.9, 0.75)
 const FULL_TEXT := "Mochila cheia"
+## While the player stands on a leftover stack, try again this often.
+const RETRY_TIME := 0.5
 
 @export var item_id: StringName = &""
 @export var qty: int = 1
@@ -16,6 +18,7 @@ const FULL_TEXT := "Mochila cheia"
 var _near: bool = false
 var _busy: bool = false
 var _t: float = 0.0
+var _retry: float = 0.0
 
 @onready var prompt: Label = $Prompt
 
@@ -36,6 +39,11 @@ func _process(delta: float) -> void:
 	queue_redraw()
 	if _near and not _busy and not is_material() and Input.is_action_just_pressed(&"interact"):
 		take()
+	elif _near and is_material() and qty > 0 and not is_queued_for_deletion():
+		_retry -= delta
+		if _retry <= 0.0:
+			_retry = RETRY_TIME
+			_take_stack(false)
 
 
 ## Puts what fits into the run; frees the pickup when nothing is left.
@@ -47,7 +55,7 @@ func take() -> int:
 	var result: Dictionary = await Game.offer_item(item_id)
 	_busy = false
 	if not bool(result["taken"]):
-		if ItemDB.kind(item_id) != &"relic":
+		if not bool(result.get("busy", false)) and ItemDB.kind(item_id) != &"relic":
 			Game.toast(FULL_TEXT)
 		return qty
 	var out: StringName = result["swapped_out"]
@@ -61,9 +69,14 @@ func take() -> int:
 	return 0
 
 
-func _take_stack() -> int:
+## `toast`: say "Mochila cheia" when something is left (not on quiet retries).
+func _take_stack(toast: bool = true) -> int:
+	if Game.run.inventory.free_slots() <= 0 and not _has_room_in_stack():
+		if toast:
+			Game.toast(FULL_TEXT)
+		return qty
 	var left := Game.run.take_loot(item_id, qty)
-	if left > 0:
+	if left > 0 and toast:
 		Game.toast(FULL_TEXT)
 	qty = left
 	if qty <= 0:
@@ -71,6 +84,13 @@ func _take_stack() -> int:
 	else:
 		_update_prompt()
 	return qty
+
+
+func _has_room_in_stack() -> bool:
+	for i in Game.run.inventory.capacity:
+		if Game.run.inventory.id_at(i) == item_id and Game.run.inventory.qty_at(i) < ItemDB.stack_max(item_id):
+			return true
+	return false
 
 
 func _update_prompt() -> void:
@@ -86,6 +106,7 @@ func _on_body(body: Node2D, inside: bool) -> void:
 		_near = inside
 		prompt.visible = inside
 		if inside and is_material() and not is_queued_for_deletion():
+			_retry = RETRY_TIME
 			_take_stack()
 
 
