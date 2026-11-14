@@ -16,6 +16,7 @@ func _ready() -> void:
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 	var box := UiKit.centred_frame(self, Vector2(200, 0), "Você caiu", UiKit.COLOR_DANGER)
+	CinzelLogo.above_frame(CinzelLogo.frame_of(box), CinzelLogo.SMALL)
 	summary_label = UiKit.label(summary_text(Game.last_run), Color(0.95, 0.9, 0.82), HORIZONTAL_ALIGNMENT_CENTER)
 	box.add_child(summary_label)
 	var lost := UiKit.label("Ouro, itens e andares\nforam perdidos.", UiKit.COLOR_MUTED, HORIZONTAL_ALIGNMENT_CENTER)

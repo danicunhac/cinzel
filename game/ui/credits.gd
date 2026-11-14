@@ -2,6 +2,8 @@ extends Control
 ## Credits, then back to the title with a fresh run.
 
 const TITLE_SCENE := "res://ui/title.tscn"
+const LOGO_ROOM := 30
+const TAGLINE := "Uma torre. Um relógio. Nenhuma segunda chance."
 const LINES := "Design: Daniel\nProgramação: Daniel, com assistência de IA (Claude)\nArte: gerada por IA (preset\ncinzel-pixel); personagem redesenhado\nà mão por Daniel\nFonte: Silkscreen (OFL)\nMotor: Godot 4"
 
 
@@ -12,7 +14,14 @@ func _ready() -> void:
 	bg.color = Color(0.06, 0.05, 0.08)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
-	var box := UiKit.centred_frame(self, Vector2(304, 164), "Créditos")
+	# The frame sits lower than centre to leave room for the large logo.
+	var area := Control.new()
+	area.position = Vector2(0, LOGO_ROOM)
+	area.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(area)
+	var box := UiKit.centred_frame(area, Vector2(304, 0), "Créditos")
+	CinzelLogo.above_frame(CinzelLogo.frame_of(box), CinzelLogo.LARGE, 10)
+	box.add_child(UiKit.label(TAGLINE, UiKit.COLOR_TITLE, HORIZONTAL_ALIGNMENT_CENTER))
 	var lines := UiKit.label(LINES, Color(0.95, 0.9, 0.82), HORIZONTAL_ALIGNMENT_CENTER)
 	lines.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lines.custom_minimum_size = Vector2(288, 0)

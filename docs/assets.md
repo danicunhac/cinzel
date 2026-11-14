@@ -19,6 +19,8 @@ Os scripts em `art-src/` transformam esses originais nas folhas do jogo. Rode co
 - `build_outfits.py`: as roupas visuais (camadas `hair` e `outfit`), repintando a roupa inicial pixel a pixel (Task E3).
 - `build_items.py`: ícones 16x16 de armas, armaduras, capuzes, mochilas, materiais e roupas, e as molduras de raridade (Task E3). `preview_items.py` monta a folha de conferência.
 - `preview_gear.py`: prévias 4x e GIFs do escalador com cada arma e cada roupa, empilhando as camadas como o jogo.
+- `build_logo.py`: logo CINZEL (240, 120 e 80 px de largura, brilho de brasa do logo grande), emblema quadrado (16, 32, 64, 256), `icon.ico` do Windows e imagem do boot splash.
+- `build_title.py`: camadas da tela de título desenhadas por script (parapeito, faixa de névoa, luz quente).
 - `check_art.py`: confere tamanho, transparência, no máximo 32 cores, quadros sem uso vazios, pixels soltos nas camadas do escalador e a linha do chão (escalador e NPCs 30, inimigos 22, chefe 44).
 - `build_rooms_art.py` (precisa também de `numpy`): salas pintadas. `blockout` desenha cada layout de `game/tools/build_rooms.gd` em cores chapadas (480x270; o layout sai em `art-src/gen/rooms/layouts.json` quando o `build_rooms.gd` roda), `score` e `overlay` conferem o alinhamento de uma pintura com a colisão, `final` reduz a pintura escolhida para 480x270 (média por área, no máximo 48 cores, sem pontilhado), desloca até 8 px quando o chão inteiro deslizou e grava `art-src/gen/rooms/align/` (sobreposição e `scores.json`), `doors` monta as portas.
 
@@ -51,6 +53,10 @@ Nenhum desses scripts sobrescreve um arquivo que já existe, porque ele pode ter
 | `game/assets/ui/heart.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Coração de `cinzel-ui-kit-sheet` | 2026-11-14 |
 | `game/assets/ui/coin.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Moeda de `cinzel-ui-kit-sheet`, recolorida para dourado (saiu salmão) | 2026-11-14 |
 | `game/assets/ui/title_bg.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | `cinzel-title-bg` reduzido para 480x270, 32 cores | 2026-11-14 |
+| `game/assets/ui/logo/logo_large.png`, `logo_medium.png`, `logo_small.png`, `boot_splash.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | `art-src/gen/logo/wordmark-1-2.png` por `build_logo.py`: chave magenta, redução por área para 240/120/80 px de largura, contorno de 1 px, até 32 cores; o splash é o logo grande x3 | 2026-11-14 |
+| `game/assets/ui/logo/logo_large_glow.png` | Autoral (script) | Halo de brasa em 3 faixas, 4 px em volta do logo grande, por `build_logo.py` (soma aditiva no Godot) | 2026-11-14 |
+| `game/assets/ui/logo/emblem_16.png`, `emblem_32.png`, `emblem_64.png`, `emblem_256.png`, `icon.ico` | Gerado por IA (nano-banana-2 edit) + ajuste por script | `art-src/gen/logo/emblem-1-1.png` por `build_logo.py`; o 256 é o 64 x4; o `.ico` junta 16 a 256 para o export do Windows | 2026-11-14 |
+| `game/assets/ui/title/parapet.png`, `fog.png`, `glow.png` | Autoral (script) | `build_title.py`: parapeito escuro com borda quente, faixa de névoa que repete a cada 512 px, luz radial em faixas | 2026-11-14 |
 | `game/assets/ui/hud/hp_frame.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Moldura da barra de vida de `cinzel-hud-frames-sheet` por `build_hud.py`: metade esquerda reduzida e espelhada, 48x12, 9-slice 9/3/9/3 (o meio é uma coluna repetida, estica sem dobrar pixel) | 2026-11-14 |
 | `game/assets/ui/hud/boss_frame.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Moldura com chifres da barra do chefe de `cinzel-hud-frames-sheet`, mesma receita, 64x16, 9-slice 14/5/14/3 (a placa de nome é `plaque.png`) | 2026-11-14 |
 | `game/assets/ui/hud/slot.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Espaço de item de `cinzel-hud-frames-sheet-b`, 22x22, simetrizado | 2026-11-14 |
@@ -131,6 +137,8 @@ O nome no gerador de IA leva um hash de conteúdo. O arquivo no repositório é 
 | `art-src/gen/hud-frames-sheet.png` | `cinzel-hud-frames-sheet-218b52ab9951` | `fal-ai/nano-banana-2/edit` (via `generate_styled_image`), preset `cinzel-pixel`, papel `uiElements`, 2K, 16:9 | Kit de HUD sobre magenta: barra de vida de ferro com cantos de bronze, barra do chefe com pontas de chifre e placa no meio, espaço de item, placa, botão, janela. Só as duas barras saíram limpas: o resto veio misturado com a arte de referência da cidade | 2026-11-14 |
 | `art-src/gen/hud-frames-sheet-b.png` | `cinzel-hud-frames-sheet-b-0c785c1847fa` | idem, 2K, 1:1 | Espaço de item de ferro rebitado com cantos de bronze, placa de ferro com friso de bronze, botão marrom com borda de bronze chanfrada, janela de bronze e ferro com cantos ornamentados, sobre magenta | 2026-11-14 |
 | `art-src/gen/hud-icons-sheet.png` | `cinzel-hud-icons-sheet-da5da5001b42` | idem, 1K, 4:1 | Coração vermelho, moeda dourada com torre em relevo, ampulheta de bronze com areia âmbar, anel de luz âmbar, sobre magenta | 2026-11-14 |
+| `art-src/gen/logo/wordmark-1-2.png` | `cinzel-logo-wordmark-1-2-79dcd9b2768e` | `fal-ai/nano-banana-2/edit` (via `generate_styled_image`), preset `cinzel-pixel`, papel `uiElements`, 2K, 4:1, 2 variações (a 1 tinha uma ponta solta sobre o C) | "CINZEL" em blocos de pedra entalhada com bordas de ferro, rebites de bronze e brilho de brasa embaixo; o I é uma torre com janela acesa; sobre magenta | 2026-11-14 |
+| `art-src/gen/logo/emblem-1-1.png` | `cinzel-logo-emblem-1-1-10cd82af1058` | idem, 1K, 1:1, 2 variações | Emblema: C de pedra com rebites, torre com janela acesa e espada atravessada, brasas; sobre magenta | 2026-11-14 |
 
 ### Arte em alta (R2): escalador 32 px, inimigos 24 px, chefe 48 px
 
