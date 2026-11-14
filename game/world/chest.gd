@@ -37,6 +37,8 @@ func open() -> void:
 	is_open = true
 	prompt.visible = false
 	sprite.region_rect = RoomTiles.region(RoomTiles.CHEST_OPEN)
+	Sfx.play(&"chest_open", 0.0)
+	Fx.burst(&"chest_open", global_position + Vector2(0, -6))
 	var id := roll_item()
 	var result: Dictionary = await Game.offer_item(id)
 	if not bool(result["taken"]):

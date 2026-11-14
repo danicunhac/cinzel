@@ -42,6 +42,7 @@ func new_run() -> void:
 ## the new scene fades in (DoD, one transition type). The change itself is not
 ## delayed, so code that waits for the next scene keeps working.
 func goto(scene_path: String) -> void:
+	Fx.reset()
 	get_tree().change_scene_to_file(scene_path)
 	_fade_in()
 

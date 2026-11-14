@@ -16,6 +16,9 @@ offset_right = 480.0
 offset_bottom = 270.0
 color = Color(0.094, 0.075, 0.102, 1)
 
+[node name="Camera" type="Camera2D" parent="."]
+position = Vector2(240, 135)
+
 [node name="Rooms" type="Node2D" parent="."]
 y_sort_enabled = true
 

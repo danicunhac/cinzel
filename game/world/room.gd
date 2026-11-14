@@ -135,6 +135,11 @@ func _clear() -> void:
 	if is_cleared:
 		return
 	is_cleared = true
+	if not restored and _started:
+		# The room is clear: the doors unlock with a sound and a ring.
+		Sfx.play(&"door_open", 0.0)
+		if exit_door != null:
+			Fx.burst(&"ring", exit_door.global_position)
 	if exit_door != null:
 		exit_door.set_open(true)
 	if _has_back:
@@ -142,7 +147,9 @@ func _clear() -> void:
 	if _has_chest:
 		chest = ChestScene.instantiate() as Chest
 		chest.position = ($ChestSpot as Marker2D).position
-		add_child(chest)
+		# Deferred: the last kill lands inside a physics callback, where a
+		# new body cannot join the space.
+		add_child.call_deferred(chest)
 	cleared.emit()
 
 
@@ -168,7 +175,8 @@ func _drop_item(it: Dictionary) -> void:
 
 
 func _show_chest_open(c: Chest) -> void:
-	c.show_looted()
+	c.is_open = true
+	c.show_looted.call_deferred()
 
 
 func _lower_player_hp() -> void:

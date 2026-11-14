@@ -50,6 +50,7 @@ func _ready() -> void:
 	warning.visible = false
 	health.hp_changed.connect(_on_hp_changed)
 	_emit_hp.call_deferred()
+	Sfx.play(&"boss_roar", 0.0)
 
 
 func _emit_hp() -> void:
@@ -66,6 +67,10 @@ func _on_hp_changed(hp: int) -> void:
 		phase = 2
 		_summon_cd = 0.0
 		sprite.self_modulate = PHASE2_TINT
+		if sprite.has_meta(&"fx_base"):
+			sprite.set_meta(&"fx_base", PHASE2_TINT)
+		Sfx.play(&"boss_roar", 0.0)
+		Fx.shake(3.0, 0.4)
 
 
 func _think(delta: float) -> void:

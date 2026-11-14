@@ -13,6 +13,9 @@ signal entered
 const FRAME_SHUT := 0
 const FRAME_LOCKED := 1
 const FRAME_OPEN := 2
+## Walking into a locked door rattles it (once per bump, this often at most).
+const KNOCK_SIZE := 26.0
+const KNOCK_GAP := 0.6
 
 @export var walls_path: NodePath = ^"../Walls"
 ## Starts shut (no way through) instead of locked.
@@ -24,6 +27,8 @@ var _cell: Vector2i
 var _alt: int = 0
 var _trigger: Area2D
 var _sprite: Sprite2D
+var _knock: Area2D
+var _knock_left: float = 0.0
 
 
 func _ready() -> void:
@@ -39,6 +44,13 @@ func _ready() -> void:
 	_trigger.add_child(shape)
 	add_child(_trigger)
 	_trigger.body_entered.connect(_on_body_entered)
+	_knock = Area2D.new()
+	var ks := CollisionShape2D.new()
+	var kr := RectangleShape2D.new()
+	kr.size = Vector2(KNOCK_SIZE, KNOCK_SIZE)
+	ks.shape = kr
+	_knock.add_child(ks)
+	add_child(_knock)
 	if starts_shut:
 		set_shut()
 	else:
@@ -76,6 +88,21 @@ func _show(tile: Vector2i, frame: int) -> void:
 	if _sprite != null:
 		var row := _sprite.frame / _sprite.hframes
 		_sprite.frame = row * _sprite.hframes + frame
+
+
+## Rattles when the player pushes against the locked door (standing next to
+## it after arriving through it stays quiet).
+func _physics_process(delta: float) -> void:
+	_knock_left = maxf(_knock_left - delta, 0.0)
+	if is_open or _knock_left > 0.0:
+		return
+	for body in _knock.get_overlapping_bodies():
+		if not body.is_in_group(&"player"):
+			continue
+		var push := Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
+		if push.dot((global_position - body.global_position).normalized()) > 0.5:
+			_knock_left = KNOCK_GAP
+			Sfx.play(&"door_locked")
 
 
 func _on_body_entered(body: Node2D) -> void:

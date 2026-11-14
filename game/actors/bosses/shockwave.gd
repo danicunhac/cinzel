@@ -50,6 +50,10 @@ func _physics_process(delta: float) -> void:
 	if _t < warn_time:
 		queue_redraw()
 		return
+	if warning:
+		# The ring leaves the boss: M on the ladder.
+		Sfx.play(&"shockwave", 0.03)
+		Fx.shake(2.5, 0.3)
 	warning = false
 	var k := minf((_t - warn_time) / grow_time, 1.0)
 	radius = max_radius * k

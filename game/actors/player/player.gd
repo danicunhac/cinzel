@@ -26,6 +26,15 @@ const HURT_IFRAMES := 1.0
 ## Moving while the attack is held to charge.
 const CHARGE_MOVE_MULT := 0.45
 const HAND := Vector2(0, -6)
+## Run feel: a step every STEP_TIME s of walking (two per walk cycle of 8
+## frames at 12 fps), dust at the feet every second step, and the sprite
+## leans LEAN px toward the move.
+const STEP_TIME := 1.0 / 3.0
+const LEAN := 1.0
+const SPRITE_HOME := Vector2(0, -8)
+const HEAVY_WEAPONS: Array[StringName] = [&"axe", &"longsword"]
+## Seconds between heal sparkles while healing.
+const HEAL_SPARK_TIME := 0.45
 
 # Specials (px already at the x1.5 scale).
 const THRUST_TIME := 0.3
@@ -87,6 +96,10 @@ var _roll_speed: float = 0.0
 var _pulse: float = 0.0
 var _special_dir: Vector2 = Vector2.DOWN
 var _special_step: int = 0
+var _step_time: float = 0.0
+var _steps: int = 0
+var _was_charged: bool = false
+var _heal_spark: float = 0.0
 
 
 func _ready() -> void:
@@ -112,6 +125,7 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	Sfx.stop_loop(&"heal_loop")
 	if Game.run != null and Game.run.changed.is_connected(_refresh_stats):
 		Game.run.changed.disconnect(_refresh_stats)
 
@@ -154,7 +168,7 @@ func _tick_timers(delta: float) -> void:
 		_combo_timer = maxf(_combo_timer - delta, 0.0)
 
 
-func _process_free(_delta: float, input_dir: Vector2) -> void:
+func _process_free(delta: float, input_dir: Vector2) -> void:
 	var speed := _stats.move_speed
 	if special.glow() > 0.0:
 		speed *= CHARGE_MOVE_MULT
@@ -162,12 +176,28 @@ func _process_free(_delta: float, input_dir: Vector2) -> void:
 	if input_dir != Vector2.ZERO:
 		facing = input_dir
 		sprite.play(&"walk", facing)
+		_walk_feel(delta, input_dir)
 	else:
 		sprite.play(&"idle", facing)
+		_step_time = 0.0
+		sprite.position = SPRITE_HOME
 	if _just_pressed(&"roll") and _roll_cooldown <= 0.0:
 		_start_roll(input_dir if input_dir != Vector2.ZERO else facing)
 	elif _just_pressed(&"attack") and not weapon.ranged:
 		_start_attack()
+
+
+## Footsteps and dust while walking, and the 1 px lean.
+func _walk_feel(delta: float, dir: Vector2) -> void:
+	sprite.position = SPRITE_HOME + Vector2(signf(roundf(dir.x)) * LEAN, 0)
+	_step_time += delta
+	if _step_time < STEP_TIME:
+		return
+	_step_time -= STEP_TIME
+	_steps += 1
+	Sfx.play(&"step", 0.1)
+	if _steps % 2 == 0:
+		Fx.burst(&"step_dust", global_position + Vector2(0, 5))
 
 
 ## Attack press starts the hold; the release fires the special, the bow's
@@ -219,6 +249,8 @@ func _start_attack(charged: bool = false) -> void:
 	if weapon.ranged:
 		return
 	var finisher := weapon.combo > 1 and _combo_step == weapon.combo - 1
+	Sfx.play(&"swing_heavy" if finisher or weapon.type in HEAVY_WEAPONS else &"swing_light", 0.08)
+	hitbox.heavy = finisher
 	_roll_hit(weapon.combo_mult[_combo_step])
 	hitbox.stun = weapon.stun
 	_set_swing_shape(weapon.reach, weapon.arc_deg)
@@ -271,6 +303,7 @@ func _process_attack(delta: float) -> void:
 func _end_swing() -> void:
 	hitbox.set_active(false)
 	hitbox.stun = 0.0
+	hitbox.heavy = false
 	hitbox.scale = Vector2.ONE
 	sprite.speed_scale = 1.0
 
@@ -284,6 +317,8 @@ func _fire_arrow(charged: bool) -> void:
 	a.pierce = weapon.charged_pierce if charged else 0
 	a.damage = _roll_damage(weapon.charged_mult if charged else 1.0)
 	a.crit = _last_crit
+	a.heavy = charged
+	Sfx.play(&"bow_shot", 0.08 if not charged else 0.02)
 	a.global_position = global_position + HAND + a.direction * 8.0
 	a.landed.connect(func(_h: Hurtbox) -> void: _lifesteal(a.damage))
 	_room().add_child(a)
@@ -293,12 +328,15 @@ func _fire_arrow(charged: bool) -> void:
 
 func _start_special() -> void:
 	_end_swing()
+	hitbox.heavy = true
 	state = State.SPECIAL
 	_state_time = 0.0
 	_special_step = 0
 	_special_dir = facing.normalized() if facing != Vector2.ZERO else Vector2.DOWN
 	sprite.speed_scale = 1.0
 	sprite.play(&"attack", facing, true)
+	Sfx.play(&"special_release", 0.02)
+	Fx.burst(&"ring", _hand())
 	var hand := _hand()
 	match weapon.special:
 		&"thrust_line":
@@ -491,6 +529,9 @@ func _start_roll(dir: Vector2) -> void:
 	special.cancel()
 	invincible_time = maxf(invincible_time, ROLL_TIME)
 	sprite.play(&"roll", facing, true)
+	sprite.position = SPRITE_HOME
+	Sfx.play(&"roll", 0.08)
+	Fx.burst(&"roll_dust", global_position + Vector2(0, 5))
 
 
 func _process_roll(delta: float) -> void:
@@ -539,6 +580,7 @@ func _update_exit(delta: float) -> void:
 
 func _update_visuals(delta: float) -> void:
 	_pulse += delta
+	_update_sounds(delta)
 	var c := Color.WHITE
 	if _heal.healing:
 		var k := 0.5 + 0.5 * sin(_pulse * 6.0)
@@ -550,6 +592,24 @@ func _update_visuals(delta: float) -> void:
 	_fx.glow = special.glow()
 	_fx.charged = special.is_charged()
 	_fx.stage_one = special.is_stage_one()
+
+
+## Special ready to release, and the heal loop while healing.
+func _update_sounds(delta: float) -> void:
+	var charged := special.is_charged()
+	if charged and not _was_charged:
+		Sfx.play(&"special_charge", 0.0)
+	_was_charged = charged
+	var healing := _heal.healing and state != State.DEAD and health.hp < health.max_hp
+	if healing:
+		Sfx.play_loop(&"heal_loop")
+		_heal_spark -= delta
+		if _heal_spark <= 0.0:
+			_heal_spark = HEAL_SPARK_TIME
+			Fx.burst(&"heal", global_position + Vector2(0, -8))
+	elif Sfx.is_looping(&"heal_loop"):
+		Sfx.stop_loop(&"heal_loop")
+		_heal_spark = 0.0
 
 
 ## Writes Health.hp back to the run on every change, never once dead.
@@ -604,6 +664,11 @@ func _on_hurt(from: Hitbox) -> void:
 ## A hit that deals damage breaks the charge (a blocked hit does not).
 func _on_damaged(_n: int) -> void:
 	invincible_time = HURT_IFRAMES
+	# M on the ladder: red flash, a small shake; the HUD heart pulses.
+	Sfx.play(&"player_hurt")
+	Fx.flash(sprite, Fx.FLASH_HURT, Fx.HURT_FLASH_TIME)
+	Fx.shake(1.5, 0.15)
+	Fx.burst(&"hit", global_position + HAND)
 	special.cancel()
 	_exit.interrupt()
 	exit_progress.emit(0.0)
@@ -627,4 +692,8 @@ func _on_died() -> void:
 	special.cancel()
 	sprite.speed_scale = 1.0
 	sprite.play(&"death", Vector2.DOWN, true)
+	sprite.position = SPRITE_HOME
+	Sfx.stop_loop(&"heal_loop")
+	Fx.hit_stop(Fx.STOP_FRAMES[Fx.L])
+	Fx.shake(3.0, 0.4)
 	died.emit()

@@ -51,6 +51,7 @@ func _ready() -> void:
 		_enter(State.RECOVER))
 	health.hp_changed.connect(func(_hp: int) -> void: _emit_hp())
 	_emit_hp.call_deferred()
+	Sfx.play(&"boss_roar", 0.0)
 
 
 ## Takes stats, the sprite sheet and its grid from the base enemy before EnemyBase
