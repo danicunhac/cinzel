@@ -259,3 +259,23 @@ func test_death_resets_floor_state() -> void:
 	await _tree().create_timer(Dungeon.DEATH_DELAY + 0.1).timeout
 	T.eq(d.state.floor_count(), 0, "floor state forgotten on death")
 	await _cleanup(d)
+
+
+func test_last_run_keeps_the_highest_floor_after_walking_down() -> void:
+	_game().new_run()
+	_game().run.tutorial_done = true
+	_game().run.beat_floor(1)
+	var d := await _spawn()
+	var plan: Array[String] = _f1_templates().slice(0, 4)
+	plan.append("res://world/rooms/boss_f2.tscn")
+	var none: Array[int] = []
+	d.state.start_floor(2, plan, none)
+	d.enter_floor(2)
+	T.ok(await _wait(d, 2, 0), "floor 2 first room")
+	_stairs(d).use()
+	T.ok(await _wait(d, 1, d.plan.size() - 1), "walked down to floor 1")
+	T.eq(d.max_floor, 2, "max floor of the trip")
+	d._snapshot_run()
+	T.eq(_game().last_run.get("floor"), 2, "last_run keeps floor 2")
+	d.leave_to_town()
+	await _cleanup(d)

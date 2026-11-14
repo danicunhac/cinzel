@@ -237,7 +237,7 @@ func _build_ui() -> void:
 
 	_add_button("Novo jogo", _new_game)
 	_add_button("Créditos", func() -> void: Game.goto(CREDITS_SCENE))
-	_add_button("Sair", func() -> void: get_tree().quit())
+	_add_button("Sair", func() -> void: Sfx.quit_clean())
 	for i in buttons.size():
 		var b := buttons[i]
 		b.focus_neighbor_top = b.get_path_to(buttons[(i - 1 + buttons.size()) % buttons.size()])

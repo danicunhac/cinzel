@@ -88,7 +88,8 @@ func _initialize() -> void:
 					print("FAIL %s::%s: %s" % [file.get_file(), name, f])
 	OS.remove_logger(counter)
 	print("PASS %d / FAIL %d" % [passed, failed])
-	quit(1 if failed > 0 else 0)
+	# Through Sfx: the audio server needs a moment to let go of the sounds.
+	root.get_node(^"Sfx").call(&"quit_clean", 1 if failed > 0 else 0)
 
 
 func _find_tests() -> Array[String]:

@@ -117,7 +117,8 @@ func is_stopped() -> bool:
 	return Engine.time_scale != 1.0
 
 
-## Back to normal time and a still camera (scene changes call it).
+## Back to normal time and a still camera, and no leftover numbers or
+## bursts (scene changes call it).
 func reset() -> void:
 	_gen += 1
 	_stops = 0
@@ -127,6 +128,12 @@ func reset() -> void:
 	if is_instance_valid(_shake_cam):
 		_shake_cam.offset = Vector2.ZERO
 	_shake_cam = null
+	# Numbers, bursts and flying coins of the old scene go with it.
+	for layer: Node in [_world, _overlay]:
+		if layer == null:
+			continue
+		for c in layer.get_children():
+			c.queue_free()
 
 
 # --- shake ---

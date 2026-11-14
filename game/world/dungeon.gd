@@ -30,6 +30,8 @@ enum Arrival { ENTRY, EXIT }
 static var requested_floor: int = 1
 
 var current_floor: int = 1
+## Highest floor reached on this trip (walking back down does not lower it).
+var max_floor: int = 1
 ## The current floor's plan and chest rooms (shared with its FloorRecord).
 var plan: Array[String] = []
 var chest_rooms: Array[int] = []
@@ -74,6 +76,7 @@ func _process(delta: float) -> void:
 ## already visited in this tower visit keeps its plan and rooms.
 func enter_floor(floor_num: int) -> void:
 	current_floor = floor_num
+	max_floor = maxi(max_floor, floor_num)
 	Game.run.clock.running = true
 	var rec := state.get_floor(floor_num)
 	if rec == null:
@@ -153,6 +156,7 @@ static func templates_for(floor_num: int) -> Array[String]:
 
 func _enter_single(path: String) -> void:
 	current_floor = int(_args.get("floor", "1"))
+	max_floor = current_floor
 	var p: Array[String] = [path]
 	var chests: Array[int] = []
 	if _args.has("chest"):
@@ -309,8 +313,10 @@ func _on_player_died() -> void:
 
 
 ## Saved before die() zeroes the run, for the game-over and victory screens.
+## "floor" is the highest floor reached on this trip, not the one the hero
+## walked back down to.
 func _snapshot_run() -> void:
-	Game.last_run = {"floor": current_floor, "seconds": Game.run.clock.seconds, "gold": Game.run.gold}
+	Game.last_run = {"floor": maxi(max_floor, current_floor), "seconds": Game.run.clock.seconds, "gold": Game.run.gold}
 
 
 func _show_notice(text: String) -> void:

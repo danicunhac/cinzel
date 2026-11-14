@@ -51,8 +51,22 @@ func test_extra_enemies_and_chest_on_clear() -> void:
 	T.eq(room.chest, null, "no chest before clear")
 	for e in room.enemies:
 		_kill(e)
-	T.ok(room.chest != null, "chest after clear")
+	T.eq(room.chest, null, "chest made in a deferred call")
+	await (Engine.get_main_loop() as SceneTree).process_frame
+	T.ok(room.chest != null and room.chest.is_inside_tree(), "chest after clear")
 	room.free()
+
+
+func test_room_freed_before_the_chest_call_leaks_nothing() -> void:
+	_game().new_run()
+	var room := await _room("res://world/rooms/f1/f1_arena.tscn")
+	room.start(0, true, RandomNumberGenerator.new())
+	for e in room.enemies:
+		_kill(e)
+	var before := Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)
+	room.free()
+	await (Engine.get_main_loop() as SceneTree).process_frame
+	T.eq(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT), before, "no orphan chest")
 
 
 func test_tutorial_rooms_get_no_extra_enemies() -> void:

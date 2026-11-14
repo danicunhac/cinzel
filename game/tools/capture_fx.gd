@@ -67,7 +67,7 @@ func _run() -> void:
 			break
 	await _real(0.14)
 	await _shot("taskP1-coin-fly.png")
-	get_tree().quit(0)
+	Sfx.quit_clean(0)
 
 
 func _until(cond: Callable, frames: int) -> void:
