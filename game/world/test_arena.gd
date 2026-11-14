@@ -1,6 +1,8 @@
 extends Node2D
 ## Empty test room. `--autopilot` (user arg) drives the player through every
-## state so screenshots can capture them. Debug only.
+## state so screenshots can capture them. `--demo=attack|special` (with
+## `--weapon=<id>`) puts the player next to the dummy facing it, then taps
+## attack at 0.3 s, or holds it past the special's hold time. Debug only.
 
 @onready var player: Player = $Player
 
@@ -11,6 +13,10 @@ var _time: float = 0.0
 var _autopilot: bool = false
 var _fired: Dictionary = {}
 var _enemies: Array[EnemyBase] = []
+var _demo: String = ""
+## `--shot-at=<s> --out=<png>`: saves the screen at that arena time and quits.
+var _shot_at: float = -1.0
+var _shot_out: String = ""
 
 const ENEMY_SCENES := {
 	"crawler": preload("res://actors/enemies/crawler.tscn"),
@@ -26,12 +32,23 @@ const ENEMY_POS := {
 
 func _ready() -> void:
 	_autopilot = "--autopilot" in OS.get_cmdline_user_args()
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--demo="):
+			_demo = a.substr(7)
+		elif a.begins_with("--shot-at="):
+			_shot_at = float(a.substr(10))
+		elif a.begins_with("--out="):
+			_shot_out = a.substr(6)
 	var wanted := _enemy_arg()
 	if wanted.is_empty():
 		_make_dummy(Vector2(273, 135))
 	else:
 		for kind in wanted:
 			_spawn_enemy(kind)
+	if _demo != "":
+		var gap := 96.0 if player.weapon.ranged else (40.0 if player.weapon.thrust else 26.0)
+		player.position = Vector2(273 - gap, 140)
+		player.facing = Vector2.RIGHT
 	_label = Label.new()
 	_label.position = Vector2(20, 18)
 	_label.add_theme_font_size_override("font_size", 8)
@@ -87,13 +104,20 @@ func _make_dummy(pos: Vector2) -> void:
 
 func _physics_process(delta: float) -> void:
 	_time += delta
-	if _autopilot and _enemies.is_empty():
+	if _demo != "":
+		_run_demo()
+	elif _autopilot and _enemies.is_empty():
 		_run_autopilot()
 	elif _autopilot:
 		_run_fight()
 
 
 func _process(_delta: float) -> void:
+	if _shot_at >= 0.0 and _time >= _shot_at:
+		_shot_at = -1.0
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(_shot_out)
+		get_tree().quit()
 	var alive := 0
 	for e in _enemies:
 		if is_instance_valid(e) and not e.dead:
@@ -161,3 +185,12 @@ func _once(key: String, at: float, fn: Callable) -> void:
 	if _time >= at and not _fired.has(key):
 		_fired[key] = true
 		fn.call()
+
+
+func _run_demo() -> void:
+	var hold := 0.05 if _demo == "attack" else player.special.special_hold + 0.1
+	var on := _time >= 0.3 and _time < 0.3 + hold
+	if on and not Input.is_action_pressed(&"attack"):
+		Input.action_press(&"attack")
+	elif not on and Input.is_action_pressed(&"attack"):
+		Input.action_release(&"attack")

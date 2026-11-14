@@ -1,6 +1,6 @@
 class_name Hud
 extends CanvasLayer
-## Life (ornate bar, beating heart), gold (counter that counts up, coin that
+## Life (ornate bar, beating heart), the special's cooldown slot, toasts, gold (counter that counts up, coin that
 ## spins and bounces on gain), a small clock block with the difficulty
 ## level, floor, 3 item slots (light ring on a new item), the exit bar with
 ## the boss-room block message, and the boss bar. Reads Game.run and the
@@ -11,6 +11,7 @@ extends CanvasLayer
 ## except the heart, whose beat is the life state.
 
 const BLOCKED_TEXT := "Não dá para sair durante o chefe"
+const TOAST_TIME := 1.8
 const BLOCKED_TIME := 2.5
 const DANGER_LEVEL := 5
 
@@ -94,6 +95,10 @@ var boss_trail: ColorRect
 var boss_tip: TextureRect
 var boss_label: Label
 var boss_plaque: NinePatchRect
+## Special (hold attack) cooldown, next to the item slots.
+var special_icon: SpecialIcon
+var toast_box: NinePatchRect
+var toast_label: Label
 
 ## Gold shown by the counter (counts toward Game.run.gold).
 var gold_shown: float = 0.0
@@ -106,6 +111,7 @@ var _top_left: Control
 var _top_right: Control
 var _slot_row: Control
 var _blocked_left: float = 0.0
+var _toast_left: float = 0.0
 var _items_shown: Array[StringName] = []
 var _gold_target: int = 0
 var _coin_spin: float = -1.0
@@ -130,6 +136,7 @@ func _ready() -> void:
 	UiKit.slide_in(_top_left, Vector2(0, -28))
 	UiKit.slide_in(_top_right, Vector2(0, -32), 0.05)
 	UiKit.slide_in(_slot_row, Vector2(0, 32), 0.1)
+	Game.toast_requested.connect(show_toast)
 
 
 func _process(delta: float) -> void:
@@ -144,11 +151,27 @@ func _process(delta: float) -> void:
 			_bind_boss(b)
 	_update_stats(delta)
 	_pulse = fmod(_pulse + delta, 0.6)
+	if _toast_left > 0.0:
+		_toast_left -= delta
+		toast_box.visible = _toast_left > 0.0
 	if _blocked_left > 0.0:
 		_blocked_left -= delta
 		var show := _blocked_left > 0.0
 		blocked_label.visible = show
 		blocked_box.visible = show
+
+
+## Short message on a plaque above the exit bar ("Mochila cheia").
+func show_toast(text: String) -> void:
+	toast_label.text = text
+	var w := UiKit.text_width(text) + 16
+	toast_box.size = Vector2(w, 14)
+	toast_box.position = Vector2(roundf((UiKit.SCREEN.x - w) / 2.0), 154)
+	toast_label.size.x = w
+	if not toast_box.visible:
+		UiKit.slide_in(toast_box, Vector2(0, 10))
+	toast_box.visible = true
+	_toast_left = TOAST_TIME
 
 
 func bind_player(p: Player) -> void:
@@ -202,6 +225,9 @@ func _update_stats(delta: float) -> void:
 	level_label.text = "Nv %d" % level
 	level_label.add_theme_color_override("font_color", UiKit.COLOR_DANGER if level >= DANGER_LEVEL else UiKit.COLOR_MUTED)
 	floor_label.text = current_floor_text()
+	if player != null and is_instance_valid(player) and player.special != null:
+		special_icon.weapon_id = player.weapon_id
+		special_icon.set_state(player.special.cooldown_ratio(), player.special.glow())
 	if run.items != _items_shown:
 		_refresh_slots(true)
 	if boss_box.visible:
@@ -436,6 +462,9 @@ func _build() -> void:
 		slot.add_child(icon)
 		slots.append(slot)
 		slot_icons.append(icon)
+	special_icon = SpecialIcon.new()
+	special_icon.position = Vector2(RunState.SLOTS * 24 + 6, 0)
+	_slot_row.add_child(special_icon)
 
 	# Centre: exit hold bar.
 	exit_box = _group(root, Vector2(roundf((w - EXIT_SIZE.x) / 2.0), 172))
@@ -454,6 +483,12 @@ func _build() -> void:
 	blocked_label.add_theme_color_override("font_color", UiKit.COLOR_DANGER)
 	blocked_label.visible = false
 	blocked_box.visible = false
+
+	toast_box = UiKit.plaque(Vector2(40, 14))
+	root.add_child(toast_box)
+	toast_label = _label(toast_box, Vector2(0, 1), Vector2(40, 10), HORIZONTAL_ALIGNMENT_CENTER)
+	toast_label.add_theme_color_override("font_color", UiKit.COLOR_ITEM)
+	toast_box.visible = false
 
 	# Bottom centre: boss bar, name on a plaque across its top edge.
 	boss_box = _group(root, Vector2(roundf((w - BOSS_SIZE.x) / 2.0), h - BOSS_SIZE.y - 3))

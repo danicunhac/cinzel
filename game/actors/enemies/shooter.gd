@@ -56,3 +56,7 @@ func _fire(dir: Vector2) -> void:
 	shot.position = position + Vector2(0, -9) + dir * 9.0
 	get_parent().add_child(shot)
 	play(ROW_IDLE)
+
+
+func loot_type() -> StringName:
+	return &"shooter"

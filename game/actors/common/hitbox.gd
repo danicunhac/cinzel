@@ -6,6 +6,10 @@ signal landed(hurtbox: Hurtbox)
 
 @export var damage: int = 0
 @export var team: StringName = &""
+## Seconds a hit enemy stops acting (axe); bosses ignore it.
+var stun: float = 0.0
+## The current damage came from a crit roll (enemies flash gold).
+var crit: bool = false
 
 var _active: bool = false
 var _already_hit: Array[Hurtbox] = []
@@ -26,3 +30,15 @@ func set_active(active: bool) -> void:
 	for c in get_children():
 		if c is CollisionShape2D:
 			(c as CollisionShape2D).set_deferred("disabled", not active)
+
+
+## Lets every hurtbox be hit again (a new cut of a multi-hit attack).
+func reset_hits() -> void:
+	_already_hit.clear()
+
+
+## Hits every hurtbox overlapping now (a new cut on enemies already inside).
+func hit_overlapping() -> void:
+	for area in get_overlapping_areas():
+		if area is Hurtbox:
+			(area as Hurtbox).receive(self)

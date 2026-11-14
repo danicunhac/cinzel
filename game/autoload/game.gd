@@ -1,6 +1,9 @@
 extends Node
 ## Autoload. Holds the current run and scene flow.
 
+## A short message for the HUD (e.g. "Mochila cheia").
+signal toast_requested(text: String)
+
 const SwapItemPanelScene := preload("res://ui/swap_item_panel.tscn")
 ## Scene-change fade-in (see goto).
 const FADE_TIME := 0.35
@@ -19,6 +22,10 @@ var _fade_tween: Tween
 func _ready() -> void:
 	if run == null:
 		new_run()
+
+
+func toast(text: String) -> void:
+	toast_requested.emit(text)
 
 
 func new_run() -> void:
