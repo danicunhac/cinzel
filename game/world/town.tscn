@@ -13,13 +13,7 @@ script = ExtResource("1")
 z_index = -20
 offset_right = 480.0
 offset_bottom = 270.0
-color = Color(0.18, 0.2, 0.14, 1)
-
-[node name="Ground" type="TileMapLayer" parent="."]
-z_index = -10
-
-[node name="Decor" type="TileMapLayer" parent="."]
-z_index = -9
+color = Color(0.16, 0.22, 0.12, 1)
 
 [node name="Player" parent="." instance=ExtResource("2")]
 position = Vector2(240, 222)

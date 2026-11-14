@@ -21,7 +21,6 @@ SHEETS = {
     "game/assets/tiles/floor1.png": (128, 32, 16),
     "game/assets/tiles/floor2.png": (128, 32, 16),
     "game/assets/tiles/floor3.png": (128, 32, 16),
-    "game/assets/tiles/town.png": (128, 32, 16),
     "game/assets/characters/npc_shopkeeper.png": (64, 32, 32),
     "game/assets/characters/npc_blacksmith.png": (64, 32, 32),
     "game/assets/items/heavy_blade.png": (16, 16, 16),
@@ -37,6 +36,24 @@ SHEETS = {
     "game/assets/ui/heart.png": (9, 8, 1),
     "game/assets/ui/coin.png": (8, 8, 8),
     "game/assets/ui/title_bg.png": (480, 270, 30),
+    "game/assets/ui/hud/hp_frame.png": (48, 12, 12),
+    "game/assets/ui/hud/boss_frame.png": (64, 16, 16),
+    "game/assets/ui/hud/slot.png": (22, 22, 22),
+    "game/assets/ui/hud/plaque.png": (30, 16, 2),
+    "game/assets/ui/hud/button.png": (42, 24, 6),
+    "game/assets/ui/hud/button_hot.png": (42, 24, 6),
+    "game/assets/ui/hud/button_down.png": (42, 24, 6),
+    "game/assets/ui/hud/button_off.png": (42, 24, 6),
+    "game/assets/ui/hud/button_focus.png": (42, 24, 6),
+    "game/assets/ui/hud/panel.png": (72, 70, 2),
+    "game/assets/ui/hud/heart.png": (52, 12, 1),
+    "game/assets/ui/hud/coin.png": (54, 9, 9),
+    "game/assets/ui/hud/hourglass.png": (6, 9, 1),
+    "game/assets/ui/hud/ring.png": (24, 24, 24),
+    "game/assets/ui/hud/fill_hp.png": (1, 6, 1),
+    "game/assets/ui/hud/fill_boss.png": (1, 8, 1),
+    "game/assets/ui/hud/fill_exit.png": (1, 6, 1),
+    "game/assets/ui/hud/fill_tip.png": (3, 8, 1),
 }
 # Cells that must stay empty in the climber sheets (frame counts per row).
 CLIMBER_COUNTS = [4, 4, 4, 8, 8, 8, 6, 6, 6, 6, 6, 6, 6]
@@ -71,7 +88,7 @@ def lowest_row(img, cell):
 
 
 def main():
-    root = sys.argv[1]
+    root = sys.argv[1] if len(sys.argv) > 1 else "."
     ok = True
     for rel, (w, h, cell) in SHEETS.items():
         img = Image.open(os.path.join(root, rel)).convert("RGBA")

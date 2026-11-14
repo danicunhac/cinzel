@@ -12,15 +12,14 @@ var _pending_sell: int = -1
 
 func _init() -> void:
 	super._init()
-	panel_size = Vector2(304, 168)
+	panel_size = Vector2(344, 0)
+	panel_title = "Loja"
 
 
 func _build(box: VBoxContainer) -> void:
 	var run := Game.run
 	var head := HBoxContainer.new()
-	var title := UiKit.label("Loja", UiKit.COLOR_TITLE)
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	head.add_child(title)
+	head.alignment = BoxContainer.ALIGNMENT_END
 	head.add_child(UiKit.label("Ouro: %d" % run.gold, UiKit.COLOR_GOLD))
 	box.add_child(head)
 
@@ -49,7 +48,7 @@ func _build(box: VBoxContainer) -> void:
 
 	_desc = UiKit.label("", UiKit.COLOR_ITEM)
 	_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_desc.custom_minimum_size = Vector2(288, 18)
+	_desc.custom_minimum_size = Vector2(324, 18)
 	box.add_child(_desc)
 	var msg := UiKit.label(_msg, _msg_color)
 	box.add_child(msg)
@@ -57,7 +56,7 @@ func _build(box: VBoxContainer) -> void:
 
 func _column(parent: HBoxContainer, title: String) -> VBoxContainer:
 	var col := VBoxContainer.new()
-	col.custom_minimum_size = Vector2(141, 0)
+	col.custom_minimum_size = Vector2(159, 0)
 	col.add_theme_constant_override("separation", 2)
 	col.add_child(UiKit.label(title, UiKit.COLOR_MUTED))
 	parent.add_child(col)
@@ -67,7 +66,7 @@ func _column(parent: HBoxContainer, title: String) -> VBoxContainer:
 ## Icon + name on the left, price on the right.
 func _item_button(id: StringName, price: String) -> Button:
 	var b := UiKit.button(UiKit.item_name(id), UiKit.item_icon(id))
-	b.custom_minimum_size = Vector2(141, 20)
+	b.custom_minimum_size = Vector2(159, 20)
 	b.clip_text = true
 	b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	var p := UiKit.label(price, UiKit.COLOR_GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
