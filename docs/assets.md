@@ -10,6 +10,7 @@ Os scripts em `art-src/` transformam esses originais nas folhas do jogo. Rode co
 - `build_enemies.py`: inimigos.
 - `build_boss.py`: chefe final (quadros de 32x32, mesma receita dos inimigos).
 - `build_tiles.py`: tilesets.
+- `build_town.py`: cidade (chão pintado de 480x270 e os sprites grandes com sombra). `town_ground_guide.py` desenha o mapa de cores que guiou a geração do chão.
 - `build_ui.py`: ícones dos itens, NPCs da cidade, molduras e ícones da UI, fundo do título. `preview_ui.py` monta uma folha ampliada para revisar.
 - `check_art.py`: confere tamanho, transparência e no máximo 32 cores.
 
@@ -40,6 +41,14 @@ Nenhum desses scripts sobrescreve um arquivo que já existe, porque ele pode ter
 | `game/assets/ui/heart.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Coração de `cinzel-ui-kit-sheet` | 2026-11-14 |
 | `game/assets/ui/coin.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Moeda de `cinzel-ui-kit-sheet`, recolorida para dourado (saiu salmão) | 2026-11-14 |
 | `game/assets/ui/title_bg.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | `cinzel-title-bg` reduzido para 320x180, 32 cores | 2026-11-14 |
+| `game/assets/town/ground.png` (480x270) | Gerado por IA (gpt-image-2.5 flare edit) + ajuste por script | `art-src/gen/town-ground.png` (pintado sobre `town-ground-guide.png` com a arte-chave da cidade como referência) por `build_town.py`: reduzido para 480x270, 32 cores | 2026-11-14 |
+| `game/assets/town/shop.png` | Gerado por IA (gpt-image-2.5 flare, preset `cinzel-pixel`) + ajuste por script | `art-src/gen/town-shop.png` por `build_town.py`: recorte, 104 px de largura, até 29 cores, contorno de 1 px e sombra suave embutida | 2026-11-14 |
+| `game/assets/town/forge.png` | Idem | `art-src/gen/town-forge.png`, mesma receita; a cena espelha o sprite | 2026-11-14 |
+| `game/assets/town/house_a.png` | Idem | `art-src/gen/town-houses.png`, 80 px de altura | 2026-11-14 |
+| `game/assets/town/house_b.png`, `house_c.png` | Gerado por IA (gpt-image-2.5 flare edit) + ajuste por script | `art-src/gen/town-houses-b.png` (casa de pedra e casa enxaimel) | 2026-11-14 |
+| `game/assets/town/crystal.png` | Gerado por IA (gpt-image-2.5 flare, preset `cinzel-pixel`) + ajuste por script | `art-src/gen/town-crystal.png`, 60 px de altura | 2026-11-14 |
+| `game/assets/town/tree_a.png`, `tree_b.png`, `tree_c.png`, `lamp.png`, `well.png`, `planter.png`, `flowerbed.png`, `fence.png`, `fence_post.png`, `barrel.png`, `crates.png`, `sack.png` | Idem | `art-src/gen/town-props.png`, um recorte por objeto (caixas em `build_town.py`); o halo rosa do lampião vira luz âmbar | 2026-11-14 |
+| `game/assets/town/crystal_glow.png` | Feito por script | Brilho azul radial em 4 faixas, desenhado em `build_town.py` | 2026-11-14 |
 | `game/assets/fonts/Silkscreen-Regular.ttf` | Terceiros: fonte Silkscreen, licença SIL OFL 1.1 | Fonte Silkscreen (Jason Kottke), SIL OFL 1.1, de google/fonts; licença em `Silkscreen-OFL.txt` | 2026-11-14 |
 
 Quando o Daniel redesenhar um arquivo à mão, troque a autoria dessa linha para "Autoral (Daniel)".
@@ -64,6 +73,14 @@ O nome no gerador de IA leva um hash de conteúdo. O arquivo no repositório é 
 | `art-src/gen/tiles-props-sheet.png` | `cinzel-tiles-props-sheet-6f9f6685ebad` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayProps` | Pilar, caixote, baú fechado, baú aberto com ouro, tocha de parede, sobre magenta | 2026-11-14 |
 | `art-src/gen/tiles-town-sheet.png` | `cinzel-tiles-town-sheet-07b9e1466613` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 da cidade: calçamento, grama, madeira, terra, telhado, muro, toldo listrado, casa enxaimel, porta, janela, estandarte, topo de muro, água | 2026-11-14 |
 | `art-src/gen/boss-final.png` | `cinzel-boss-final-15618594aab4` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `characters` | Chefe final: cavaleiro-espectro encapuzado de armadura negra rachada, olhos e fenda no peito em brasa vermelha, lâmina incandescente, sobre magenta | 2026-11-14 |
+| `art-src/gen/town-shop.png` | `cinzel-town-shop-2d8e249685e5` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayProps` | Loja do herói vista de cima 3/4: enxaimel, toldo listrado vermelho e creme, balcão com prateleiras de poções, duas mesas de exposição com pano verde, placa de poção, barril, caixote, lanterna, sobre magenta | 2026-11-14 |
+| `art-src/gen/town-forge.png` | `cinzel-town-forge-ef8d59b688fe` | idem | Forja: pedra e madeira escura, chaminé alta de pedra, frente aberta com fornalha acesa, bigorna no toco, suporte de espadas e machados, barril de têmpera, placa de bigorna, lanterna, sobre magenta | 2026-11-14 |
+| `art-src/gen/town-houses.png` | `cinzel-town-houses-1182b3bf7188` | idem | Pedido de três casas; veio uma (enxaimel estreita com hera, floreira e estandarte azul) | 2026-11-14 |
+| `art-src/gen/town-houses-b.png` | `cinzel-town-houses-b-0c23dc8e0a89` | `openai/gpt-image-2.5/flare/edit`, referência = `town-houses` | Mesmo estilo e escala: casa de pedra com telhado vermelho e estandarte; casa enxaimel com telhado marrom, janela redonda, banco e vaso | 2026-11-14 |
+| `art-src/gen/town-crystal.png` | `cinzel-town-crystal-ad465add88c7` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayProps` | Cristal azul de teleporte sobre pedestal redondo de pedra com dois pilares e estandartes | 2026-11-14 |
+| `art-src/gen/town-props.png` | `cinzel-town-props-316a781f76ff` | idem, 2K | Folha de objetos em 3 linhas: três árvores (carvalho, árvore clara, outono), lampião, poço, floreira, canteiro redondo, cerca, poste, barril, caixotes, saco | 2026-11-14 |
+| `art-src/gen/town-ground-guide.png` | `town-ground-guide-9e3f26c9fe7f` (upload) | `town_ground_guide.py` | Mapa de cores do chão: cinza = calçamento, anel claro = anel de pedra do cristal, marrom = terra, verde = grama | 2026-11-14 |
+| `art-src/gen/town-ground.png` | `cinzel-town-ground-e1d822381cad` | `openai/gpt-image-2.5/flare/edit`, referências = guia + arte-chave da cidade | "Repaint it as the GROUND ONLY of a top-down pixel art town square, keeping every region where it is": calçamento, anel de lajes, caminho de terra, grama com flores, meio-fio de pedra, sem prédios | 2026-11-14 |
 | (sem arquivo bruto no repo) | `cinzel-item-icons-sheet-6a10443e5bc9` | `fal-ai/nano-banana-2/edit`, preset `cinzel-pixel`, papel `gameplayProps`, 2K | Grade 4x2 dos 8 itens sobre magenta, cada um com brilho amarelo (veio um mini escalador perdido no meio, apagado no script) | 2026-11-14 |
 | (sem arquivo bruto no repo) | `cinzel-npcs-sheet-73ad112ab455` | `fal-ai/nano-banana-2/edit`, preset `cinzel-pixel`, papel `characters`, 2K | Lojista (avental verde, boné, bolsa de moedas) e ferreiro (careca, barba, avental de couro, martelo), 2 quadros de idle cada, sobre magenta | 2026-11-14 |
 | (sem arquivo bruto no repo) | `cinzel-ui-kit-sheet-7be22ce3bc8a` | `fal-ai/nano-banana-2/edit`, preset `cinzel-pixel`, papel `uiElements`, 2K | Moldura de painel bronze, espaço de item, coração, moeda, relógio, sobre magenta | 2026-11-14 |
@@ -87,7 +104,7 @@ Todos os tilesets têm 8 colunas x 2 linhas de tiles 16x16. As coordenadas são 
 | (6, 0) | `pillar` | (6, 1) | vazio |
 | (7, 0) | `crate` | (7, 1) | vazio |
 
-`town.png` (para a Task 12):
+`town.png` (Task 12; desde a Task P3 a cidade não usa mais este tileset, ela usa `game/assets/town/`):
 
 | (c, l) | Nome | Uso |
 |---|---|---|
@@ -107,3 +124,21 @@ Todos os tilesets têm 8 colunas x 2 linhas de tiles 16x16. As coordenadas são 
 | (5, 1) | `banner` | estandarte azul (fundo transparente) |
 | (6, 1) | `wall_top` | topo do muro, visto de cima |
 | (7, 1) | `water` | água rasa |
+
+## Peças da cidade (`game/assets/town/`)
+
+Desde a Task P3 a cidade não é um mapa de tiles. `ground.png` é o chão inteiro da tela (480x270, opaco). Os outros arquivos são sprites soltos, ordenados por Y na cena (`world/town.gd`, lista `PIECES`).
+
+Em todo sprite, a linha de base (onde a parede ou o tronco toca o chão) fica 4 px acima da borda de baixo; esses 4 px guardam a sombra embutida. A cena põe a origem do sprite em (largura / 2, altura - 4). A sombra é uma elipse de duas faixas de alfa, por isso esses arquivos têm alfa parcial (os outros sprites do jogo não têm).
+
+| Arquivo | Tamanho | Uso |
+|---|---|---|
+| `shop.png` | 106x116 | loja do herói (toldo, balcão, mesas) |
+| `forge.png` | 106x104 | forja com chaminé, espelhada na cena |
+| `house_a.png`, `house_b.png`, `house_c.png` | 59x86, 76x73, 64x82 | casas |
+| `crystal.png`, `crystal_glow.png` | 52x66, 48x48 | cristal de teleporte e o brilho aditivo que pulsa |
+| `tree_a.png`, `tree_b.png`, `tree_c.png` | 56x63, 42x53, 48x58 | árvores (sem colisão) |
+| `lamp.png` | 18x44 | lampião (a luz é um `PointLight2D`) |
+| `well.png`, `planter.png`, `flowerbed.png` | 36x46, 32x32, 32x31 | poço, floreira, canteiro |
+| `fence.png`, `fence_post.png` | 42x24, 13x28 | cerca e poste (sem sombra) |
+| `barrel.png`, `crates.png`, `sack.png` | 16x26, 20x30, 16x24 | barril, caixotes, saco |
