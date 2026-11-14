@@ -1,7 +1,9 @@
 """Placeholder layered character sheets (4 cols x 13 rows of 24x24 frames).
 
-Usage: python3 -I make_placeholders.py <out_dir>
+Usage: python3 -I make_placeholders.py <out_dir> [<enemies_dir>]
 Writes body.png, hair.png, outfit.png, weapon.png into <out_dir>.
+With <enemies_dir>, also writes crawler.png, shooter.png, charger.png
+(4 cols x 4 rows of 16x16 frames: idle, move, attack, death).
 """
 import os
 import sys
@@ -32,11 +34,12 @@ EYE = (30, 20, 20, 255)
 class Cell:
     """24x24 RGBA cell with the few draw calls the placeholders need."""
 
-    def __init__(self):
+    def __init__(self, size=F):
         self.p = {}
+        self.size = size
 
     def set(self, x, y, c):
-        if 0 <= x < F and 0 <= y < F:
+        if 0 <= x < self.size and 0 <= y < self.size:
             self.p[(x, y)] = c
 
     def rectangle(self, box, fill):
@@ -206,7 +209,118 @@ def draw_weapon(d, anim, face, i):
 LAYERS = {"body": draw_body, "hair": draw_hair, "outfit": draw_outfit, "weapon": draw_weapon}
 
 
+E = 16
+E_ROWS = ("idle", "move", "attack", "death")
+RED = (230, 40, 40, 255)
+RED_DARK = (140, 20, 30, 255)
+BLACK = (20, 14, 20, 255)
+
+
+def draw_crawler(d, anim, i):
+    body = (96, 70, 120, 255)
+    dark = (60, 40, 80, 255)
+    if anim == "death":
+        h = (5, 4, 2, 1)[i]
+        d.ellipse([2, 14 - h, 13, 14], fill=body)
+        if i < 3:
+            px(d, 5, 13 - h, 1, 1, RED_DARK)
+        return
+    bob = i % 2 if anim == "idle" else 0
+    lx = 1 if anim == "move" and i % 2 else -1 if anim == "move" else 0
+    d.ellipse([2, 6 + bob, 13, 13], fill=body)
+    d.ellipse([4, 6 + bob, 11, 9 + bob], fill=dark)
+    for k, x in enumerate((3, 6, 9, 12)):
+        off = lx if k % 2 else -lx
+        px(d, x + off, 13, 1, 2, dark)
+    px(d, 4, 8 + bob, 2, 2, RED)
+    px(d, 9, 8 + bob, 2, 2, RED)
+    if anim == "attack":
+        jaw = (1, 3, 2, 3)[i]
+        px(d, 4, 11 + bob, 8, jaw, RED_DARK)
+        for x in (4, 6, 8, 10):
+            px(d, x, 11 + bob, 1, 1, (240, 240, 230, 255))
+        px(d, 4, 11 + bob + jaw, 8, 1, dark)
+
+
+def draw_shooter(d, anim, i):
+    robe = (50, 70, 120, 255)
+    robe_dark = (30, 44, 80, 255)
+    skin = (200, 200, 220, 255)
+    if anim == "death":
+        k = (0, 2, 5, 7)[i]
+        px(d, 3, 9 + k // 2, 10, 5 - k // 3, robe)
+        px(d, 3 + k // 2, 5 + k, 5, 4 - k // 3 if k < 7 else 1, skin)
+        if i < 3:
+            px(d, 6 + k // 2, 7 + k, 1, 1, RED_DARK)
+        return
+    bob = i % 2 if anim == "idle" else 0
+    sway = (0, 1, 0, -1)[i] if anim == "move" else 0
+    for y in range(7, 15):
+        w = 3 + (y - 7)
+        px(d, 8 - w // 2 + sway, y, w, 1, robe_dark if y > 12 else robe)
+    d.ellipse([5 + sway, 2 + bob, 10 + sway, 7 + bob], fill=robe_dark)
+    px(d, 6 + sway, 4 + bob, 3, 2, skin)
+    px(d, 7 + sway, 4 + bob, 1, 1, RED)
+    if anim == "attack":
+        up = (0, 2, 3, 2)[i]
+        px(d, 3, 8 - up, 1, 5, robe_dark)
+        px(d, 12, 8 - up, 1, 5, robe_dark)
+        d.ellipse([6, 0, 9, 3], fill=RED if i >= 1 else RED_DARK)
+    else:
+        px(d, 12 + sway, 5 + bob, 1, 9, (120, 90, 60, 255))
+        px(d, 11 + sway, 4 + bob, 3, 2, RED_DARK)
+
+
+def draw_charger(d, anim, i):
+    hide = (120, 76, 50, 255)
+    dark = (80, 48, 34, 255)
+    horn = (236, 232, 214, 255)
+    if anim == "death":
+        h = (7, 5, 3, 2)[i]
+        d.ellipse([1, 14 - h, 14, 14], fill=hide)
+        if i < 3:
+            px(d, 11, 13 - h, 1, 1, RED_DARK)
+        px(d, 13, 12 - h // 2, 2, 1, horn)
+        return
+    bob = i % 2 if anim == "idle" else 0
+    lx = 1 if anim == "move" and i % 2 else -1 if anim == "move" else 0
+    low = 2 if anim == "attack" else 0
+    d.ellipse([1, 4 + bob + low, 12, 12 + bob], fill=hide)
+    px(d, 2, 5 + bob + low, 7, 2, dark)
+    d.ellipse([9, 4 + bob + low * 2, 14, 10 + bob + low], fill=hide)
+    px(d, 10, 7 + bob + low, 1, 1, RED)
+    px(d, 12, 7 + bob + low, 1, 1, RED)
+    px(d, 9, 2 + bob + low, 1, 3, horn)
+    px(d, 13, 2 + bob + low, 1, 3, horn)
+    for k, x in enumerate((3, 5, 9, 11)):
+        off = lx if k % 2 else -lx
+        px(d, x + off, 12 + bob, 2, 3 - bob, dark)
+    if anim == "attack":
+        px(d, 0, 6, 1, 1, RED)
+        px(d, 0, 9, 2, 1, RED)
+        if i % 2:
+            px(d, 9, 1, 5, 1, RED)
+
+
+ENEMIES = {"crawler": draw_crawler, "shooter": draw_shooter, "charger": draw_charger}
+
+
+def write_enemies(out):
+    os.makedirs(out, exist_ok=True)
+    for name, fn in ENEMIES.items():
+        pixels = {}
+        for r, anim in enumerate(E_ROWS):
+            for i in range(4):
+                cell = Cell(E)
+                fn(cell, anim, i)
+                for (x, y), c in cell.p.items():
+                    pixels[(i * E + x, r * E + y)] = c
+        write_png(os.path.join(out, name + ".png"), E * 4, E * 4, pixels)
+
+
 def main():
+    if len(sys.argv) > 2:
+        write_enemies(sys.argv[2])
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
     for name, fn in LAYERS.items():

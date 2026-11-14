@@ -10,17 +10,52 @@ var _dummy_rect: ColorRect
 var _time: float = 0.0
 var _autopilot: bool = false
 var _fired: Dictionary = {}
+var _enemies: Array[EnemyBase] = []
+
+const ENEMY_SCENES := {
+	"crawler": preload("res://actors/enemies/crawler.tscn"),
+	"shooter": preload("res://actors/enemies/shooter.tscn"),
+	"charger": preload("res://actors/enemies/charger.tscn"),
+}
+const ENEMY_POS := {
+	"crawler": Vector2(230, 130),
+	"shooter": Vector2(260, 40),
+	"charger": Vector2(250, 90),
+}
 
 
 func _ready() -> void:
 	_autopilot = "--autopilot" in OS.get_cmdline_user_args()
-	_make_dummy(Vector2(182, 90))
+	var wanted := _enemy_arg()
+	if wanted.is_empty():
+		_make_dummy(Vector2(182, 90))
+	else:
+		for kind in wanted:
+			_spawn_enemy(kind)
 	_label = Label.new()
 	_label.position = Vector2(20, 18)
 	_label.add_theme_font_size_override("font_size", 8)
 	add_child(_label)
 	player.exit_blocked.connect(func() -> void: print("exit_blocked"))
 	player.exited.connect(func() -> void: print("exited"))
+
+
+## `--enemies` spawns all three, `--enemies=charger,shooter` a subset.
+func _enemy_arg() -> Array[String]:
+	var out: Array[String] = []
+	for a in OS.get_cmdline_user_args():
+		if a == "--enemies":
+			out.assign(ENEMY_SCENES.keys())
+		elif a.begins_with("--enemies="):
+			out.assign(Array(a.substr(10).split(",")))
+	return out
+
+
+func _spawn_enemy(kind: String) -> void:
+	var e := (ENEMY_SCENES[kind] as PackedScene).instantiate() as EnemyBase
+	e.position = ENEMY_POS[kind]
+	add_child(e)
+	_enemies.append(e)
 
 
 func _make_dummy(pos: Vector2) -> void:
@@ -52,13 +87,19 @@ func _make_dummy(pos: Vector2) -> void:
 
 func _physics_process(delta: float) -> void:
 	_time += delta
-	if _autopilot:
+	if _autopilot and _enemies.is_empty():
 		_run_autopilot()
+	elif _autopilot:
+		_run_fight()
 
 
 func _process(_delta: float) -> void:
-	_label.text = "HP %d/%d  dummy %d  state %s  t %.1f p %s" % [
-		player.health.hp, player.health.max_hp, _dummy_health.hp,
+	var alive := 0
+	for e in _enemies:
+		if is_instance_valid(e) and not e.dead:
+			alive += 1
+	_label.text = "HP %d/%d  dummy %d  foes %d  gold %d  state %s  t %.1f p %s" % [
+		player.health.hp, player.health.max_hp, _dummy_health.hp if _dummy_health != null else 0, alive, Game.run.gold,
 		Player.State.keys()[player.state], _time, player.position.round()]
 
 
@@ -85,6 +126,27 @@ func _run_autopilot() -> void:
 	_tap(&"attack", 3.15)
 	_tap(&"attack", 3.5)
 	_tap(&"roll", 4.3)
+
+
+## Fight mode: walk at the nearest living enemy and swing when close.
+func _run_fight() -> void:
+	var target: EnemyBase = null
+	for e in _enemies:
+		if is_instance_valid(e) and not e.dead:
+			if target == null or e.position.distance_to(player.position) < target.position.distance_to(player.position):
+				target = e
+	for action: StringName in [&"move_left", &"move_right", &"move_up", &"move_down"]:
+		Input.action_release(action)
+	if target == null:
+		return
+	var to := target.position - player.position
+	if to.length() > 18.0:
+		if absf(to.x) > 4.0:
+			Input.action_press(&"move_right" if to.x > 0.0 else &"move_left")
+		if absf(to.y) > 4.0:
+			Input.action_press(&"move_down" if to.y > 0.0 else &"move_up")
+	else:
+		_tap(&"attack", snappedf(_time, 0.35))
 
 
 func _tap(action: StringName, at: float) -> void:

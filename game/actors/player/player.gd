@@ -48,6 +48,7 @@ var _pulse: float = 0.0
 
 
 func _ready() -> void:
+	add_to_group(&"player")
 	if Game.run == null:
 		Game.new_run()
 	Game.run.changed.connect(_refresh_stats)
