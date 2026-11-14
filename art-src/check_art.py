@@ -21,7 +21,6 @@ SHEETS = {
     "game/assets/tiles/floor1.png": (128, 32, 16),
     "game/assets/tiles/floor2.png": (128, 32, 16),
     "game/assets/tiles/floor3.png": (128, 32, 16),
-    "game/assets/tiles/town.png": (128, 32, 16),
     "game/assets/characters/npc_shopkeeper.png": (64, 32, 32),
     "game/assets/characters/npc_blacksmith.png": (64, 32, 32),
     "game/assets/items/heavy_blade.png": (16, 16, 16),
