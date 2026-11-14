@@ -164,3 +164,13 @@ Pasta: `.superpowers/sdd/2026-11-14-cinzel/shots/`
 | 8 | `task11-final-phase2.png` | Chefe final, fase 2 |
 
 Reserva: `task12-smith.png` (forja), `task10-t1.png` (tutorial), `task10-boss.png` (chefe do andar 1).
+
+## Atalho para o chefe na demonstração
+
+Se o tempo apertar, abra a sala do chefe direto (sem passar pelas salas):
+
+```
+/Applications/Godot.app/Contents/MacOS/Godot --path game res://world/dungeon.tscn -- --room=res://world/rooms/boss_f1.tscn
+```
+
+Rode da pasta do projeto (`cinzel/`). No Windows, use o `.exe` da build com os mesmos argumentos depois de `--`.
