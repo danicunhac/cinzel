@@ -7,9 +7,9 @@ extends Hitbox
 signal finished
 
 const RED := Color(1.0, 0.15, 0.1)
-const BAND := 8.0
+const BAND := 12.0
 
-@export var max_radius: float = 88.0
+@export var max_radius: float = 132.0
 @export var warn_time: float = 0.8
 @export var grow_time: float = 0.45
 
@@ -76,9 +76,9 @@ func _draw() -> void:
 	if warning:
 		var pulse := 0.5 + 0.5 * sin(_t * 24.0)
 		draw_circle(Vector2.ZERO, max_radius, Color(RED, 0.16 + 0.10 * pulse))
-		draw_arc(Vector2.ZERO, max_radius, 0.0, TAU, 64, Color(RED, 0.7 + 0.3 * pulse), 2.0)
+		draw_arc(Vector2.ZERO, max_radius, 0.0, TAU, 96, Color(RED, 0.7 + 0.3 * pulse), 2.0)
 		# The inner ring grows to the edge as the warning runs out.
 		draw_arc(Vector2.ZERO, max_radius * (_t / warn_time), 0.0, TAU, 64, Color(RED, 0.6), 1.0)
 	else:
-		draw_arc(Vector2.ZERO, radius, 0.0, TAU, 48, Color(1.0, 0.45, 0.3, 0.9), 3.0)
-		draw_arc(Vector2.ZERO, maxf(radius - 3.0, 0.0), 0.0, TAU, 48, Color(RED, 0.5), 2.0)
+		draw_arc(Vector2.ZERO, radius, 0.0, TAU, 64, Color(1.0, 0.45, 0.3, 0.9), 4.0)
+		draw_arc(Vector2.ZERO, maxf(radius - 4.0, 0.0), 0.0, TAU, 64, Color(RED, 0.5), 3.0)

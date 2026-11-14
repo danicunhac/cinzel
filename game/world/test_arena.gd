@@ -18,9 +18,9 @@ const ENEMY_SCENES := {
 	"charger": preload("res://actors/enemies/charger.tscn"),
 }
 const ENEMY_POS := {
-	"crawler": Vector2(230, 130),
-	"shooter": Vector2(260, 40),
-	"charger": Vector2(250, 90),
+	"crawler": Vector2(345, 195),
+	"shooter": Vector2(390, 60),
+	"charger": Vector2(375, 135),
 }
 
 
@@ -28,7 +28,7 @@ func _ready() -> void:
 	_autopilot = "--autopilot" in OS.get_cmdline_user_args()
 	var wanted := _enemy_arg()
 	if wanted.is_empty():
-		_make_dummy(Vector2(182, 90))
+		_make_dummy(Vector2(273, 135))
 	else:
 		for kind in wanted:
 			_spawn_enemy(kind)
@@ -63,8 +63,8 @@ func _make_dummy(pos: Vector2) -> void:
 	node.position = pos
 	add_child(node)
 	_dummy_rect = ColorRect.new()
-	_dummy_rect.size = Vector2(12, 16)
-	_dummy_rect.position = Vector2(-6, -8)
+	_dummy_rect.size = Vector2(18, 24)
+	_dummy_rect.position = Vector2(-9, -12)
 	_dummy_rect.color = Color(0.7, 0.2, 0.2)
 	node.add_child(_dummy_rect)
 	_dummy_health = Health.new()
@@ -75,7 +75,7 @@ func _make_dummy(pos: Vector2) -> void:
 	hb.team = &"enemy"
 	var cs := CollisionShape2D.new()
 	var rs := RectangleShape2D.new()
-	rs.size = Vector2(12, 16)
+	rs.size = Vector2(18, 24)
 	cs.shape = rs
 	hb.add_child(cs)
 	node.add_child(hb)
@@ -140,10 +140,10 @@ func _run_fight() -> void:
 	if target == null:
 		return
 	var to := target.position - player.position
-	if to.length() > 18.0:
-		if absf(to.x) > 4.0:
+	if to.length() > 27.0:
+		if absf(to.x) > 6.0:
 			Input.action_press(&"move_right" if to.x > 0.0 else &"move_left")
-		if absf(to.y) > 4.0:
+		if absf(to.y) > 6.0:
 			Input.action_press(&"move_down" if to.y > 0.0 else &"move_up")
 	else:
 		_tap(&"attack", snappedf(_time, 0.35))

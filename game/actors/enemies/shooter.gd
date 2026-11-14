@@ -1,12 +1,12 @@
 class_name Shooter
 extends EnemyBase
 
-const SPEED := 40.0
-const PREFERRED := 80.0
-const BAND := 12.0
+const SPEED := 60.0
+const PREFERRED := 120.0
+const BAND := 18.0
 const FIRE_INTERVAL := 1.5
 const AIM_TIME := 0.25
-const PROJECTILE_SPEED := 90.0
+const PROJECTILE_SPEED := 135.0
 const ProjectileScene := preload("res://actors/enemies/projectile.tscn")
 
 var _cooldown: float = FIRE_INTERVAL
@@ -53,6 +53,6 @@ func _fire(dir: Vector2) -> void:
 	shot.damage = hitbox.damage
 	shot.direction = dir
 	shot.speed = PROJECTILE_SPEED
-	shot.position = position + Vector2(0, -6) + dir * 6.0
+	shot.position = position + Vector2(0, -9) + dir * 9.0
 	get_parent().add_child(shot)
 	play(ROW_IDLE)

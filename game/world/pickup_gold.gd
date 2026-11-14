@@ -1,8 +1,8 @@
 class_name PickupGold
 extends Area2D
 
-const MAGNET_RADIUS := 32.0
-const MAGNET_SPEED := 120.0
+const MAGNET_RADIUS := 48.0
+const MAGNET_SPEED := 180.0
 
 var amount: int = 1
 var _collected: bool = false
@@ -36,6 +36,6 @@ func collect() -> void:
 
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, 3.0, Color(0.6, 0.45, 0.05))
-	draw_circle(Vector2.ZERO, 2.2, Color(1.0, 0.85, 0.2))
-	draw_rect(Rect2(-0.5, -1.5, 1, 3), Color(0.7, 0.5, 0.05))
+	draw_circle(Vector2.ZERO, 4.5, Color(0.6, 0.45, 0.05))
+	draw_circle(Vector2.ZERO, 3.5, Color(1.0, 0.85, 0.2))
+	draw_rect(Rect2(-0.5, -2, 1, 4), Color(0.7, 0.5, 0.05))

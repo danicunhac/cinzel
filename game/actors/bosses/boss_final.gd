@@ -10,24 +10,24 @@ signal boss_hp(hp: int, max_hp: int)
 
 enum State { WALK, DASH_WARN, DASH, AIM, RECOVER }
 
-const WALK_SPEED := 30.0
+const WALK_SPEED := 45.0
 const WALK_TIME := 1.4
 const DASH_WARN_TIME := 0.6
-const DASH_SPEED := 170.0
+const DASH_SPEED := 255.0
 const DASH_TIME := 0.5
 const AIM_TIME := 0.5
 const RECOVER_TIME := 0.7
 const FAN_SHOTS := 5
 const FAN_SPREAD := PI / 3.0
-const SHOT_SPEED := 85.0
+const SHOT_SPEED := 127.5
 const SHOT_DAMAGE_MULT := 0.7
 const SUMMON_INTERVAL := 8.0
 const SUMMON_COUNT := 2
-const SUMMON_OFFSET := 28.0
+const SUMMON_OFFSET := 42.0
 const PHASE2_SPEED := 1.2
 const PHASE2_TINT := Color(1.0, 0.72, 0.68)
 ## Room interior (inside the outer walls), where summons may appear.
-const ROOM_INNER := Rect2(24, 24, 272, 128)
+const ROOM_INNER := Rect2(24, 24, 432, 208)
 const CrawlerScene := preload("res://actors/enemies/crawler.tscn")
 const ProjectileScene := preload("res://actors/enemies/projectile.tscn")
 
@@ -107,7 +107,7 @@ func _think(delta: float) -> void:
 				_enter(State.DASH)
 				set_telegraph(false)
 				warning.visible = false
-				hitbox.position = Vector2(0, -12)
+				hitbox.position = Vector2(0, -18)
 				hitbox.set_active(true)
 		State.DASH:
 			velocity = _dir * DASH_SPEED * speed_mult()
@@ -140,7 +140,7 @@ func fire_fan(dir: Vector2) -> void:
 		shot.damage = roundi(hitbox.damage * SHOT_DAMAGE_MULT)
 		shot.direction = d
 		shot.speed = SHOT_SPEED * speed_mult()
-		shot.position = position + Vector2(0, -12) + d * 10.0
+		shot.position = position + Vector2(0, -18) + d * 15.0
 		parent.add_child(shot)
 
 
@@ -174,7 +174,7 @@ func _rest() -> void:
 
 
 func _point_warning() -> void:
-	var from := Vector2(0, -12)
+	var from := Vector2(0, -18)
 	warning.points = PackedVector2Array([from, from + _dir * DASH_SPEED * speed_mult() * DASH_TIME])
 
 

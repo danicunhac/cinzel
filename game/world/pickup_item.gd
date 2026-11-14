@@ -51,9 +51,9 @@ func _on_body(body: Node2D, inside: bool) -> void:
 
 
 func _draw() -> void:
-	var y := -4.0 + sin(_t * 3.0) * 1.0
-	draw_circle(Vector2(0, 2), 3.0, Color(0, 0, 0, 0.35))
-	var gem := PackedVector2Array([Vector2(0, y - 4), Vector2(4, y), Vector2(0, y + 4), Vector2(-4, y)])
+	var y := -6.0 + sin(_t * 3.0) * 1.5
+	draw_circle(Vector2(0, 3), 4.5, Color(0, 0, 0, 0.35))
+	var gem := PackedVector2Array([Vector2(0, y - 6), Vector2(6, y), Vector2(0, y + 6), Vector2(-6, y)])
 	draw_colored_polygon(gem, YELLOW)
 	draw_polyline(gem + PackedVector2Array([gem[0]]), Color(0.55, 0.4, 0.05), 1.0)
-	draw_rect(Rect2(-1, y - 2, 1, 1), Color.WHITE)
+	draw_rect(Rect2(-2, y - 3, 2, 2), Color.WHITE)

@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://world/pickup_gold.gd" id="1"]
 
 [sub_resource type="CircleShape2D" id="shape"]
-radius = 4.0
+radius = 6.0
 
 [node name="PickupGold" type="Area2D"]
 script = ExtResource("1")

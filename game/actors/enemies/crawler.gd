@@ -3,8 +3,8 @@ extends EnemyBase
 
 enum State { CHASE, WINDUP, BITE, RECOVER }
 
-const SPEED := 50.0
-const BITE_RANGE := 14.0
+const SPEED := 75.0
+const BITE_RANGE := 21.0
 const WINDUP_TIME := 0.3
 const BITE_TIME := 0.15
 const RECOVER_TIME := 0.7
@@ -39,7 +39,7 @@ func _think(delta: float) -> void:
 			if _t >= WINDUP_TIME:
 				_enter(State.BITE)
 				set_telegraph(false)
-				hitbox.position = _bite_dir * 9.0 + Vector2(0, -5)
+				hitbox.position = _bite_dir * 13.5 + Vector2(0, -7.5)
 				hitbox.set_active(true)
 		State.BITE:
 			velocity = _bite_dir * SPEED * 1.5

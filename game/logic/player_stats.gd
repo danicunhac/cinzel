@@ -4,8 +4,8 @@ extends RefCounted
 var max_hp: int = 100
 var damage: int = 10
 var attack_speed_mult: float = 1.0
-var move_speed: float = 80.0
-var roll_distance: float = 48.0
+var move_speed: float = 120.0
+var roll_distance: float = 72.0
 var lifesteal: float = 0.0
 var heal_delay: float = 1.5
 var heal_per_sec: float = 8.0

@@ -8,14 +8,21 @@ const ROW_IDLE := 0
 const ROW_MOVE := 1
 const ROW_ATTACK := 2
 const ROW_DEATH := 3
-const FPS := [4.0, 8.0, 10.0, 6.0]
+## Frames per second of the idle, move, attack and death rows.
+const FPS: Array[float] = [6.0, 10.0, 12.0, 9.0]
 const FLASH_TIME := 0.08
-const KNOCKBACK := 90.0
+const KNOCKBACK := 135.0
+## Below this horizontal speed the sprite keeps its facing.
+const FLIP_MIN_SPEED := 1.0
 const TELEGRAPH_RED := Color(1.0, 0.25, 0.25)
 
 @export var base_hp: int = 20
 @export var base_damage: int = 5
 @export var gold_drop: int = 3
+## Sheet layout: rows idle, move, attack, death; frames_per_row frames of
+## frame_size px each. Art faces right; flip_h turns it left.
+@export var frame_size: int = 24
+@export var frames_per_row: int = 6
 
 @onready var sprite: Sprite2D = $Sprite
 @onready var health: Health = $Health
@@ -44,6 +51,7 @@ func _ready() -> void:
 	hurtbox.hit.connect(_on_hit)
 	health.damaged.connect(_on_damaged)
 	health.died.connect(_on_died)
+	_setup_sheet()
 	play(ROW_IDLE)
 
 
@@ -79,6 +87,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_knock = _knock.move_toward(Vector2.ZERO, KNOCKBACK * 4.0 * delta)
 	_think(delta)
+	_face_movement()
 	velocity += _knock
 	move_and_slide()
 	velocity -= _knock
@@ -89,18 +98,38 @@ func _think(_delta: float) -> void:
 	pass
 
 
+## Slices the sheet into frames_per_row x 4 frames; the texture must be
+## frames_per_row * frame_size wide and 4 * frame_size tall.
+func _setup_sheet() -> void:
+	sprite.hframes = frames_per_row
+	sprite.vframes = 4
+	if sprite.texture == null:
+		return
+	var expected := Vector2i(frames_per_row * frame_size, 4 * frame_size)
+	if Vector2i(sprite.texture.get_size()) != expected:
+		push_warning("%s: sheet is %s, expected %s" % [name, sprite.texture.get_size(), expected])
+
+
 func _update_frame() -> void:
-	var f := int(_anim_time * float(FPS[_row]))
+	var f := int(_anim_time * FPS[_row])
 	if _row == ROW_DEATH:
-		f = mini(f, 3)
+		f = mini(f, frames_per_row - 1)
 	else:
-		f %= 4
-	sprite.frame = _row * 4 + f
+		f %= frames_per_row
+	sprite.frame = _row * frames_per_row + f
 
 
+## Turns toward dir (used while standing still to aim or wind up).
 func face(dir: Vector2) -> void:
 	if absf(dir.x) > 0.1:
 		sprite.flip_h = dir.x < 0.0
+
+
+## While moving, the sprite faces the way it moves (a retreating shooter
+## shows its back); standing still keeps the last face() call.
+func _face_movement() -> void:
+	if absf(velocity.x) > FLIP_MIN_SPEED:
+		sprite.flip_h = velocity.x < 0.0
 
 
 func _on_hit(from: Hitbox) -> void:

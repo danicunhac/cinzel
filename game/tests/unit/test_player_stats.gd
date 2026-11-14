@@ -10,7 +10,7 @@ func test_base_stats() -> void:
 func test_item_mods_stack() -> void:
 	var s: PlayerStats = PlayerStats.from_items([&"stone_heart", &"light_boots"] as Array[StringName])
 	T.eq(s.max_hp, 140)
-	T.near(s.move_speed, 100.0)
+	T.near(s.move_speed, 150.0)
 
 
 func test_hourglass_heal_delay() -> void:

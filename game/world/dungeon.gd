@@ -162,9 +162,9 @@ func _on_room_cleared() -> void:
 		_win()
 		return
 	# Low in the room, away from where the boss (and its gold) usually falls.
-	var base := Vector2(160, 136)
-	_add_portal(base + Vector2(-48, 0), "Cidade", Color(1.0, 0.75, 0.45), leave_to_town)
-	_add_portal(base + Vector2(48, 0), "Andar %d" % (current_floor + 1), Color(0.5, 0.85, 1.0), _next_floor)
+	var base := Vector2(240, 208)
+	_add_portal(base + Vector2(-72, 0), "Cidade", Color(1.0, 0.75, 0.45), leave_to_town)
+	_add_portal(base + Vector2(72, 0), "Andar %d" % (current_floor + 1), Color(0.5, 0.85, 1.0), _next_floor)
 
 
 func _add_portal(pos: Vector2, label: String, color: Color, on_used: Callable) -> void:

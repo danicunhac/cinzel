@@ -1,9 +1,15 @@
-"""Placeholder layered character sheets (4 cols x 13 rows of 24x24 frames).
+"""Placeholder layered character sheets in the 480x270 grids.
 
 Usage: python3 -I make_placeholders.py <out_dir> [<enemies_dir>]
-Writes body.png, hair.png, outfit.png, weapon.png into <out_dir>.
+Writes body.png, hair.png, outfit.png, weapon.png into <out_dir>
+(8 cols x 13 rows of 32x32 frames; frame counts in ROWS).
 With <enemies_dir>, also writes crawler.png, shooter.png, charger.png
-(4 cols x 4 rows of 16x16 frames: idle, move, attack, death).
+(6 cols x 4 rows of 24x24 frames: idle, move, attack, death) and
+boss_final.png (6 cols x 4 rows of 48x48 frames).
+
+The shapes are drawn on the old small cells (24 px hero, 16 px enemies) and
+scaled up with nearest neighbour, feet on the bottom line; the frame index is
+spread over the longer strips. Placeholders only, the real art replaces them.
 
 python3 -I make_placeholders.py --tiles <out_png>
 Writes only the floor tileset: 8 cols x 2 rows of 16x16 tiles (see TILES).
@@ -19,14 +25,17 @@ import math
 import struct
 import zlib
 
-F = 24
-COLS = 4
+F = 24  # cell the hero shapes are drawn on
+OUT_F = 32  # frame size in the sheet
+COLS = 8
+# Frames drawn per strip in the small cell (OLD_COUNT) and frames in the sheet.
+OLD_COUNT = {"idle": 2, "walk": 4, "attack": 3, "roll": 4, "death": 4}
 ROWS = [
-    ("idle", "down", 2), ("idle", "up", 2), ("idle", "side", 2),
-    ("walk", "down", 4), ("walk", "up", 4), ("walk", "side", 4),
-    ("attack", "down", 3), ("attack", "up", 3), ("attack", "side", 3),
-    ("roll", "down", 4), ("roll", "up", 4), ("roll", "side", 4),
-    ("death", "down", 4),
+    ("idle", "down", 4), ("idle", "up", 4), ("idle", "side", 4),
+    ("walk", "down", 8), ("walk", "up", 8), ("walk", "side", 8),
+    ("attack", "down", 6), ("attack", "up", 6), ("attack", "side", 6),
+    ("roll", "down", 6), ("roll", "up", 6), ("roll", "side", 6),
+    ("death", "down", 6),
 ]
 
 SKIN = (236, 190, 150, 255)
@@ -222,7 +231,10 @@ def draw_weapon(d, anim, face, i):
 LAYERS = {"body": draw_body, "hair": draw_hair, "outfit": draw_outfit, "weapon": draw_weapon}
 
 
-E = 16
+E = 16  # cell the enemy shapes are drawn on
+E_OUT = 24  # enemy frame size in the sheet
+E_COLS = 6
+BOSS_OUT = 48  # final boss frame size
 E_ROWS = ("idle", "move", "attack", "death")
 RED = (230, 40, 40, 255)
 RED_DARK = (140, 20, 30, 255)
@@ -318,17 +330,27 @@ def draw_charger(d, anim, i):
 ENEMIES = {"crawler": draw_crawler, "shooter": draw_shooter, "charger": draw_charger}
 
 
+def blit_scaled(pixels, cell, out_size, ox, oy):
+    """Nearest-neighbour scale of a small cell into an out_size frame at (ox, oy)."""
+    for y in range(out_size):
+        for x in range(out_size):
+            c = cell.p.get((x * cell.size // out_size, y * cell.size // out_size))
+            if c is not None:
+                pixels[(ox + x, oy + y)] = c
+
+
 def write_enemies(out):
     os.makedirs(out, exist_ok=True)
-    for name, fn in ENEMIES.items():
+    sheets = dict((name, (fn, E_OUT)) for name, fn in ENEMIES.items())
+    sheets["boss_final"] = (draw_shooter, BOSS_OUT)
+    for name, (fn, size) in sheets.items():
         pixels = {}
         for r, anim in enumerate(E_ROWS):
-            for i in range(4):
+            for i in range(E_COLS):
                 cell = Cell(E)
-                fn(cell, anim, i)
-                for (x, y), c in cell.p.items():
-                    pixels[(i * E + x, r * E + y)] = c
-        write_png(os.path.join(out, name + ".png"), E * 4, E * 4, pixels)
+                fn(cell, anim, i * 4 // E_COLS)
+                blit_scaled(pixels, cell, size, i * size, r * size)
+        write_png(os.path.join(out, name + ".png"), size * E_COLS, size * len(E_ROWS), pixels)
 
 
 T = 16
@@ -478,10 +500,9 @@ def main():
         for r, (anim, face, n) in enumerate(ROWS):
             for i in range(n):
                 cell = Cell()
-                fn(cell, anim, face, i)
-                for (x, y), c in cell.p.items():
-                    pixels[(i * F + x, r * F + y)] = c
-        write_png(os.path.join(out, name + ".png"), F * COLS, F * len(ROWS), pixels)
+                fn(cell, anim, face, i * OLD_COUNT[anim] // n)
+                blit_scaled(pixels, cell, OUT_F, i * OUT_F, r * OUT_F)
+        write_png(os.path.join(out, name + ".png"), OUT_F * COLS, OUT_F * len(ROWS), pixels)
 
 
 if __name__ == "__main__":

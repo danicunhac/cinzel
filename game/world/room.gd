@@ -20,7 +20,7 @@ const ENEMY_SCENES: Dictionary[String, PackedScene] = {
 const ChestScene := preload("res://world/chest.tscn")
 ## Enemies fade in and stay still this long, so a room never opens with a hit.
 const SPAWN_GRACE := 0.6
-const EXTRA_MIN_DIST := 96.0
+const EXTRA_MIN_DIST := 144.0
 
 @export var is_boss: bool = false
 @export var is_tutorial: bool = false
@@ -64,7 +64,7 @@ func start(extra: int, has_chest: bool, rng: RandomNumberGenerator) -> void:
 	if not is_tutorial and not is_boss and not far.is_empty():
 		for i in extra:
 			var m := far[rng.randi_range(0, far.size() - 1)] as Marker2D
-			var jitter := Vector2(rng.randf_range(-4.0, 4.0), rng.randf_range(-4.0, 4.0))
+			var jitter := Vector2(rng.randf_range(-6.0, 6.0), rng.randf_range(-6.0, 6.0))
 			_spawn(String(m.get_meta(&"enemy", "crawler")), m.position + jitter, String(m.get_meta(&"base", "")))
 	if _alive == 0 and not heal_to_clear:
 		_clear()

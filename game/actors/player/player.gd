@@ -17,8 +17,8 @@ const FINISHER_MULT := 1.5
 const ROLL_TIME := 0.3
 const ROLL_COOLDOWN := 0.6
 const HURT_IFRAMES := 1.0
-const LUNGE_SPEED := 30.0
-const ARC_RADIUS := 22.0
+const LUNGE_SPEED := 45.0
+const ARC_RADIUS := 33.0
 const ARC_HALF_ANGLE := deg_to_rad(60.0)
 
 @onready var sprite: LayeredSprite = $Sprite

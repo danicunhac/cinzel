@@ -15,6 +15,10 @@ const EXIT_COLOR := Color(0.55, 0.8, 1.0)
 const BOSS_COLOR := Color(0.75, 0.12, 0.12)
 const BAR_BG := Color(0.07, 0.05, 0.06, 0.9)
 const DANGER_LEVEL := 5
+## Fill widths (bar width minus the 1 px border on each side).
+const HP_W := 78.0
+const EXIT_W := 118.0
+const BOSS_W := 238.0
 
 ## In town: floor label reads "Cidade", no exit or boss bar.
 @export var in_town: bool = false
@@ -84,7 +88,7 @@ func _update_stats() -> void:
 	if player != null and is_instance_valid(player) and player.health != null:
 		hp = player.health.hp
 		max_hp = player.health.max_hp
-	hp_fill.size.x = roundf(58.0 * clampf(float(hp) / maxf(max_hp, 1), 0.0, 1.0))
+	hp_fill.size.x = roundf(HP_W * clampf(float(hp) / maxf(max_hp, 1), 0.0, 1.0))
 	hp_label.text = "%d/%d" % [hp, max_hp]
 	gold_label.text = "%d" % run.gold
 	var level := run.clock.level()
@@ -96,12 +100,12 @@ func _update_stats() -> void:
 		for i in slot_icons.size():
 			slot_icons[i].texture = UiKit.item_icon(run.items[i]) if i < run.items.size() else null
 	if boss_box.visible:
-		boss_fill.size.x = roundf(158.0 * clampf(float(boss_hp) / maxf(boss_max, 1), 0.0, 1.0))
+		boss_fill.size.x = roundf(BOSS_W * clampf(float(boss_hp) / maxf(boss_max, 1), 0.0, 1.0))
 
 
 func _on_exit_progress(p: float) -> void:
 	exit_box.visible = p > 0.0 and p < 1.0
-	exit_fill.size.x = roundf(98.0 * clampf(p, 0.0, 1.0))
+	exit_fill.size.x = roundf(EXIT_W * clampf(p, 0.0, 1.0))
 
 
 func _on_exit_blocked() -> void:
@@ -134,31 +138,33 @@ func _on_boss_hp(hp: int, max_hp: int) -> void:
 	boss_max = max_hp
 
 
-# --- layout (320x180) ---
+# --- layout (480x270; 8 px Silkscreen, the 9-slice art stays 1:1) ---
 
 func _build() -> void:
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
+	var w := UiKit.SCREEN.x
+	var h := UiKit.SCREEN.y
 
 	# Dark backing so the numbers read over bright roofs and floors.
-	_backing(root, Rect2(2, 2, 110, 24))
-	_backing(root, Rect2(214, 2, 104, 24))
-	_icon(root, HEART_TEX, Vector2(4, 4))
-	hp_fill = _bar(root, Vector2(15, 4), Vector2(60, 9), HP_COLOR)
-	hp_label = _label(root, Vector2(78, 3), Vector2(60, 10))
-	_icon(root, COIN_TEX, Vector2(4, 16))
-	gold_label = _label(root, Vector2(15, 15), Vector2(60, 10))
+	_backing(root, Rect2(2, 2, 136, 24))
+	_backing(root, Rect2(w - 132, 2, 130, 24))
+	_icon(root, HEART_TEX, Vector2(5, 4))
+	hp_fill = _bar(root, Vector2(16, 4), Vector2(HP_W + 2, 9), HP_COLOR)
+	hp_label = _label(root, Vector2(100, 3), Vector2(40, 10))
+	_icon(root, COIN_TEX, Vector2(5, 16))
+	gold_label = _label(root, Vector2(16, 15), Vector2(80, 10))
 	gold_label.add_theme_color_override("font_color", UiKit.COLOR_GOLD)
 
-	clock_label = _label(root, Vector2(196, 3), Vector2(120, 10), HORIZONTAL_ALIGNMENT_RIGHT)
-	floor_label = _label(root, Vector2(196, 14), Vector2(120, 10), HORIZONTAL_ALIGNMENT_RIGHT)
+	clock_label = _label(root, Vector2(w - 130, 3), Vector2(124, 10), HORIZONTAL_ALIGNMENT_RIGHT)
+	floor_label = _label(root, Vector2(w - 130, 14), Vector2(124, 10), HORIZONTAL_ALIGNMENT_RIGHT)
 
 	for i in RunState.SLOTS:
 		var slot := TextureRect.new()
 		slot.texture = UiKit.SLOT_TEX
-		slot.position = Vector2(4 + i * 22, 156)
+		slot.position = Vector2(4 + i * 22, h - 24)
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		root.add_child(slot)
 		var icon := TextureRect.new()
@@ -169,25 +175,25 @@ func _build() -> void:
 		slot_icons.append(icon)
 
 	exit_box = Control.new()
-	exit_box.position = Vector2(110, 118)
+	exit_box.position = Vector2(roundf((w - EXIT_W - 2) / 2.0), 176)
 	exit_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(exit_box)
-	_label(exit_box, Vector2(-20, 0), Vector2(140, 10), HORIZONTAL_ALIGNMENT_CENTER).text = "Saindo da torre..."
-	exit_fill = _bar(exit_box, Vector2(0, 11), Vector2(100, 6), EXIT_COLOR)
+	_label(exit_box, Vector2(-20, 0), Vector2(EXIT_W + 22, 10), HORIZONTAL_ALIGNMENT_CENTER).text = "Saindo da torre..."
+	exit_fill = _bar(exit_box, Vector2(0, 11), Vector2(EXIT_W + 2, 6), EXIT_COLOR)
 	exit_box.visible = false
 
-	blocked_label = _label(root, Vector2(10, 132), Vector2(300, 10), HORIZONTAL_ALIGNMENT_CENTER)
+	blocked_label = _label(root, Vector2(40, 198), Vector2(w - 80, 10), HORIZONTAL_ALIGNMENT_CENTER)
 	blocked_label.text = BLOCKED_TEXT
 	blocked_label.add_theme_color_override("font_color", UiKit.COLOR_DANGER)
 	blocked_label.visible = false
 
 	boss_box = Control.new()
-	boss_box.position = Vector2(80, 158)
+	boss_box.position = Vector2(roundf((w - BOSS_W - 2) / 2.0), h - 22)
 	boss_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(boss_box)
-	boss_label = _label(boss_box, Vector2(0, 0), Vector2(160, 10), HORIZONTAL_ALIGNMENT_CENTER)
+	boss_label = _label(boss_box, Vector2(0, 0), Vector2(BOSS_W + 2, 10), HORIZONTAL_ALIGNMENT_CENTER)
 	boss_label.add_theme_color_override("font_color", UiKit.COLOR_DANGER)
-	boss_fill = _bar(boss_box, Vector2(0, 11), Vector2(160, 7), BOSS_COLOR)
+	boss_fill = _bar(boss_box, Vector2(0, 11), Vector2(BOSS_W + 2, 7), BOSS_COLOR)
 	boss_box.visible = false
 
 

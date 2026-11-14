@@ -13,7 +13,7 @@ var _done: bool = false
 func _ready() -> void:
 	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
-	circle.radius = 8.0
+	circle.radius = 12.0
 	shape.shape = circle
 	add_child(shape)
 	var label := Label.new()
@@ -22,7 +22,7 @@ func _ready() -> void:
 	label.add_theme_color_override(&"font_outline_color", Color.BLACK)
 	label.add_theme_constant_override(&"outline_size", 3)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.position = Vector2(-40, -26)
+	label.position = Vector2(-40, -32)
 	label.size = Vector2(80, 10)
 	add_child(label)
 	body_entered.connect(_on_body)
@@ -42,6 +42,6 @@ func _on_body(body: Node2D) -> void:
 
 func _draw() -> void:
 	var pulse := 0.5 + 0.5 * sin(_t * 4.0)
-	draw_circle(Vector2.ZERO, 11.0, Color(color, 0.25 + 0.15 * pulse))
-	draw_arc(Vector2.ZERO, 9.0, 0.0, TAU, 24, color, 2.0)
-	draw_arc(Vector2.ZERO, 5.0 + pulse * 2.0, 0.0, TAU, 16, Color(color, 0.8), 1.0)
+	draw_circle(Vector2.ZERO, 16.5, Color(color, 0.25 + 0.15 * pulse))
+	draw_arc(Vector2.ZERO, 13.5, 0.0, TAU, 32, color, 3.0)
+	draw_arc(Vector2.ZERO, 7.5 + pulse * 3.0, 0.0, TAU, 24, Color(color, 0.8), 1.0)

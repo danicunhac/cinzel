@@ -92,6 +92,6 @@ func test_templates_follow_layout_rules() -> void:
 		for m in room.get_node(^"Spawns").get_children():
 			n += 1
 			var d := (m as Marker2D).position.distance_to((room.get_node(^"Entry") as Marker2D).position)
-			T.ok(d >= 96.0, "%s spawn %s at %.0f px from entry" % [path, m.name, d])
+			T.ok(d >= Room.EXTRA_MIN_DIST, "%s spawn %s at %.0f px from entry" % [path, m.name, d])
 		T.ok(n >= 3, "%s has %d enemies" % [path, n])
 		room.free()

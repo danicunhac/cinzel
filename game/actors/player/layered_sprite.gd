@@ -1,9 +1,12 @@
 class_name LayeredSprite
 extends Node2D
 
-const FRAME := Vector2i(24, 24)
-const HFRAMES := 4
+## Sheets are COLS x 13 frames of FRAME_SIZE px; a strip uses the first
+## FRAME_COUNT[anim] frames of its row. Feet sit on row FEET_ROW of the frame.
+const FRAME_SIZE := 32
+const COLS := 8
 const VFRAMES := 13
+const FEET_ROW := 30
 const ROW_ORDER: Array[StringName] = [
 	&"idle_down", &"idle_up", &"idle_side",
 	&"walk_down", &"walk_up", &"walk_side",
@@ -11,8 +14,14 @@ const ROW_ORDER: Array[StringName] = [
 	&"roll_down", &"roll_up", &"roll_side",
 	&"death",
 ]
-const FRAME_COUNT := {&"idle": 2, &"walk": 4, &"attack": 3, &"roll": 4, &"death": 4}
-const FPS := {&"idle": 3.0, &"walk": 8.0, &"attack": 12.0, &"roll": 14.0, &"death": 6.0}
+const FRAME_COUNT: Dictionary[StringName, int] = {
+	&"idle": 4, &"walk": 8, &"attack": 6, &"roll": 6, &"death": 6,
+}
+## Attack plays its 6 frames in about one swing (Player.SWING_TIME 0.27 s),
+## roll in one roll (Player.ROLL_TIME 0.3 s).
+const FPS: Dictionary[StringName, float] = {
+	&"idle": 6.0, &"walk": 12.0, &"attack": 22.0, &"roll": 20.0, &"death": 9.0,
+}
 const LOOPING: Array[StringName] = [&"idle", &"walk"]
 const LAYERS: Array[StringName] = [&"body", &"hair", &"outfit", &"weapon"]
 
@@ -30,7 +39,7 @@ func _ready() -> void:
 	for layer in LAYERS:
 		var s := Sprite2D.new()
 		s.name = String(layer)
-		s.hframes = HFRAMES
+		s.hframes = COLS
 		s.vframes = VFRAMES
 		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		add_child(s)
@@ -79,11 +88,11 @@ func _process(delta: float) -> void:
 	if finished or anim == &"":
 		return
 	_time += delta * speed_scale
-	var frame_time := 1.0 / float(FPS[anim])
+	var frame_time := 1.0 / FPS[anim]
 	while _time >= frame_time:
 		_time -= frame_time
 		_frame += 1
-		var count: int = FRAME_COUNT[anim]
+		var count := FRAME_COUNT[anim]
 		if _frame >= count:
 			if anim in LOOPING:
 				_frame = 0

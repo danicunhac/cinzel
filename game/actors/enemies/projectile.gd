@@ -2,11 +2,11 @@ class_name Projectile
 extends Hitbox
 
 const LIFETIME := 3.0
-const RADIUS := 2.5
+const RADIUS := 3.75
 const RED := Color(1.0, 0.15, 0.15)
 
 var direction: Vector2 = Vector2.RIGHT
-var speed: float = 90.0
+var speed: float = 135.0
 var _age: float = 0.0
 
 

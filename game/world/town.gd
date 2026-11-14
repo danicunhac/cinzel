@@ -1,5 +1,5 @@
 extends Node2D
-## Walkable town (one 320x180 screen). Three spots: the shop (shopkeeper),
+## Walkable town (one 480x270 screen). Three spots: the shop (shopkeeper),
 ## the blacksmith and the teleport stone; E near one opens its panel. The run
 ## clock stays stopped here. The shop restocks every time the town loads,
 ## which is every return from the tower.
@@ -16,12 +16,12 @@ const TeleportPanelScene := preload("res://ui/teleport_panel.tscn")
 const GlowScript := preload("res://world/teleport_glow.gd")
 
 const T := 16
-const SPAWN := Vector2(160, 146)
-const REACH := 26.0
-const STONE_POS := Vector2(160, 100)
+const SPAWN := Vector2(240, 222)
+const REACH := 39.0
+const STONE_POS := Vector2(240, 150)
 const SPOTS: Dictionary[StringName, Vector2] = {
-	&"shop": Vector2(48, 62),
-	&"smith": Vector2(256, 62),
+	&"shop": Vector2(88, 78),
+	&"smith": Vector2(392, 78),
 	&"teleport": STONE_POS,
 }
 const SPOT_NAMES: Dictionary[StringName, String] = {
@@ -41,20 +41,32 @@ const COBBLE_B := Vector2i(1, 0)
 const AWNING_EDGE := Vector2i(1, 1)
 const BANNER := Vector2i(5, 1)
 const MAP: Array[String] = [
-	"RRRRRRRRRRRRRRRRRRRR",
-	"RRRRRRRRRRRRRRRRRRRR",
-	"HAAAAAHNHDHNHHSSSSSH",
-	"cWWWWWccccccccWWWWWc",
-	"gcccccccccccccccccfg",
-	"gccccccccccccccccccg",
-	"fccccccccccccccccccg",
-	"gccccccccccccccccccf",
-	"gccccccccccccccccccg",
-	"ggcccccccccccccccggg",
-	"gfgggggddddddgggggfg",
-	"~~~~~~~~~~~~~~~~~~~~",
+	"RRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+	"RRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+	"RRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+	"HHAAAAAAAHNHDHNHNHDHNSSSSSSSHH",
+	"ccWWWWWWWccccccccccccWWWWWWWcc",
+	"gcccccccccccccccccccccccccccfg",
+	"gccccccccccccccccccccccccccccg",
+	"fccccccccccccccccccccccccccccg",
+	"gccccccccccccccccccccccccccccg",
+	"gccccccccccccccccccccccccccccf",
+	"gccccccccccccccccccccccccccccg",
+	"gccccccccccccccccccccccccccccg",
+	"fccccccccccccccccccccccccccccg",
+	"gccccccccccccccccccccccccccccg",
+	"gggccccccccccccccccccccccccggg",
+	"gfggggggggddddddddddggggggggfg",
+	"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
 ]
-const BANNERS: Array[Vector2i] = [Vector2i(8, 2), Vector2i(12, 2), Vector2i(19, 2), Vector2i(6, 2)]
+const BANNERS: Array[Vector2i] = [Vector2i(9, 3), Vector2i(13, 3), Vector2i(17, 3), Vector2i(20, 3)]
+## Shop awning edge, on the counter row under the awning.
+const AWNING_ROW := 4
+const AWNING_COLS := Vector2i(2, 8)
+## Screen size and the y where the houses (top) and the water (bottom) block.
+const SCREEN := Vector2(480, 270)
+const HOUSES_BOTTOM := 68.0
+const WATER_TOP := 252.0
 
 var shop := Shop.new()
 var near: StringName = &""
@@ -168,8 +180,8 @@ func _build_tiles() -> void:
 			else:
 				coords = TILE[ch]
 			ground.set_cell(Vector2i(x, y), 0, coords)
-	for x in range(1, 6):
-		decor.set_cell(Vector2i(x, 3), 0, AWNING_EDGE)
+	for x in range(AWNING_COLS.x, AWNING_COLS.y + 1):
+		decor.set_cell(Vector2i(x, AWNING_ROW), 0, AWNING_EDGE)
 	for c in BANNERS:
 		decor.set_cell(c, 0, BANNER)
 
@@ -180,11 +192,11 @@ func _build_bounds() -> void:
 	var body := StaticBody2D.new()
 	body.name = "Bounds"
 	add_child(body)
-	_rect(body, Rect2(0, 0, 320, 52))
-	_rect(body, Rect2(0, 172, 320, 20))
-	_rect(body, Rect2(-16, 0, 16, 180))
-	_rect(body, Rect2(320, 0, 16, 180))
-	_rect(body, Rect2(STONE_POS + Vector2(-6, -4), Vector2(12, 8)))
+	_rect(body, Rect2(0, 0, SCREEN.x, HOUSES_BOTTOM))
+	_rect(body, Rect2(0, WATER_TOP, SCREEN.x, 20))
+	_rect(body, Rect2(-16, 0, 16, SCREEN.y))
+	_rect(body, Rect2(SCREEN.x, 0, 16, SCREEN.y))
+	_rect(body, Rect2(STONE_POS + Vector2(-7, -5), Vector2(14, 10)))
 
 
 func _rect(body: StaticBody2D, r: Rect2) -> void:
@@ -214,7 +226,7 @@ func _build_spots() -> void:
 		var l := Label.new()
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.size = Vector2(90, 10)
-		l.position = SPOTS[id] + Vector2(-45, -34)
+		l.position = SPOTS[id] + Vector2(-45, -38)
 		l.z_index = 20
 		add_child(l)
 		_prompts[id] = l

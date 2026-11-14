@@ -7,7 +7,7 @@
 size = Vector2(14, 8)
 
 [sub_resource type="CircleShape2D" id="reach_shape"]
-radius = 18.0
+radius = 27.0
 
 [node name="Chest" type="StaticBody2D"]
 script = ExtResource("1")

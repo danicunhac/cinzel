@@ -1,7 +1,9 @@
 class_name UiKit
 extends RefCounted
-## Shared helpers for the HUD, panels and screens (320x180 base resolution).
+## Shared helpers for the HUD, panels and screens (480x270 base resolution).
 
+## Base resolution (project.godot viewport); every screen is laid out on it.
+const SCREEN := Vector2(480, 270)
 const PANEL_TEX := preload("res://assets/ui/panel.png")
 const SLOT_TEX := preload("res://assets/ui/slot.png")
 const PANEL_MARGIN := 4
@@ -42,10 +44,10 @@ static func frame(size: Vector2) -> NinePatchRect:
 	return f
 
 
-## Frame centred on the 320x180 screen, with a margin box for content.
+## Frame centred on the screen, with a margin box for content.
 static func centred_frame(parent: Control, size: Vector2) -> VBoxContainer:
 	var f := frame(size)
-	f.position = ((Vector2(320, 180) - size) / 2.0).floor()
+	f.position = ((SCREEN - size) / 2.0).floor()
 	parent.add_child(f)
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)

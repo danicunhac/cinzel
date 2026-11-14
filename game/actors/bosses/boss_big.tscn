@@ -8,13 +8,13 @@
 [ext_resource type="Script" path="res://actors/bosses/shockwave.gd" id="6"]
 
 [sub_resource type="CircleShape2D" id="body_shape"]
-radius = 8.0
+radius = 12.0
 
 [sub_resource type="RectangleShape2D" id="hurt_shape"]
-size = Vector2(20, 24)
+size = Vector2(30, 36)
 
 [sub_resource type="CircleShape2D" id="hit_shape"]
-radius = 13.0
+radius = 19.5
 
 [node name="BossBig" type="CharacterBody2D" groups=["enemy"]]
 motion_mode = 1
@@ -27,13 +27,13 @@ visible = false
 script = ExtResource("6")
 
 [node name="Sprite" type="Sprite2D" parent="."]
-position = Vector2(0, -16)
+position = Vector2(0, -24)
 scale = Vector2(2, 2)
-hframes = 4
+hframes = 6
 vframes = 4
 
 [node name="Body" type="CollisionShape2D" parent="."]
-position = Vector2(0, -6)
+position = Vector2(0, -9)
 shape = SubResource("body_shape")
 
 [node name="Health" type="Node" parent="."]
@@ -43,7 +43,7 @@ script = ExtResource("3")
 script = ExtResource("4")
 
 [node name="Shape" type="CollisionShape2D" parent="Hurtbox"]
-position = Vector2(0, -12)
+position = Vector2(0, -18)
 shape = SubResource("hurt_shape")
 
 [node name="Hitbox" type="Area2D" parent="."]
@@ -53,5 +53,5 @@ script = ExtResource("5")
 shape = SubResource("hit_shape")
 
 [node name="Warning" type="Line2D" parent="."]
-width = 5.0
+width = 7.0
 default_color = Color(1, 0.1, 0.1, 0.55)

@@ -3,10 +3,10 @@ extends EnemyBase
 
 enum State { WALK, WARN, DASH, RECOVER }
 
-const WALK_SPEED := 35.0
-const TRIGGER_RANGE := 100.0
+const WALK_SPEED := 52.5
+const TRIGGER_RANGE := 150.0
 const WARN_TIME := 0.6
-const DASH_SPEED := 160.0
+const DASH_SPEED := 240.0
 const DASH_TIME := 0.55
 const RECOVER_TIME := 0.9
 
@@ -53,7 +53,7 @@ func _think(delta: float) -> void:
 				_enter(State.DASH)
 				set_telegraph(false)
 				warning.visible = false
-				hitbox.position = Vector2(0, -6)
+				hitbox.position = Vector2(0, -9)
 				hitbox.set_active(true)
 		State.DASH:
 			velocity = _dir * DASH_SPEED
@@ -70,7 +70,7 @@ func _think(delta: float) -> void:
 
 func _point_warning() -> void:
 	var reach := DASH_SPEED * DASH_TIME
-	warning.points = PackedVector2Array([Vector2(0, -6), Vector2(0, -6) + _dir * reach])
+	warning.points = PackedVector2Array([Vector2(0, -9), Vector2(0, -9) + _dir * reach])
 
 
 func _enter(s: State) -> void:

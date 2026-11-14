@@ -39,10 +39,10 @@ func open() -> void:
 	var id := roll_item()
 	var result: Dictionary = await Game.offer_item(id)
 	if not bool(result["taken"]):
-		_drop(id, Vector2(0, 14))
+		_drop(id, Vector2(0, 21))
 	var out: StringName = result["swapped_out"]
 	if out != &"":
-		_drop(out, Vector2(14, 10))
+		_drop(out, Vector2(21, 15))
 	opened.emit(id)
 
 

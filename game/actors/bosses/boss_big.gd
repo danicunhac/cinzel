@@ -14,15 +14,15 @@ const HP_MULT := 8
 const GOLD_MULT := 6
 const SHOCK_INTERVAL := 5.0
 # Crawler base: bite.
-const CHASE_SPEED := 38.0
-const BITE_RANGE := 26.0
+const CHASE_SPEED := 57.0
+const BITE_RANGE := 39.0
 const BITE_WINDUP := 0.45
 const BITE_TIME := 0.2
 # Charger base: dash.
-const WALK_SPEED := 28.0
-const DASH_TRIGGER := 130.0
+const WALK_SPEED := 42.0
+const DASH_TRIGGER := 195.0
 const DASH_WARN := 0.7
-const DASH_SPEED := 150.0
+const DASH_SPEED := 225.0
 const DASH_TIME := 0.6
 const RECOVER_TIME := 0.8
 
@@ -53,7 +53,7 @@ func _ready() -> void:
 	_emit_hp.call_deferred()
 
 
-## Takes stats and the sprite sheet from the base enemy before EnemyBase
+## Takes stats, the sprite sheet and its grid from the base enemy before EnemyBase
 ## scales them by the difficulty level.
 func _copy_base() -> void:
 	if base == null:
@@ -65,6 +65,8 @@ func _copy_base() -> void:
 	gold_drop = inst.gold_drop * GOLD_MULT
 	dashes = inst is Charger
 	sprite.texture = (inst.get_node(^"Sprite") as Sprite2D).texture
+	frame_size = inst.frame_size
+	frames_per_row = inst.frames_per_row
 	inst.free()
 
 
@@ -109,7 +111,7 @@ func _think(delta: float) -> void:
 				_enter(State.STRIKE)
 				set_telegraph(false)
 				warning.visible = false
-				hitbox.position = Vector2(0, -12) if dashes else _dir * 16.0 + Vector2(0, -10)
+				hitbox.position = Vector2(0, -18) if dashes else _dir * 24.0 + Vector2(0, -15)
 				hitbox.set_active(true)
 		State.STRIKE:
 			velocity = _dir * (DASH_SPEED if dashes else CHASE_SPEED * 2.0)
@@ -137,7 +139,7 @@ func _start_shock() -> void:
 
 
 func _point_warning() -> void:
-	var from := Vector2(0, -12)
+	var from := Vector2(0, -18)
 	warning.points = PackedVector2Array([from, from + _dir * DASH_SPEED * DASH_TIME])
 
 

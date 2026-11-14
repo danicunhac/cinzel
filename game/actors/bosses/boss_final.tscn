@@ -7,13 +7,13 @@
 [ext_resource type="Script" path="res://actors/common/hitbox.gd" id="5"]
 
 [sub_resource type="CircleShape2D" id="body_shape"]
-radius = 6.0
+radius = 9.0
 
 [sub_resource type="RectangleShape2D" id="hurt_shape"]
-size = Vector2(14, 26)
+size = Vector2(21, 39)
 
 [sub_resource type="CircleShape2D" id="hit_shape"]
-radius = 11.0
+radius = 16.5
 
 [node name="BossFinal" type="CharacterBody2D" groups=["enemy"]]
 motion_mode = 1
@@ -21,15 +21,16 @@ script = ExtResource("1")
 base_hp = 420
 base_damage = 16
 gold_drop = 80
+frame_size = 48
 
 [node name="Sprite" type="Sprite2D" parent="."]
-position = Vector2(0, -15)
+position = Vector2(0, -23)
 texture = ExtResource("2")
-hframes = 4
+hframes = 6
 vframes = 4
 
 [node name="Body" type="CollisionShape2D" parent="."]
-position = Vector2(0, -4)
+position = Vector2(0, -6)
 shape = SubResource("body_shape")
 
 [node name="Health" type="Node" parent="."]
@@ -39,7 +40,7 @@ script = ExtResource("3")
 script = ExtResource("4")
 
 [node name="Shape" type="CollisionShape2D" parent="Hurtbox"]
-position = Vector2(0, -13)
+position = Vector2(0, -19.5)
 shape = SubResource("hurt_shape")
 
 [node name="Hitbox" type="Area2D" parent="."]
@@ -49,5 +50,5 @@ script = ExtResource("5")
 shape = SubResource("hit_shape")
 
 [node name="Warning" type="Line2D" parent="."]
-width = 4.0
+width = 6.0
 default_color = Color(1, 0.1, 0.1, 0.55)
