@@ -4,6 +4,11 @@ extends CharacterBody2D
 signal killed
 
 const GoldScene := preload("res://world/pickup_gold.tscn")
+const PickupScene := preload("res://world/pickup_item.tscn")
+## Loot lands this far around the body (px).
+const LOOT_SPREAD := 18.0
+const CRIT_TINT := Color(3.0, 2.4, 0.8)
+const STUN_TINT := Color(0.75, 0.8, 1.3)
 const ROW_IDLE := 0
 const ROW_MOVE := 1
 const ROW_ATTACK := 2
@@ -23,6 +28,8 @@ const TELEGRAPH_RED := Color(1.0, 0.25, 0.25)
 ## frame_size px each. Art faces right; flip_h turns it left.
 @export var frame_size: int = 24
 @export var frames_per_row: int = 6
+## False for summons (the final boss's crawlers): no material drops.
+@export var drops_loot: bool = true
 
 @onready var sprite: Sprite2D = $Sprite
 @onready var health: Health = $Health
@@ -35,6 +42,12 @@ var _anim_time: float = 0.0
 var _flash: float = 0.0
 var _telegraph: bool = false
 var _knock: Vector2 = Vector2.ZERO
+var _flash_crit: bool = false
+## Seconds left stunned: no thinking, no moving (knockback still slides).
+var stunned: float = 0.0
+
+## Shared by every enemy so drops differ between kills.
+static var loot_rng: RandomNumberGenerator = null
 
 
 func _ready() -> void:
@@ -80,13 +93,19 @@ func _physics_process(delta: float) -> void:
 	if _telegraph:
 		var k := 0.5 + 0.5 * sin(_anim_time * 30.0)
 		tint = Color.WHITE.lerp(TELEGRAPH_RED, 0.6 + 0.4 * k)
+	if stunned > 0.0:
+		tint = STUN_TINT
 	if _flash > 0.0:
-		tint = Color(3.0, 3.0, 3.0)
+		tint = CRIT_TINT if _flash_crit else Color(3.0, 3.0, 3.0)
 	sprite.modulate = tint
 	if dead:
 		return
 	_knock = _knock.move_toward(Vector2.ZERO, KNOCKBACK * 4.0 * delta)
-	_think(delta)
+	if stunned > 0.0:
+		stunned = maxf(stunned - delta, 0.0)
+		velocity = Vector2.ZERO
+	else:
+		_think(delta)
 	_face_movement()
 	velocity += _knock
 	move_and_slide()
@@ -133,7 +152,25 @@ func _face_movement() -> void:
 
 
 func _on_hit(from: Hitbox) -> void:
+	_flash_crit = from.crit
+	if from.stun > 0.0:
+		stun(from.stun)
 	health.damage(from.damage, from.global_position)
+
+
+## Stops acting for `seconds` (the longest stun wins). Bosses are immune, so
+## an axe cannot lock them.
+func stun(seconds: float) -> void:
+	if dead or is_in_group(&"boss"):
+		return
+	stunned = maxf(stunned, seconds)
+	set_telegraph(false)
+
+
+## Material table key in LootTable.ENEMY_MATERIALS (crawler, charger,
+## shooter); &"" drops no material.
+func loot_type() -> StringName:
+	return &""
 
 
 func _on_damaged(_n: int) -> void:
@@ -151,6 +188,7 @@ func _on_died() -> void:
 	($Body as CollisionShape2D).set_deferred("disabled", true)
 	play(ROW_DEATH)
 	_drop_gold.call_deferred()
+	_drop_loot.call_deferred()
 	killed.emit()
 	get_tree().create_timer(0.8).timeout.connect(queue_free)
 
@@ -167,3 +205,35 @@ func _drop_gold() -> void:
 	gold.amount = gold_amount()
 	gold.position = position
 	parent.add_child(gold)
+
+
+## Bosses roll LootTable.roll_boss, the rest roll_enemy by loot_type(). Each
+## drop is a PickupItem around the body.
+func roll_loot() -> Array[LootDrop]:
+	if not drops_loot:
+		return []
+	if loot_rng == null:
+		loot_rng = RandomNumberGenerator.new()
+		loot_rng.randomize()
+	# Read by name: naming the Dungeon class here would make a preload cycle
+	# (Dungeon -> Room -> enemy scenes -> EnemyBase).
+	var scene := get_tree().current_scene if is_inside_tree() else null
+	var f: Variant = scene.get(&"current_floor") if scene != null else null
+	var floor_num: int = f if f is int else 1
+	if is_in_group(&"boss"):
+		return LootTable.roll_boss(floor_num, Game.run.clock.level(), loot_rng, Game.run.unlocked_outfits)
+	return LootTable.roll_enemy(loot_type(), floor_num, loot_rng)
+
+
+func _drop_loot() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	var drops := roll_loot()
+	for i in drops.size():
+		var p := PickupScene.instantiate() as PickupItem
+		p.item_id = drops[i].id
+		p.qty = drops[i].qty
+		var a := TAU * (float(i) / maxf(drops.size(), 1.0)) + 0.6
+		p.position = position + (Vector2.from_angle(a) * LOOT_SPREAD if drops.size() > 1 else Vector2(0, 8))
+		parent.add_child(p)

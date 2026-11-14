@@ -81,3 +81,7 @@ func _enter(s: State) -> void:
 func _on_died() -> void:
 	warning.visible = false
 	super()
+
+
+func loot_type() -> StringName:
+	return &"charger"

@@ -56,12 +56,12 @@ const ITEMS: Dictionary[StringName, Dictionary] = {
 	&"spear_hunter": {
 		"kind": &"weapon", "rarity": &"common", "weapon_type": &"spear",
 		"name": "Lança de Caçador", "desc": "Alcance longo e estocada.",
-		"base_price": 30, "stats": {"damage": 12, "attack_speed": 0.85, "range": 40.0, "crit": 0.05}, "mods": {},
+		"base_price": 30, "stats": {"damage": 12, "attack_speed": 0.85, "range": 48.0, "crit": 0.05}, "mods": {},
 	},
 	&"spear_dragoon": {
 		"kind": &"weapon", "rarity": &"rare", "weapon_type": &"spear",
 		"name": "Lança do Dragoneiro", "desc": "Lança de cavaleiro, alcança ainda mais longe.",
-		"base_price": 65, "stats": {"damage": 15, "attack_speed": 0.9, "range": 44.0, "crit": 0.07}, "mods": {},
+		"base_price": 65, "stats": {"damage": 15, "attack_speed": 0.9, "range": 52.0, "crit": 0.07}, "mods": {},
 	},
 	&"dagger_rogue": {
 		"kind": &"weapon", "rarity": &"common", "weapon_type": &"dagger",
