@@ -27,7 +27,7 @@ func _wait_room(d: Dungeon, index: int) -> bool:
 
 func test_floor_one_from_tutorial_to_boss() -> void:
 	_game().new_run()
-	Dungeon.tutorial_done = false
+	_game().run.tutorial_done = false
 	var d := (load("res://world/dungeon.tscn") as PackedScene).instantiate() as Dungeon
 	_tree().root.add_child(d)
 	T.ok(await _wait_room(d, 0), "first room loaded")
@@ -55,7 +55,7 @@ func test_floor_one_from_tutorial_to_boss() -> void:
 			T.ok(false, "never left room %d" % i)
 			break
 	T.ok(chests >= 1 and chests <= 2, "1 or 2 chests, got %d" % chests)
-	T.ok(Dungeon.tutorial_done, "tutorial marked done")
+	T.ok(_game().run.tutorial_done, "tutorial marked done")
 	T.ok(d.room.is_boss, "ended in the boss room")
 	T.eq(_game().run.unlocked_floors, 2, "boss unlocks floor 2")
 	T.eq(_game().in_boss_room, false, "boss room flag cleared after the win")
@@ -71,13 +71,14 @@ func test_floor_one_from_tutorial_to_boss() -> void:
 	T.ok(cur != null and cur.scene_file_path == Dungeon.TOWN_SCENE, "went to town")
 	if cur != null:
 		cur.free()
-	Dungeon.tutorial_done = false
 	_game().new_run()
 
 
 func test_death_resets_run_and_goes_to_town() -> void:
 	_game().new_run()
 	_game().run.add_gold(30)
+	_game().run.clock.seconds = 75.0
+	(_game().last_run as Dictionary).clear()
 	var d := (load("res://world/dungeon.tscn") as PackedScene).instantiate() as Dungeon
 	_tree().root.add_child(d)
 	await _tree().process_frame
@@ -86,6 +87,11 @@ func test_death_resets_run_and_goes_to_town() -> void:
 	T.eq(_game().run.gold, 30, "run reset waits for the death animation")
 	await _tree().create_timer(Dungeon.DEATH_DELAY + 0.1).timeout
 	T.eq(_game().run.gold, 0, "die() ran")
+	T.eq(_game().last_run.get("floor"), 1, "snapshot floor")
+	T.eq(_game().last_run.get("gold"), 30, "snapshot gold before die()")
+	var secs: float = _game().last_run.get("seconds", -1.0)
+	T.ok(secs >= 75.0 and secs < 80.0, "snapshot seconds before die(): %f" % secs)
+	T.eq(_game().run.clock.seconds, 0.0, "clock zeroed after")
 	d.free()
 	await _tree().process_frame
 	await _tree().process_frame

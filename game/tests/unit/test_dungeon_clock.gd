@@ -58,6 +58,7 @@ func test_clock_ticks_only_while_not_paused() -> void:
 
 func test_first_floor_plan_starts_with_tutorial_and_ends_with_boss() -> void:
 	_game().new_run()
+	_game().run.tutorial_done = false
 	var d := await _spawn_dungeon()
 	T.eq(d.plan.slice(0, 3), FloorPlan.TUTORIAL_ROOMS)
 	T.eq(d.plan[-1], "res://world/rooms/boss_f1.tscn")
@@ -66,5 +67,20 @@ func test_first_floor_plan_starts_with_tutorial_and_ends_with_boss() -> void:
 		T.ok(i >= 3 and i < d.plan.size() - 1, "chest in a random room: %d" % i)
 	T.eq(d.room_index, 0)
 	T.eq(d.room.scene_file_path, FloorPlan.TUTORIAL_ROOMS[0])
+	d.leave_to_town()
+	await _cleanup(d)
+
+
+func test_finished_tutorial_is_skipped_until_death() -> void:
+	_game().new_run()
+	_game().run.tutorial_done = true
+	var d := await _spawn_dungeon()
+	T.ok(not d.plan.has(FloorPlan.TUTORIAL_ROOMS[0]), "no tutorial once done in this run")
+	d.leave_to_town()
+	await _cleanup(d)
+	_game().run.tutorial_done = true
+	_game().run.die()
+	d = await _spawn_dungeon()
+	T.eq(d.plan.slice(0, 3), FloorPlan.TUTORIAL_ROOMS, "tutorial again after death")
 	d.leave_to_town()
 	await _cleanup(d)

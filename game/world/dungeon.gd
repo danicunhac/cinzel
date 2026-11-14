@@ -17,8 +17,6 @@ const PortalScript := preload("res://world/portal.gd")
 
 ## Floor the next Dungeon instance enters (the town sets it before goto).
 static var requested_floor: int = 1
-## The tutorial plays on floor 1 until it is finished once in this session.
-static var tutorial_done: bool = false
 
 var current_floor: int = 1
 var plan: Array[String] = []
@@ -57,7 +55,7 @@ func _process(delta: float) -> void:
 func enter_floor(floor_num: int) -> void:
 	current_floor = floor_num
 	Game.run.clock.running = true
-	var with_tutorial := floor_num == 1 and not tutorial_done
+	var with_tutorial := floor_num == 1 and not Game.run.tutorial_done
 	plan = FloorPlan.build(floor_num, templates_for(floor_num), _rng, with_tutorial)
 	var tutorial_count := FloorPlan.TUTORIAL_ROOMS.size() if with_tutorial else 0
 	var random_count := plan.size() - tutorial_count - 1
@@ -145,7 +143,7 @@ func _on_exit_reached() -> void:
 	if _busy or _leaving or room_index + 1 >= plan.size():
 		return
 	if plan[room_index] == FloorPlan.TUTORIAL_ROOMS[-1]:
-		tutorial_done = true
+		Game.run.tutorial_done = true
 	_go_to_room(room_index + 1, true)
 
 
@@ -183,6 +181,7 @@ func _next_floor() -> void:
 func _win() -> void:
 	_leaving = true
 	Game.run.clock.running = false
+	_snapshot_run()
 	Game.goto(VICTORY_SCENE if ResourceLoader.exists(VICTORY_SCENE) else TOWN_SCENE)
 
 
@@ -192,9 +191,15 @@ func _on_player_died() -> void:
 	_leaving = true
 	Game.run.clock.running = false
 	await get_tree().create_timer(DEATH_DELAY).timeout
+	_snapshot_run()
 	Game.run.die()
 	Game.in_boss_room = false
 	Game.goto(GAME_OVER_SCENE if ResourceLoader.exists(GAME_OVER_SCENE) else TOWN_SCENE)
+
+
+## Saved before die() zeroes the run, for the game-over and victory screens.
+func _snapshot_run() -> void:
+	Game.last_run = {"floor": current_floor, "seconds": Game.run.clock.seconds, "gold": Game.run.gold}
 
 
 func _show_notice(text: String) -> void:

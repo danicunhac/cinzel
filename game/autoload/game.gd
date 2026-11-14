@@ -5,6 +5,10 @@ const SwapItemPanelScene := preload("res://ui/swap_item_panel.tscn")
 
 var run: RunState
 var in_boss_room: bool = false
+## Summary of the run that just ended (death or victory), written by Dungeon
+## before RunState.die() zeroes it: {"floor": int, "seconds": float, "gold": int}.
+## Empty until a run ends.
+var last_run: Dictionary[String, Variant] = {}
 
 
 func _ready() -> void:

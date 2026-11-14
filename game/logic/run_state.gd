@@ -11,6 +11,8 @@ var items: Array[StringName] = []
 var unlocked_floors: int = 1
 var hp: int = PlayerStats.new().max_hp
 var clock: RunClock = RunClock.new()
+## Floor 1 opens with the 3 tutorial rooms until they are finished in this run.
+var tutorial_done: bool = false
 
 
 func can_take_item() -> bool:
@@ -72,6 +74,7 @@ func die() -> void:
 	items.clear()
 	unlocked_floors = 1
 	clock.reset()
+	tutorial_done = false
 	hp = stats().max_hp
 	changed.emit()
 

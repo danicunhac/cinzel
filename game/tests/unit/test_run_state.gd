@@ -1,5 +1,8 @@
 extends RefCounted
 
+## Tests whose push_error is the behaviour under test (see run_tests.gd).
+const EXPECTS_ERRORS: Array[String] = ["test_add_unknown_item_rejected"]
+
 var _fired: int = 0
 
 
@@ -50,8 +53,10 @@ func test_die_loses_everything() -> void:
 	r.add_item(&"spark")
 	r.unlock_floor(3)
 	r.clock.seconds = 200.0
+	r.tutorial_done = true
 	r.die()
 	T.eq(r.gold, 0)
+	T.eq(r.tutorial_done, false, "tutorial comes back")
 	T.ok(r.items.is_empty(), "items empty")
 	T.eq(r.unlocked_floors, 1)
 	T.near(r.clock.seconds, 0.0)
