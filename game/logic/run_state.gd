@@ -140,6 +140,14 @@ func set_outfit(id: StringName) -> bool:
 	return true
 
 
+## Wardrobe toggle: armor and helm over the outfit, or the outfit alone.
+func set_show_armor(on: bool) -> void:
+	if equipment.show_armor == on:
+		return
+	equipment.show_armor = on
+	changed.emit()
+
+
 func add_gold(n: int) -> void:
 	gold += n
 	changed.emit()
@@ -165,13 +173,16 @@ func beat_floor(floor_num: int) -> void:
 
 
 ## Loses everything and goes back to the starter kit; the market starts fresh.
-## Unlocked outfits (and the one being worn) stay.
+## Unlocked outfits (and the one being worn) stay, and so does the
+## "Mostrar armadura" choice.
 func die() -> void:
 	var outfit := equipment.outfit
+	var show_armor := equipment.show_armor
 	gold = 0
 	market = Market.new()
 	equipment = Equipment.starter()
 	equipment.outfit = outfit
+	equipment.show_armor = show_armor
 	inventory = Inventory.new(equipment.capacity())
 	unlocked_floors = 1
 	floors_beaten = 0

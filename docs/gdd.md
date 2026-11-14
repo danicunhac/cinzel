@@ -60,13 +60,13 @@ Pedido do Daniel: mais armas, armaduras, roupas e mochilas, mais perto de SAO.
 | Espaço | O que faz | Aparece no sprite |
 |---|---|---|
 | Arma | Define o estilo de ataque (alcance, velocidade, combo, golpe especial) | Sim (camada `weapon`) |
-| Armadura | Só atributos: defesa, vida máxima, peso (armadura pesada deixa o rolamento mais lento) | Não |
-| Capuz/elmo | Só atributos: bônus pequeno (crítico, resistência) | Não |
+| Armadura | Defesa, vida máxima, peso (armadura pesada deixa o rolamento mais lento) | Sim (camada `armor`, sobre o tronco da roupa), se "Mostrar armadura" estiver ligado |
+| Capuz/elmo | Bônus pequeno (crítico, resistência) | Sim (camada `helm`, sobre o capuz e o cabelo), se "Mostrar armadura" estiver ligado |
 | Mochila | Quantos espaços de saque cabem | Sim (parte de `outfit`) |
 | Relíquias (até 3) | Os 8 itens atuais, com efeitos passivos | Não |
 | **Roupa (visual)** | Só aparência, estilo SAO: escolhida livremente na cidade (guarda-roupa) e desbloqueada por compra, baú ou chefe. Não muda números. | Sim (camadas `hair` e `outfit`) |
 
-A aparência vem da roupa, e os números vêm do equipamento. Cada roupa precisa da sua folha de sprite completa (8×13 quadros de 32 px nas camadas `hair` e `outfit`).
+Os números vêm do equipamento. A aparência vem da roupa e, por cima dela, da armadura e do elmo equipados. No guarda-roupa o jogador escolhe em "Mostrar armadura" (ligado no começo): ligado, a armadura cobre o tronco e os ombros da roupa e o elmo cobre o capuz e o cabelo; desligado, só a roupa aparece. A escolha fica salva na corrida junto com a roupa e não se perde na morte. Cada roupa precisa da sua folha de sprite completa (8×13 quadros de 32 px nas camadas `hair` e `outfit`); cada armadura e cada elmo têm a sua (camadas `armor` e `helm`). Ordem das camadas: `body`, `hair`, `outfit`, `armor`, `helm`, `weapon`.
 
 ### Tipos de arma (decidido pelo Daniel em 14/11)
 - **Espada:** equilibrada, combo de 3. Especial: estocada em linha.

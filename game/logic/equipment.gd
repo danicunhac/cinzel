@@ -16,6 +16,9 @@ var armor: StringName = &""
 var helm: StringName = &""
 var backpack: StringName = &""
 var outfit: StringName = &""
+## Armor and helm drawn on the hero (wardrobe toggle). Off: only the outfit.
+## Visual only, kept on death with the outfit.
+var show_armor: bool = true
 var relics: Array[StringName] = []
 
 
@@ -36,6 +39,7 @@ func copy() -> Equipment:
 	e.helm = helm
 	e.backpack = backpack
 	e.outfit = outfit
+	e.show_armor = show_armor
 	e.relics = relics.duplicate()
 	return e
 

@@ -2,7 +2,7 @@ class_name InventoryScreen
 extends UiPanel
 ## Backpack and equipment (Tab, or "Mochila" in the pause menu). It pauses the
 ## tree, so the run clock stops while it is open.
-## Left: the hero as he looks now (outfit and weapon) with the equipment
+## Left: the hero as he looks now (outfit, armor, helm and weapon) with the equipment
 ## slots around him. Middle: the backpack grid. Right: the tooltip of the
 ## item under the cursor, compared with what is worn (green/red arrows).
 ## Actions: equip (E, or a second press on the item), take off, and drop (X).
@@ -115,8 +115,7 @@ func _build_doll(run: RunState, parent: Control) -> void:
 	holder.add_child(GroundShadow.make(Vector2i(16, 6), Vector2(0, 14)))
 	hero = LayeredSprite.new()
 	holder.add_child(hero)
-	hero.set_weapon(ItemDB.weapon_type(run.equipment.weapon))
-	hero.set_outfit(run.equipment.outfit)
+	hero.dress(run.equipment)
 	hero.play(&"idle", Vector2.DOWN)
 	var relic_label := UiKit.label("Relíquias", UiKit.COLOR_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 	relic_label.position = Vector2(0, 87)

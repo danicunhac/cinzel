@@ -626,12 +626,12 @@ func _on_hp_changed(hp: int) -> void:
 func _refresh_stats() -> void:
 	_stats = Game.run.stats()
 	health.set_max_hp(_stats.max_hp)
-	var id := Game.run.equipment.weapon
-	if id != weapon_id:
-		_set_weapon(id)
-	var outfit := Game.run.equipment.outfit
-	if sprite.outfit_dir != String(outfit).trim_prefix("outfit_"):
-		sprite.set_outfit(outfit)
+	var e := Game.run.equipment
+	if e.weapon != weapon_id:
+		_set_weapon(e.weapon)
+	if sprite.outfit_dir != String(e.outfit).trim_prefix("outfit_"):
+		sprite.set_outfit(e.outfit)
+	sprite.set_gear(e.armor, e.helm, e.show_armor)
 
 
 func _set_weapon(id: StringName) -> void:
