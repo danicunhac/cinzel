@@ -20,7 +20,7 @@ Roguelike de ação 2D, visto de cima. Você sobe uma torre de 3 andares e volta
 
 Como jogar:
 
-1. Na cidade, use a loja, o ferreiro e o guarda-roupa. Entre na torre pelo cristal de teleporte.
+1. Na cidade, use a loja, o ferreiro e o guarda-roupa. Na cidade não dá para atacar. Para entrar na torre, caminhe até a entrada no fim do caminho norte.
 2. Cada sala tem inimigos. Todo ataque inimigo avisa em vermelho: role para fora.
 3. Mate todos para abrir a porta. Abra baús com E.
 4. No fim do andar, vença o chefe para liberar o próximo andar.
@@ -37,7 +37,7 @@ Vitória: vencer o chefe do andar 3.
 | Atacar | J ou clique esquerdo |
 | Golpe especial | Segurar J (ou o clique) por 0,5 s e soltar |
 | Rolar | Espaço |
-| Interagir (loja, baú, portas, teleporte) | E |
+| Interagir (loja, ferreiro, guarda-roupa, baú) | E |
 | Sair da torre | Segurar Q por 2 s (não vale na sala do chefe) |
 | Mochila | Tab (ou I) |
 | Largar item | X |

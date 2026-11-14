@@ -56,7 +56,7 @@ Rota exata. Falar pouco, deixar o jogo mostrar.
    - Loja: abrir com E. Mostrar preços e a seta de tendência. *O preço muda com oferta e procura. A loja paga mais pelo que está em falta, e menos pelo que eu vendi demais.*
    - Forja: abrir com E. Mostrar uma receita. *O ferreiro forja armas e armaduras com material e ouro.*
    - Guarda-roupa: trocar de roupa. *As roupas são só visuais, estilo SAO. Não mudam número nenhum.*
-4. **Andar 1, tutorial (0:25).** Entrar pelo cristal de teleporte. Primeiras salas.
+4. **Andar 1, tutorial (0:25).** Caminhar até a entrada da torre, no norte da cidade. Primeiras salas.
    *O tutorial não tem texto longo. Cada sala ensina uma coisa: mover e atacar, rolar, curar parado.*
 5. **Combate com 2 armas e especial (0:50).**
    - Atacar com a espada de ferro, combo de 3 golpes.
@@ -75,7 +75,7 @@ Se o chefe não couber nos 3 minutos, mostrar `task10-boss.png` e `task11-shockw
 
 ## 4. Decisões de design (1:00)
 
-*O loop é: cidade, torre, saque, cidade. Vencer o chefe libera o próximo andar no teleporte.*
+*O loop é: cidade, torre, saque, cidade. Vencer o chefe libera o próximo andar na entrada da torre.*
 
 *Algumas decisões que eu tomei e por quê:*
 

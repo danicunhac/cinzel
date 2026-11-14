@@ -1,9 +1,12 @@
 extends Node2D
 ## Walkable town (one 480x270 screen). A painted ground with large Y-sorted
 ## sprites on it (game/assets/town, docs/assets.md). Four spots: the shop
-## (shopkeeper), the forge (blacksmith), the teleport crystal and the
-## wardrobe at the door of the hero's house (house A, next to the shop); E
-## near one opens its panel. Near a spot with an action, a gold ring pings on the ground
+## (shopkeeper), the forge (blacksmith) and the wardrobe at the door of the
+## hero's house (house A, next to the shop); E near one opens its panel. The
+## tower is up the north path: walking into its entrance (GATE) enters floor 1,
+## or opens the floor list once more floors are unlocked. The crystal in the
+## plaza is where a teleport out of the tower lands. No weapons in town: the
+## attack button only shows a note. Near a spot with an action, a gold ring pings on the ground
 ## and the building glows; the NPC speaks a short line in a bubble.
 ## The run clock stays stopped here. Every town load starts a market visit
 ## (Market.begin_visit: prices recover, new stock and wanted items).
@@ -24,20 +27,22 @@ const ART := "res://assets/town/%s.png"
 const PAD := 8
 
 const SPAWN := Vector2(240, 222)
+## Tower entrance at the top of the north path: the player walks into it.
+const GATE := Rect2(212, 18, 56, 18)
+const GATE_ARRIVAL := Vector2(240, 48)
+const CRYSTAL_ARRIVAL := Vector2(240, 180)
 const REACH := 30.0
 const CRYSTAL_POS := Vector2(240, 160)
 ## Where the player stands to use each spot (in front of the counter, the
-## anvil and the crystal).
+## anvil and the house door).
 const SPOTS: Dictionary[StringName, Vector2] = {
 	&"shop": Vector2(62, 128),
 	&"smith": Vector2(426, 146),
-	&"teleport": Vector2(240, 172),
 	&"wardrobe": Vector2(168, 100),
 }
 const SPOT_NAMES: Dictionary[StringName, String] = {
 	&"shop": "Loja",
 	&"smith": "Ferreiro",
-	&"teleport": "Teleporte",
 	&"wardrobe": "Guarda-roupa",
 }
 const SCREEN := Vector2(480, 270)
@@ -165,6 +170,7 @@ const VILLAGER_LOOKS: Dictionary[String, float] = {
 const VILLAGER_ART := "res://assets/characters/villagers/%s.png"
 ## A villager talks when the player's feet are this close (and no spot is).
 const VILLAGER_REACH := 24.0
+const NOTE_TIME := 1.4
 
 var shop: Market
 var near: StringName = &""
@@ -177,6 +183,11 @@ var _villagers: Array[Villager] = []
 var _bubble: SpeechBubble
 var _hint: Label
 var _crystal_glow: Sprite2D
+var _gate_cta: TownCta
+var _note: Label
+var _note_time: float = 0.0
+## True while the player stands in GATE; entering needs a fresh step in.
+var _in_gate: bool = false
 var _t: float = 0.0
 
 @onready var player: Player = $Player
@@ -194,8 +205,18 @@ func _ready() -> void:
 	_build_pieces()
 	_build_spots()
 	_build_life()
+	player.armed = false
 	player.global_position = SPAWN
 	player.facing = Vector2.UP
+	match Game.town_arrival:
+		&"gate":
+			player.global_position = GATE_ARRIVAL
+			player.facing = Vector2.DOWN
+		&"crystal":
+			player.global_position = CRYSTAL_ARRIVAL
+			player.facing = Vector2.DOWN
+	Game.town_arrival = &""
+	_in_gate = GATE.has_point(player.global_position)
 	# Feet are 6 px below the player's origin (layered_sprite FEET_ROW).
 	player.add_child(GroundShadow.make(Vector2i(16, 6), Vector2(0, 7)))
 	_apply_debug_args()
@@ -270,9 +291,43 @@ func _process(delta: float) -> void:
 		_crystal_glow.modulate.a = 0.7 + 0.3 * sin(_t * 2.2)
 	if near != &"" and _panel == null and not get_tree().paused and Input.is_action_just_pressed(&"interact"):
 		open_panel(near)
+	_update_gate()
+	_update_note(delta, Input.is_action_just_pressed(&"attack"))
 
 
-## Opens the panel of a spot (shop, smith, teleport) and returns it.
+## Walking into the tower entrance: floor 1 straight away, or the floor list.
+func _update_gate() -> void:
+	var inside := player.state != Player.State.DEAD and GATE.has_point(player.global_position)
+	var stepped_in := inside and not _in_gate
+	_in_gate = inside
+	if not stepped_in or _panel != null or get_tree().paused:
+		return
+	enter_tower()
+
+
+## Enters floor 1, or opens the floor list when more floors are unlocked.
+func enter_tower() -> void:
+	if Game.run.unlocked_floors > 1:
+		open_panel(&"teleport")
+		return
+	Dungeon.requested_floor = 1
+	Game.goto(Dungeon.SCENE)
+
+
+## Attack in town (`pressed`): no swing, a short note over the player instead.
+func _update_note(delta: float, pressed: bool) -> void:
+	if pressed and _panel == null and not get_tree().paused and not UiKit.gameplay_input_blocked():
+		_note_time = NOTE_TIME
+	_note_time = maxf(_note_time - delta, 0.0)
+	_note.visible = _note_time > 0.0
+	if _note.visible:
+		var p := player.global_position + Vector2(-50, -30)
+		_note.position = Vector2(clampf(p.x, 2, SCREEN.x - 102), maxf(p.y, 14))
+		_note.modulate.a = minf(_note_time / 0.3, 1.0)
+
+
+## Opens the panel of a spot (shop, smith, wardrobe, or teleport: the floor
+## list at the tower entrance) and returns it.
 func open_panel(id: StringName) -> UiPanel:
 	if _panel != null:
 		return _panel
@@ -285,6 +340,7 @@ func open_panel(id: StringName) -> UiPanel:
 			_panel = SmithPanelScene.instantiate() as SmithPanel
 		&"teleport":
 			_panel = TeleportPanelScene.instantiate() as TeleportPanel
+			_panel.panel_title = "Entrada da torre"
 		&"wardrobe":
 			_panel = WardrobePanelScript.new() as WardrobePanel
 		_:
@@ -295,7 +351,7 @@ func open_panel(id: StringName) -> UiPanel:
 	return _panel
 
 
-## Line the NPC at `id` says now ("" for the crystal, which has no speaker).
+## Line the NPC at `id` says now ("" for a spot with no speaker).
 ## `item_count` is the backpack's used slots.
 func line_for(id: StringName, item_count: int) -> String:
 	match id:
@@ -320,9 +376,7 @@ func _update_hint(items: int) -> void:
 	_hint.text = "E  %s" % SPOT_NAMES[near]
 	var ok := TownLogic.can_act(near, items, Forge.any_craftable(Game.run))
 	_hint.add_theme_color_override("font_color", UiKit.COLOR_ITEM if ok else UiKit.COLOR_MUTED)
-	# Over the player's head, except at the crystal, where that would cover
-	# the crystal itself: there it goes under the feet.
-	var p := SPOTS[near] + (Vector2(-50, 12) if near == &"teleport" else Vector2(-50, -36))
+	var p := SPOTS[near] + Vector2(-50, -36)
 	_hint.position = Vector2(clampf(p.x, 2, SCREEN.x - 102), p.y)
 
 
@@ -438,7 +492,6 @@ func _build_pieces() -> void:
 		elif p[0] == "house_a":
 			_glow_targets[&"wardrobe"] = s
 	var crystal := _piece("crystal", CRYSTAL_POS, Vector2(40, 12))
-	_glow_targets[&"teleport"] = crystal
 	_crystal_glow = Sprite2D.new()
 	_crystal_glow.texture = _tex("crystal_glow")
 	_crystal_glow.position = Vector2(0, -42)
@@ -455,12 +508,15 @@ func _build_spots() -> void:
 		var cta := TownCta.new()
 		cta.position = SPOTS[id]
 		cta.radius = 18.0
-		if id == &"teleport":
-			cta.color = Color(0.55, 0.9, 1.0)
-			cta.position = CRYSTAL_POS + Vector2(0, 2)
-			cta.radius = 24.0
 		add_child(cta)
 		_ctas[id] = cta
+	# The tower entrance always pings: it is where the run starts.
+	_gate_cta = TownCta.new()
+	_gate_cta.color = Color(0.55, 0.9, 1.0)
+	_gate_cta.position = GATE.get_center() + Vector2(0, 4)
+	_gate_cta.radius = 22.0
+	_gate_cta.active = true
+	add_child(_gate_cta)
 	# Hint and bubble live on a screen layer (no camera here, so screen and
 	# world coordinates match): no CanvasModulate tint, above props and the
 	# HUD (layer 5), below the panels (layer 30).
@@ -476,6 +532,19 @@ func _build_spots() -> void:
 	overlay.add_child(_hint)
 	_bubble = SpeechBubble.new()
 	overlay.add_child(_bubble)
+	var sign := UiKit.label("Torre", UiKit.COLOR_ITEM, HORIZONTAL_ALIGNMENT_CENTER)
+	sign.name = "GateSign"
+	sign.size = Vector2(60, 10)
+	sign.position = Vector2(GATE.get_center().x - 30, GATE.end.y + 2)
+	sign.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.06))
+	sign.add_theme_constant_override("outline_size", 2)
+	overlay.add_child(sign)
+	_note = UiKit.label("Sem armas na cidade", UiKit.COLOR_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
+	_note.size = Vector2(100, 10)
+	_note.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.06))
+	_note.add_theme_constant_override("outline_size", 2)
+	_note.visible = false
+	overlay.add_child(_note)
 
 
 ## NPC standing with its feet at `feet`; returns where its bubble hangs.

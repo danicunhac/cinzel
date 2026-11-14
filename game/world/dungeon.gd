@@ -107,7 +107,7 @@ func _on_stairs_used() -> void:
 	if _busy or _leaving:
 		return
 	if current_floor <= 1:
-		leave_to_town()
+		leave_to_town(&"gate")
 		return
 	var below := current_floor - 1
 	var rec := state.get_floor(below)
@@ -133,10 +133,13 @@ func _on_back_reached() -> void:
 	_go_to_room(room_index - 1, true, Arrival.EXIT)
 
 
-func leave_to_town() -> void:
+## `arrival`: &"gate" when walking out (stairs of floor 1), else the
+## teleport back to the crystal (held Q, the boss room portal).
+func leave_to_town(arrival: StringName = &"crystal") -> void:
 	if _leaving:
 		return
 	_leaving = true
+	Game.town_arrival = arrival
 	Game.run.clock.running = false
 	Game.in_boss_room = false
 	Game.goto(TOWN_SCENE)

@@ -73,6 +73,8 @@ var blocks_left: int = 0
 var weapon: WeaponDef = WeaponDef.for_type(&"sword")
 var weapon_id: StringName = &""
 var special: SpecialCharge = SpecialCharge.new()
+## False in town: the attack button does nothing (no swing, shot or special).
+var armed: bool = true
 ## Crit rolls. Seed it for deterministic tests.
 var rng := RandomNumberGenerator.new()
 
@@ -183,7 +185,7 @@ func _process_free(delta: float, input_dir: Vector2) -> void:
 		sprite.position = SPRITE_HOME
 	if _just_pressed(&"roll") and _roll_cooldown <= 0.0:
 		_start_roll(input_dir if input_dir != Vector2.ZERO else facing)
-	elif _just_pressed(&"attack") and not weapon.ranged:
+	elif armed and _just_pressed(&"attack") and not weapon.ranged:
 		_start_attack()
 
 
@@ -203,7 +205,7 @@ func _walk_feel(delta: float, dir: Vector2) -> void:
 ## Attack press starts the hold; the release fires the special, the bow's
 ## charged arrow, or (bow) the plain arrow.
 func _update_charge(delta: float) -> void:
-	if state == State.DEAD or state == State.ROLL or state == State.SPECIAL:
+	if state == State.DEAD or state == State.ROLL or state == State.SPECIAL or not armed:
 		special.cancel()
 		special.tick(delta, false)
 		return

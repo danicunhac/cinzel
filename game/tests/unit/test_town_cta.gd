@@ -34,7 +34,7 @@ func test_cta_needs_range_and_an_action() -> void:
 	T.ok(not TownLogic.cta_visible(&"shop", &"smith", 3), "in range of another spot")
 	T.ok(not TownLogic.cta_visible(&"smith", &"smith", 5, false), "smith needs a craftable recipe")
 	T.ok(TownLogic.cta_visible(&"smith", &"smith", 0, true), "smith with a craftable recipe")
-	T.ok(TownLogic.cta_visible(&"teleport", &"teleport", 0), "crystal always works")
+	T.ok(TownLogic.cta_visible(&"wardrobe", &"wardrobe", 0), "wardrobe always works")
 	T.ok(not TownLogic.cta_visible(&"", &"", 0), "no spot")
 
 
@@ -46,7 +46,7 @@ func test_town_rings_follow_the_player() -> void:
 	await _tree().process_frame
 	T.eq(town.near, &"shop")
 	T.ok(town._ctas[&"shop"].active, "shop ring on")
-	T.ok(not town._ctas[&"smith"].active and not town._ctas[&"teleport"].active, "others off")
+	T.ok(not town._ctas[&"smith"].active and not town._ctas[&"wardrobe"].active, "others off")
 	T.ok(town._bubble.visible, "shopkeeper talks")
 	player.global_position = TownScript.SPOTS[&"smith"]
 	await _tree().process_frame
@@ -119,7 +119,7 @@ func test_backs_of_buildings_are_blocked_paths_open() -> void:
 	for p in blocked:
 		q.position = p
 		T.ok(not space.intersect_point(q).is_empty(), "blocked at %s" % p)
-	var open: Array[Vector2] = [Vector2(240, 40), Vector2(240, 200), Vector2(240, 258), TownScript.SPOTS[&"shop"], TownScript.SPOTS[&"smith"], TownScript.SPOTS[&"teleport"]]
+	var open: Array[Vector2] = [Vector2(240, 40), Vector2(240, 200), Vector2(240, 258), TownScript.SPOTS[&"shop"], TownScript.SPOTS[&"smith"], TownScript.GATE.get_center(), TownScript.CRYSTAL_ARRIVAL]
 	for p in open:
 		q.position = p
 		var walls := space.intersect_point(q).filter(func(h: Dictionary) -> bool: return h["collider"] is StaticBody2D)

@@ -1,6 +1,8 @@
 extends RefCounted
 ## Town panels, HUD and end screens.
 
+const TownScript := preload("res://world/town.gd")
+
 
 func _tree() -> SceneTree:
 	return Engine.get_main_loop() as SceneTree
@@ -191,3 +193,40 @@ class FakeBoss extends Node:
 
 	func _ready() -> void:
 		add_to_group(&"boss")
+
+
+func test_walking_back_arrives_at_the_gate_unarmed() -> void:
+	_game().new_run()
+	_game().town_arrival = &"gate"
+	var town := await _spawn("res://world/town.tscn")
+	var player := town.get_node("Player") as Player
+	T.eq(player.global_position, TownScript.GATE_ARRIVAL, "arrives at the tower entrance")
+	T.eq(_game().town_arrival, &"", "arrival is used once")
+	T.ok(not player.armed, "no weapon in town")
+	await _tree().physics_frame
+	Input.action_press(&"attack")
+	await _tree().physics_frame
+	await _tree().process_frame
+	Input.action_release(&"attack")
+	T.eq(player.state, Player.State.FREE, "attack does not swing")
+	town._update_note(0.0, true)
+	T.ok(town._note.visible, "note says there are no weapons in town")
+	town.free()
+	_game().new_run()
+
+
+func test_stepping_into_the_gate_opens_the_floor_list() -> void:
+	_game().new_run()
+	_game().run.unlock_floor(2)
+	var town := await _spawn("res://world/town.tscn")
+	var player := town.get_node("Player") as Player
+	player.global_position = TownScript.GATE.get_center()
+	await _tree().process_frame
+	var p := town._panel as TeleportPanel
+	T.ok(p != null, "floor list opens")
+	T.eq(p.floor_buttons.size(), 2, "floors 1..2")
+	p.close()
+	await _tree().process_frame
+	T.ok(town._panel == null, "standing still in the gate does not reopen it")
+	town.free()
+	_game().new_run()

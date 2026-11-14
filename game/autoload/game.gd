@@ -13,6 +13,9 @@ const FADE_TIME := 0.35
 
 var run: RunState
 var in_boss_room: bool = false
+## Where the player appears in town: &"gate" (walked down the tower), &"crystal"
+## (teleported back) or &"" (new run, the south path). The town clears it.
+var town_arrival: StringName = &""
 ## Summary of the run that just ended (death or victory), written by Dungeon
 ## before RunState.die() zeroes it: {"floor": int, "seconds": float, "gold": int}.
 ## Empty until a run ends.
