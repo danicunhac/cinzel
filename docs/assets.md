@@ -8,6 +8,7 @@ Os scripts em `art-src/` transformam esses originais nas folhas do jogo. Rode co
 
 - `build_climber.py` (com `walk_cycle.py`): escalador em camadas.
 - `build_enemies.py`: inimigos.
+- `build_boss.py`: chefe final (quadros de 32x32, mesma receita dos inimigos).
 - `build_tiles.py`: tilesets.
 - `check_art.py`: confere tamanho, transparência e no máximo 32 cores.
 
@@ -25,6 +26,7 @@ Nenhum desses scripts sobrescreve um arquivo que já existe, porque ele pode ter
 | `game/assets/enemies/crawler.png` | Gerado por IA (gpt-image-2.5 flare, preset `cinzel-pixel`) + ajuste por script | `art-src/gen/enemy-crawler.png` por `build_enemies.py` (animação por deformação da pose gerada) | 2026-11-14 |
 | `game/assets/enemies/shooter.png` | Idem | Conjurador de `art-src/gen/enemies-sheet.png` por `build_enemies.py` | 2026-11-14 |
 | `game/assets/enemies/charger.png` | Idem | `art-src/gen/enemy-charger-v2.png` por `build_enemies.py` | 2026-11-14 |
+| `game/assets/enemies/boss_final.png` | Gerado por IA (gpt-image-2.5 flare) + ajuste por script | `cinzel-boss-final` por `build_boss.py` (folha 4x4 de 32x32: parado, andar, ataque, morte). Os chefes dos andares 1 e 2 reaproveitam `crawler.png` e `charger.png` em escala x2 | 2026-11-14 |
 | `game/assets/tiles/floor1.png` | Idem | `art-src/gen/tiles-floor1-sheet.png` e `art-src/gen/tiles-props-sheet.png` por `build_tiles.py` | 2026-11-14 |
 | `game/assets/tiles/floor2.png` | Idem | `floor1` com a pedra em azul frio | 2026-11-14 |
 | `game/assets/tiles/floor3.png` | Idem | `floor1` com a pedra em vermelho escuro de brasa | 2026-11-14 |
@@ -51,6 +53,7 @@ O nome no gerador de IA leva um hash de conteúdo. O arquivo no repositório é 
 | `art-src/gen/tiles-floor1-sheet.png` | `cinzel-tiles-floor1-sheet-a22089b881f0` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 de tiles da torre: lajes (lisa, clara, rachada, com musgo), parede, topo de parede, pilar, caixote, portas (trancada, aberta, fechada), baús, parede com tocha | 2026-11-14 |
 | `art-src/gen/tiles-props-sheet.png` | `cinzel-tiles-props-sheet-6f9f6685ebad` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayProps` | Pilar, caixote, baú fechado, baú aberto com ouro, tocha de parede, sobre magenta | 2026-11-14 |
 | `art-src/gen/tiles-town-sheet.png` | `cinzel-tiles-town-sheet-07b9e1466613` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 da cidade: calçamento, grama, madeira, terra, telhado, muro, toldo listrado, casa enxaimel, porta, janela, estandarte, topo de muro, água | 2026-11-14 |
+| `art-src/gen/boss-final.png` | `cinzel-boss-final-15618594aab4` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `characters` | Chefe final: cavaleiro-espectro encapuzado de armadura negra rachada, olhos e fenda no peito em brasa vermelha, lâmina incandescente, sobre magenta | 2026-11-14 |
 
 ## Layout dos tilesets
 

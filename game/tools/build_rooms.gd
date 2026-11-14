@@ -1,6 +1,6 @@
 extends SceneTree
-## Generates world/tiles_floor1.tres and the room scenes from the ASCII layouts
-## below, after checking each layout (reachability, safe spawns).
+## Generates world/tiles_floor{1,2,3}.tres and the room scenes from the ASCII
+## layouts below, after checking each layout (reachability, safe spawns).
 ## godot --headless --path game -s res://tools/build_rooms.gd
 ##
 ## Legend (20 x 11 cells of 16 px):
@@ -10,18 +10,26 @@ extends SceneTree
 ##   E  entry door (shut; the player starts on the inner neighbour)
 ##   X  exit door (locked until the room is cleared)
 ##   c  crawler      s  shooter          h  charger
-##   B  crawler boss stand-in            C  chest spot
+##   B  big crawler boss (floor 1)       H  big charger boss (floor 2)
+##   F  final boss (floor 3)             C  chest spot
+## A room's optional "floor" key (default 1) picks the tileset.
 
 const W := 20
 const H := 11
-const TILESET_PATH := "res://world/tiles_floor1.tres"
-const TEXTURE_PATH := "res://assets/tiles/floor1.png"
+const TILESET_PATH := "res://world/tiles_floor%d.tres"
+const TEXTURE_PATH := "res://assets/tiles/floor%d.png"
+const FLOORS := 3
 const ROOM_SCRIPT := "res://world/room.gd"
 const DOOR_SCRIPT := "res://world/room_door.gd"
 ## No enemy starts closer than this to the player's entry point.
 const MIN_SPAWN_DIST := 96.0
-const WALKABLE := ".,~cshBC"
-const ENEMY_KINDS := {"c": "crawler", "s": "shooter", "h": "charger", "B": "crawler"}
+const WALKABLE := ".,~cshBHFC"
+const ENEMY_KINDS := {
+	"c": "crawler", "s": "shooter", "h": "charger",
+	"B": "boss_big", "H": "boss_big", "F": "boss_final",
+}
+## Look of the big boss (Room meta `base`).
+const BOSS_BASE := {"B": "crawler", "H": "charger"}
 
 const TUTORIAL_TOP := [
 	"####################",
@@ -179,7 +187,7 @@ var ROOMS: Array[Dictionary] = [
 		],
 	},
 	{
-		# Placeholder boss room (Task 11 replaces it): one big crawler.
+		# Floor 1 boss: the big crawler. Corner pillars only, room to dodge the ring.
 		"path": "res://world/rooms/boss_f1.tscn",
 		"boss": true,
 		"rows": [
@@ -196,6 +204,44 @@ var ROOMS: Array[Dictionary] = [
 			"####################",
 		],
 	},
+	{
+		# Floor 2 boss: the big charger. Two pillar pairs stop its dashes.
+		"path": "res://world/rooms/boss_f2.tscn",
+		"boss": true,
+		"floor": 2,
+		"rows": [
+			"####################",
+			"#..................#",
+			"#..................#",
+			"#.....o......o.....#",
+			"#..................#",
+			"E..............H...#",
+			"#..................#",
+			"#.....o......o.....#",
+			"#..................#",
+			"#..................#",
+			"####################",
+		],
+	},
+	{
+		# Floor 3 boss: open hall for the dashes, fans and summoned crawlers.
+		"path": "res://world/rooms/boss_f3.tscn",
+		"boss": true,
+		"floor": 3,
+		"rows": [
+			"####################",
+			"#~................~#",
+			"#..o............o..#",
+			"#..................#",
+			"#..................#",
+			"E.............F....#",
+			"#..................#",
+			"#..................#",
+			"#..o............o..#",
+			"#~................~#",
+			"####################",
+		],
+	},
 ]
 
 
@@ -208,9 +254,11 @@ func _initialize() -> void:
 			printerr(e)
 		quit(1)
 		return
-	var tile_set := _build_tileset()
+	var tile_sets: Array[TileSet] = []
+	for f in FLOORS:
+		tile_sets.append(_build_tileset(f + 1))
 	for def in ROOMS:
-		var err: Error = await _save_room(def, tile_set)
+		var err: Error = await _save_room(def, tile_sets[int(def.get("floor", 1)) - 1])
 		if err != OK:
 			printerr("save failed %s: %d" % [def["path"], err])
 			quit(1)
@@ -309,12 +357,12 @@ func _validate(def: Dictionary) -> Array[String]:
 	return errs
 
 
-func _build_tileset() -> TileSet:
+func _build_tileset(floor_num: int) -> TileSet:
 	var ts := TileSet.new()
 	ts.tile_size = Vector2i(RoomTiles.SIZE, RoomTiles.SIZE)
 	ts.add_physics_layer()
 	var src := TileSetAtlasSource.new()
-	src.texture = load(TEXTURE_PATH) as Texture2D
+	src.texture = load(TEXTURE_PATH % floor_num) as Texture2D
 	src.texture_region_size = Vector2i(RoomTiles.SIZE, RoomTiles.SIZE)
 	ts.add_source(src, RoomTiles.SOURCE)
 	var full := PackedVector2Array([Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8)])
@@ -333,8 +381,9 @@ func _build_tileset() -> TileSet:
 			elif coords == RoomTiles.CRATE:
 				pts = crate
 			td.set_collision_polygon_points(0, 0, pts)
-	ResourceSaver.save(ts, TILESET_PATH)
-	return load(TILESET_PATH) as TileSet
+	var path := TILESET_PATH % floor_num
+	ResourceSaver.save(ts, path)
+	return load(path) as TileSet
 
 
 ## Transform flags so a door drawn for the top wall faces into the room.
@@ -432,8 +481,8 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 						m.name = "%s%d" % [String(ENEMY_KINDS[ch]).capitalize(), spawns.get_child_count() + 1]
 						m.position = _center(c)
 						m.set_meta(&"enemy", ENEMY_KINDS[ch])
-						if ch == "B":
-							m.set_meta(&"boss", true)
+						if BOSS_BASE.has(ch):
+							m.set_meta(&"base", BOSS_BASE[ch])
 						spawns.add_child(m)
 						m.owner = room
 

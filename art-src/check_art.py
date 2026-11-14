@@ -15,6 +15,7 @@ SHEETS = {
     "game/assets/enemies/crawler.png": (64, 64, 16),
     "game/assets/enemies/shooter.png": (64, 64, 16),
     "game/assets/enemies/charger.png": (64, 64, 16),
+    "game/assets/enemies/boss_final.png": (128, 128, 32),
     "game/assets/tiles/floor1.png": (128, 32, 16),
     "game/assets/tiles/floor2.png": (128, 32, 16),
     "game/assets/tiles/floor3.png": (128, 32, 16),

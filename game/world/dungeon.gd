@@ -5,7 +5,8 @@ extends Node2D
 ## the swap panel stop it) and handles death, Q-exit and the boss portals.
 ## Debug: `--room=res://...tscn` loads only that room, `--chest` gives it a
 ## chest, `--cleared` kills its enemies at once, `--floor=N` picks the floor,
-## `--player=x,y` moves the player after the room loads.
+## `--player=x,y` moves the player after the room loads, `--boss-hp=N` drops
+## the boss to N% of its HP.
 
 const SCENE := "res://world/dungeon.tscn"
 const TOWN_SCENE := "res://world/town.tscn"
@@ -117,6 +118,11 @@ func _go_to_room(index: int, with_fade: bool) -> void:
 	if _args.has("cleared"):
 		for e in room.enemies:
 			e.health.damage(1 << 20, e.global_position)
+	if _args.has("boss-hp"):
+		for e in room.enemies:
+			if e.is_in_group(&"boss"):
+				var target := e.health.max_hp * int(_args["boss-hp"]) / 100
+				e.health.damage(e.health.hp - target, e.global_position)
 	if _args.has("player"):
 		var xy := String(_args["player"]).split(",")
 		player.global_position = Vector2(float(xy[0]), float(xy[1]))
