@@ -32,7 +32,7 @@ func _initialize() -> void:
 		names.sort()
 		for name in names:
 			T.failures.clear()
-			suite.call(name)
+			await suite.call(name)
 			if T.failures.is_empty():
 				passed += 1
 			else:
