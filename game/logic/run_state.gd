@@ -57,6 +57,7 @@ func replace_item(slot: int, id: StringName) -> StringName:
 		return &""
 	var old: StringName = equipment.relics[slot]
 	equipment.relics[slot] = id
+	clamp_hp()
 	changed.emit()
 	return old
 
@@ -67,6 +68,7 @@ func remove_item(slot: int) -> StringName:
 		return &""
 	var old: StringName = equipment.relics[slot]
 	equipment.relics.remove_at(slot)
+	clamp_hp()
 	changed.emit()
 	return old
 
@@ -93,6 +95,7 @@ func take_loot(id: StringName, qty: int = 1) -> int:
 				equipment.helm = id
 		left -= 1
 	left = inventory.add(id, left)
+	clamp_hp()
 	changed.emit()
 	return left
 
@@ -100,6 +103,7 @@ func take_loot(id: StringName, qty: int = 1) -> int:
 func equip(id: StringName, relic_slot: int = -1) -> bool:
 	var ok := equipment.equip(id, inventory, relic_slot)
 	if ok:
+		clamp_hp()
 		changed.emit()
 	return ok
 
@@ -107,8 +111,14 @@ func equip(id: StringName, relic_slot: int = -1) -> bool:
 func unequip(kind: StringName, relic_slot: int = 0) -> bool:
 	var ok := equipment.unequip(kind, inventory, relic_slot)
 	if ok:
+		clamp_hp()
 		changed.emit()
 	return ok
+
+
+## Gear that lowers max hp (armor off, a lighter one on) cuts hp down to it.
+func clamp_hp() -> void:
+	hp = mini(hp, stats().max_hp)
 
 
 func unlock_outfit(id: StringName) -> void:

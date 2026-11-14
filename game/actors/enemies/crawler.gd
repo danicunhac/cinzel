@@ -56,3 +56,7 @@ func _think(delta: float) -> void:
 func _enter(s: State) -> void:
 	state = s
 	_t = 0.0
+
+
+func loot_type() -> StringName:
+	return &"crawler"

@@ -11,6 +11,8 @@ var damage: int = 10
 var attack_speed_mult: float = 1.0
 var attack_range: float = 22.0
 var crit_chance: float = 0.0
+## Damage multiplier of a crit (the weapon type's, see WeaponDef).
+var crit_mult: float = WeaponDef.DEFAULT_CRIT_MULT
 var weapon_type: StringName = &"sword"
 var defense: int = 0
 var weight: int = 0
@@ -35,6 +37,7 @@ static func from_equipment(eq: Equipment) -> PlayerStats:
 		s.attack_speed_mult = float(w["attack_speed"])
 		s.attack_range = float(w["range"])
 		s.crit_chance += float(w["crit"])
+		s.crit_mult = WeaponDef.for_type(s.weapon_type).crit_mult
 	if eq.armor != &"":
 		var a: Dictionary = ItemDB.get_def(eq.armor)["stats"]
 		s.defense += int(a["defense"])

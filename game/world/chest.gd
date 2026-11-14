@@ -1,6 +1,7 @@
 class_name Chest
 extends StaticBody2D
-## Opens with E (interact). Gives one random item through Game.offer_item;
+## Opens with E (interact). Gives one item rolled by LootTable.roll_chest
+## through Game.offer_item (into the backpack, or a free gear/relic slot);
 ## an item that does not end up in the inventory (the new one when the player
 ## keeps the old set, or the swapped-out one) drops as a PickupItem.
 
@@ -39,6 +40,8 @@ func open() -> void:
 	var id := roll_item()
 	var result: Dictionary = await Game.offer_item(id)
 	if not bool(result["taken"]):
+		if not bool(result.get("busy", false)) and ItemDB.kind(id) != &"relic":
+			Game.toast(PickupItem.FULL_TEXT)
 		_drop(id, Vector2(0, 21))
 	var out: StringName = result["swapped_out"]
 	if out != &"":
