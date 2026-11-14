@@ -17,6 +17,9 @@ func can_take_item() -> bool:
 
 
 func add_item(id: StringName) -> bool:
+	if not ItemDB.has(id):
+		push_error("RunState.add_item: unknown item '%s'" % id)
+		return false
 	if not can_take_item():
 		return false
 	items.append(id)
@@ -25,6 +28,11 @@ func add_item(id: StringName) -> bool:
 
 
 func replace_item(slot: int, id: StringName) -> StringName:
+	if not ItemDB.has(id):
+		push_error("RunState.replace_item: unknown item '%s'" % id)
+		return &""
+	if slot < 0 or slot >= items.size():
+		return &""
 	var old: StringName = items[slot]
 	items[slot] = id
 	changed.emit()
@@ -32,6 +40,8 @@ func replace_item(slot: int, id: StringName) -> StringName:
 
 
 func remove_item(slot: int) -> StringName:
+	if slot < 0 or slot >= items.size():
+		return &""
 	var old: StringName = items[slot]
 	items.remove_at(slot)
 	changed.emit()

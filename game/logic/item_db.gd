@@ -76,5 +76,9 @@ static func ids() -> Array[StringName]:
 	return out
 
 
+static func has(id: StringName) -> bool:
+	return _ITEMS.has(id)
+
+
 static func get_def(id: StringName) -> Dictionary:
 	return (_ITEMS[id] as Dictionary).duplicate(true)

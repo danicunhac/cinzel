@@ -63,3 +63,22 @@ func test_changed_signal() -> void:
 	r.changed.connect(_on_changed)
 	r.add_gold(5)
 	T.eq(_fired, 1)
+
+
+func test_add_unknown_item_rejected() -> void:
+	var r: RunState = RunState.new()
+	T.eq(r.add_item(&"nope"), false)
+	T.ok(r.items.is_empty(), "items empty")
+	r.add_item(&"fang")
+	T.eq(r.replace_item(0, &"nope"), &"")
+	T.eq(r.items[0], &"fang")
+
+
+func test_replace_bad_slot_noop() -> void:
+	var r: RunState = RunState.new()
+	r.add_item(&"fang")
+	T.eq(r.replace_item(5, &"spark"), &"")
+	T.eq(r.replace_item(-1, &"spark"), &"")
+	T.eq(r.remove_item(3), &"")
+	T.eq(r.items.size(), 1)
+	T.eq(r.items[0], &"fang")
