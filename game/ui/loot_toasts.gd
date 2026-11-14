@@ -1,6 +1,6 @@
 class_name LootToasts
 extends Control
-## "+2 Gosma de Slime" toasts, top left under the life and gold: a plaque
+## "+2 Couro Velho" toasts, top left under the life and gold: a plaque
 ## with the item icon in its rarity frame. They slide in, stack downward (at
 ## most MAX_VISIBLE; a new one pushes the oldest out) and fade after LIFE s.
 ## A pickup of an item that already has a toast adds to its count.

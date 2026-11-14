@@ -172,13 +172,13 @@ func test_leftover_stack_retries_after_space_frees() -> void:
 	_game().new_run()
 	var run: RunState = _game().run
 	for i in run.inventory.capacity:
-		run.inventory.add(&"mat_stone_shard", 10)
-	var p := _pickup(&"mat_slime_gel", 2)
+		run.inventory.add(&"mat_iron_ore", 10)
+	var p := _pickup(&"mat_old_leather", 2)
 	p._near = true
 	p._process(0.6)
 	T.eq(p.qty, 2, "still full")
-	run.inventory.remove(&"mat_stone_shard", 10)
+	run.inventory.remove(&"mat_iron_ore", 10)
 	p._process(0.6)
-	T.eq(run.inventory.count(&"mat_slime_gel"), 2, "taken on retry")
+	T.eq(run.inventory.count(&"mat_old_leather"), 2, "taken on retry")
 	T.ok(p.is_queued_for_deletion(), "gone")
 	await _tree().process_frame

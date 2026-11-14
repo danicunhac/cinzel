@@ -84,7 +84,7 @@ func test_die_restores_starter_kit_and_keeps_outfits() -> void:
 	r.equip(&"axe_war")
 	r.inventory.add(&"armor_plate")
 	r.equip(&"armor_plate")
-	r.inventory.add(&"mat_slime_gel", 15)
+	r.inventory.add(&"mat_old_leather", 15)
 	r.unlock_outfit(&"outfit_manto_mago")
 	T.eq(r.set_outfit(&"outfit_manto_mago"), true)
 	r.die()
@@ -114,8 +114,8 @@ func test_take_loot_equips_into_free_slot_else_backpack() -> void:
 	T.eq(r.take_loot(&"axe_war"), 0)
 	T.eq(r.equipment.weapon, &"sword_iron", "weapon slot taken: backpack")
 	T.eq(r.inventory.count(&"axe_war"), 1)
-	T.eq(r.take_loot(&"mat_stone_shard", 3), 0)
-	T.eq(r.inventory.count(&"mat_stone_shard"), 3)
+	T.eq(r.take_loot(&"mat_iron_ore", 3), 0)
+	T.eq(r.inventory.count(&"mat_iron_ore"), 3)
 	T.eq(r.take_loot(&"outfit_cavaleiro_leve"), 0)
 	T.ok(r.unlocked_outfits.has(&"outfit_cavaleiro_leve"), "outfit unlocks")
 
@@ -124,7 +124,7 @@ func test_take_loot_returns_overflow_when_backpack_full() -> void:
 	var r := RunState.new()
 	r.inventory.add(&"axe_war", 8)
 	T.eq(r.take_loot(&"bow_short"), 1)
-	T.eq(r.take_loot(&"mat_slime_gel", 4), 4)
+	T.eq(r.take_loot(&"mat_old_leather", 4), 4)
 
 
 func test_equip_through_run_updates_capacity_and_stats() -> void:

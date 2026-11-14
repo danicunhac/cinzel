@@ -190,45 +190,45 @@ const ITEMS: Dictionary[StringName, Dictionary] = {
 		"base_price": 40, "mods": {"block_per_room": 1},
 	},
 	# Materials: 3 per floor, plus 1 rare boss material (floor 0).
-	&"mat_slime_gel": {
+	&"mat_iron_ore": {
 		"kind": &"material", "rarity": &"common", "floor": 1,
-		"name": "Gosma de Slime", "desc": "Pegajosa. Material do andar 1.", "base_price": 3, "mods": {},
+		"name": "Minério de Ferro", "desc": "Ferro bruto. Vira lâmina, elmo e malha.", "base_price": 5, "mods": {},
 	},
-	&"mat_slime_core": {
+	&"mat_old_leather": {
 		"kind": &"material", "rarity": &"common", "floor": 1,
-		"name": "Núcleo de Slime", "desc": "O coração firme de um slime. Material do andar 1.", "base_price": 5, "mods": {},
+		"name": "Couro Velho", "desc": "Sobra que os slimes não digerem. Vira gibão e corda.", "base_price": 4, "mods": {},
 	},
-	&"mat_stone_shard": {
+	&"mat_ash_wood": {
 		"kind": &"material", "rarity": &"common", "floor": 1,
-		"name": "Lasca de Pedra", "desc": "Pedra viva da torre. Material do andar 1.", "base_price": 4, "mods": {},
+		"name": "Madeira de Freixo", "desc": "Leve e firme. Vira haste de lança, arco e cabo.", "base_price": 3, "mods": {},
 	},
-	&"mat_sentinel_eye": {
+	&"mat_chitin": {
 		"kind": &"material", "rarity": &"common", "floor": 2,
-		"name": "Olho de Sentinela", "desc": "Ainda brilha. Material do andar 2.", "base_price": 9, "mods": {},
-	},
-	&"mat_beetle_shell": {
-		"kind": &"material", "rarity": &"common", "floor": 2,
-		"name": "Carapaça de Besouro", "desc": "Dura e leve. Material do andar 2.", "base_price": 7, "mods": {},
+		"name": "Quitina de Besouro", "desc": "Placas duras e leves. Viram armadura de escamas.", "base_price": 7, "mods": {},
 	},
 	&"mat_beetle_horn": {
 		"kind": &"material", "rarity": &"common", "floor": 2,
-		"name": "Chifre de Besouro", "desc": "Ponta afiada. Material do andar 2.", "base_price": 8, "mods": {},
+		"name": "Chifre de Besouro", "desc": "Ponta curva e dura. Enfeita e reforça elmos.", "base_price": 8, "mods": {},
+	},
+	&"mat_silver_ore": {
+		"kind": &"material", "rarity": &"common", "floor": 2,
+		"name": "Minério de Prata", "desc": "Prata bruta. Liga o aço das espadas boas.", "base_price": 10, "mods": {},
+	},
+	&"mat_coal": {
+		"kind": &"material", "rarity": &"common", "floor": 3,
+		"name": "Carvão de Brasa", "desc": "Queima quente. Tempera aço e placas.", "base_price": 11, "mods": {},
 	},
 	&"mat_obsidian": {
 		"kind": &"material", "rarity": &"common", "floor": 3,
-		"name": "Obsidiana", "desc": "Vidro negro e cortante. Material do andar 3.", "base_price": 12, "mods": {},
-	},
-	&"mat_ember_dust": {
-		"kind": &"material", "rarity": &"common", "floor": 3,
-		"name": "Pó de Brasa", "desc": "Ainda quente. Material do andar 3.", "base_price": 11, "mods": {},
+		"name": "Obsidiana", "desc": "Vidro negro e cortante. Vira lâmina de adaga.", "base_price": 12, "mods": {},
 	},
 	&"mat_specter_cloth": {
 		"kind": &"material", "rarity": &"common", "floor": 3,
-		"name": "Essência Espectral", "desc": "Um retalho de fantasma. Material do andar 3.", "base_price": 13, "mods": {},
+		"name": "Tecido Espectral", "desc": "Pano de fantasma. Vira armadura das sombras.", "base_price": 13, "mods": {},
 	},
 	&"mat_tower_crystal": {
 		"kind": &"material", "rarity": &"epic", "floor": 0,
-		"name": "Cristal da Torre", "desc": "Raro. Só os chefes deixam cair.", "base_price": 20, "mods": {},
+		"name": "Cristal da Torre", "desc": "Raro, só os chefes deixam. Vira arma e armadura raras.", "base_price": 20, "mods": {},
 	},
 	# Outfits: visual only, unlocked for good.
 	&"outfit_starter": {

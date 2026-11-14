@@ -8,7 +8,8 @@ Inputs (see docs/assets.md), all on magenta:
   art-src/gen/icons-armor-sheet.png      6 armors, 3x2
   art-src/gen/icons-helms-packs-sheet.png  4 helms + 2 backpacks, 3x2
   art-src/gen/icons-backpack-large.png   1 backpack
-  art-src/gen/icons-materials-sheet.png  10 materials, 5x2
+  art-src/gen/icons-materials-sheet.png  10 materials, 5x2 (only 4 still used)
+  art-src/gen/icons-materials2-sheet.png 6 materials, 3x2
   game/assets/characters/climber/{body.png, outfits/<id>/{hair,outfit}.png}
     (outfit icons: head-and-shoulders crop of the front idle frame, 1:1)
 Outputs:
@@ -38,8 +39,11 @@ SHEETS = [
         "helm_circlet", "backpack_small", "backpack_medium"]),
     ("icons-backpack-large.png", ["backpack_large"]),
     ("icons-materials-sheet.png", [
-        "mat_slime_gel", "mat_slime_core", "mat_stone_shard", "mat_sentinel_eye", "mat_beetle_shell",
-        "mat_beetle_horn", "mat_obsidian", "mat_ember_dust", "mat_specter_cloth", "mat_tower_crystal"]),
+        None, None, None, None, None,
+        "mat_beetle_horn", "mat_obsidian", None, "mat_specter_cloth", "mat_tower_crystal"]),
+    ("icons-materials2-sheet.png", [
+        "mat_iron_ore", "mat_old_leather", "mat_ash_wood",
+        "mat_chitin", "mat_silver_ore", "mat_coal"]),
 ]
 OUTFITS = ["starter", "casaco_longo", "cavaleiro_leve", "tunica_ferreiro", "manto_mago"]
 COLORS = 16
@@ -152,6 +156,8 @@ def main():
         bx = boxes(img)
         assert len(bx) == len(ids), "%s: found %d icons, want %d" % (fn, len(bx), len(ids))
         for name, box in zip(ids, bx):
+            if name is None:  # retired material, cell kept for the box count
+                continue
             src = img.crop(box)
             if name in BRIGHTEN:
                 src = brighten(src, BRIGHTEN[name])

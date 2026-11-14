@@ -85,7 +85,7 @@ func test_smith_forges_unlocked_recipe() -> void:
 	T.eq(p.craft_button.disabled, true, "no materials: disabled")
 	T.eq(p.reason, "Faltam materiais")
 	p.close()
-	_game().run.inventory.add(&"mat_stone_shard", 4)
+	_game().run.inventory.add(&"mat_iron_ore", 4)
 	_game().run.add_gold(35)
 	p = town.open_panel(&"smith") as SmithPanel
 	p.select(idx)
@@ -94,7 +94,7 @@ func test_smith_forges_unlocked_recipe() -> void:
 	T.eq(_game().run.inventory.count(&"helm_iron"), 0, "first press only arms")
 	p.craft_button.pressed.emit()
 	T.eq(_game().run.inventory.count(&"helm_iron"), 1, "forged")
-	T.eq(_game().run.inventory.count(&"mat_stone_shard"), 0)
+	T.eq(_game().run.inventory.count(&"mat_iron_ore"), 0)
 	T.eq(_game().run.gold, 0)
 	p.close()
 	town.free()

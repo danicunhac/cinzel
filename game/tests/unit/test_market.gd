@@ -37,7 +37,7 @@ func test_same_seed_same_visit() -> void:
 func test_price_is_base_times_rarity_times_factor() -> void:
 	var m := _plain_market()
 	T.eq(m.sell_price(&"fang"), ItemDB.price(&"fang"))
-	T.eq(m.sell_price(&"mat_slime_gel"), ItemDB.price(&"mat_slime_gel"))
+	T.eq(m.sell_price(&"mat_old_leather"), ItemDB.price(&"mat_old_leather"))
 
 
 func test_factor_drops_15_percent_per_sale_down_to_40() -> void:
@@ -93,9 +93,9 @@ func test_wanted_pays_50_percent_more() -> void:
 func test_sell_one_unit_from_stack() -> void:
 	var m := _plain_market()
 	var run := RunState.new()
-	run.inventory.add(&"mat_slime_gel", 5)
-	T.eq(m.sell(run, 0), ItemDB.price(&"mat_slime_gel"))
-	T.eq(run.inventory.count(&"mat_slime_gel"), 4)
+	run.inventory.add(&"mat_old_leather", 5)
+	T.eq(m.sell(run, 0), ItemDB.price(&"mat_old_leather"))
+	T.eq(run.inventory.count(&"mat_old_leather"), 4)
 
 
 func test_sell_empty_slot_gives_nothing() -> void:

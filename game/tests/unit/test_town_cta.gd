@@ -54,7 +54,7 @@ func test_town_rings_follow_the_player() -> void:
 	T.ok(not town._ctas[&"smith"].active, "nothing to forge: no smith ring")
 	T.ok(town._bubble.visible, "smith still talks")
 	T.eq(town._bubble.label.text, TownScript.LINES["smith_wait"])
-	_game().run.inventory.add(&"mat_stone_shard", 4)
+	_game().run.inventory.add(&"mat_iron_ore", 4)
 	_game().run.add_gold(35)
 	await _tree().process_frame
 	T.ok(town._ctas[&"smith"].active, "craftable recipe: smith ring")
@@ -78,7 +78,7 @@ func test_shop_line_counts_the_backpack() -> void:
 	_game().run.add_item(&"spark")
 	await _tree().process_frame
 	T.eq(town._bubble.label.text, TownScript.LINES["shop"], "equipped relics are not for sale")
-	_game().run.inventory.add(&"mat_slime_gel")
+	_game().run.inventory.add(&"mat_old_leather")
 	await _tree().process_frame
 	T.eq(town._bubble.label.text, TownScript.LINES["shop_sell"], "backpack item: sell line")
 	town.free()
