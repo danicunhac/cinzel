@@ -1,4 +1,6 @@
-"""Check the shipped sheets: size, transparency, colour count.
+"""Check the shipped sheets: size, transparency, colour count, unused climber
+cells empty, no orphan pixels in the climber layers, nothing below the ground
+row the game expects (climber and NPCs 30, enemies 22, boss 44).
 
 python3 -I art-src/check_art.py <repo_root>
 """
@@ -8,20 +10,20 @@ import sys
 from PIL import Image
 
 SHEETS = {
-    "game/assets/characters/climber/body.png": (96, 312, 24),
-    "game/assets/characters/climber/hair.png": (96, 312, 24),
-    "game/assets/characters/climber/outfit.png": (96, 312, 24),
-    "game/assets/characters/climber/weapon.png": (96, 312, 24),
-    "game/assets/enemies/crawler.png": (64, 64, 16),
-    "game/assets/enemies/shooter.png": (64, 64, 16),
-    "game/assets/enemies/charger.png": (64, 64, 16),
-    "game/assets/enemies/boss_final.png": (128, 128, 32),
+    "game/assets/characters/climber/body.png": (256, 416, 32),
+    "game/assets/characters/climber/hair.png": (256, 416, 32),
+    "game/assets/characters/climber/outfit.png": (256, 416, 32),
+    "game/assets/characters/climber/weapon.png": (256, 416, 32),
+    "game/assets/enemies/crawler.png": (144, 96, 24),
+    "game/assets/enemies/shooter.png": (144, 96, 24),
+    "game/assets/enemies/charger.png": (144, 96, 24),
+    "game/assets/enemies/boss_final.png": (288, 192, 48),
     "game/assets/tiles/floor1.png": (128, 32, 16),
     "game/assets/tiles/floor2.png": (128, 32, 16),
     "game/assets/tiles/floor3.png": (128, 32, 16),
     "game/assets/tiles/town.png": (128, 32, 16),
-    "game/assets/characters/npc_shopkeeper.png": (48, 24, 24),
-    "game/assets/characters/npc_blacksmith.png": (48, 24, 24),
+    "game/assets/characters/npc_shopkeeper.png": (64, 32, 32),
+    "game/assets/characters/npc_blacksmith.png": (64, 32, 32),
     "game/assets/items/heavy_blade.png": (16, 16, 16),
     "game/assets/items/light_boots.png": (16, 16, 16),
     "game/assets/items/stone_heart.png": (16, 16, 16),
@@ -34,10 +36,38 @@ SHEETS = {
     "game/assets/ui/slot.png": (20, 20, 4),
     "game/assets/ui/heart.png": (9, 8, 1),
     "game/assets/ui/coin.png": (8, 8, 8),
-    "game/assets/ui/title_bg.png": (320, 180, 20),
+    "game/assets/ui/title_bg.png": (480, 270, 30),
 }
 # Cells that must stay empty in the climber sheets (frame counts per row).
-CLIMBER_COUNTS = [2, 2, 2, 4, 4, 4, 3, 3, 3, 4, 4, 4, 4]
+CLIMBER_COUNTS = [4, 4, 4, 8, 8, 8, 6, 6, 6, 6, 6, 6, 6]
+CLIMBER_COLS = 8
+# Lowest opaque row allowed in each cell (the feet / ground line the game
+# uses). First matching key wins.
+GROUND = [("climber", 30), ("npc_", 30), ("enemies/boss_final", 44), ("enemies/", 22)]
+
+
+def orphans(img):
+    """Opaque pixels with no opaque 8-neighbour in the same sheet."""
+    a = img.getchannel("A").load()
+    w, h = img.size
+    n = 0
+    for y in range(h):
+        for x in range(w):
+            if a[x, y] and not any(
+                    0 <= x + dx < w and 0 <= y + dy < h and a[x + dx, y + dy]
+                    for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy):
+                n += 1
+    return n
+
+
+def lowest_row(img, cell):
+    """Lowest opaque row inside any cell, in cell coordinates."""
+    a = img.getchannel("A").load()
+    low = -1
+    for y in range(img.height):
+        if any(a[x, y] for x in range(img.width)):
+            low = max(low, y % cell)
+    return low
 
 
 def main():
@@ -61,10 +91,16 @@ def main():
                 problems.append("corner not transparent")
         if "climber" in rel:
             for r, n in enumerate(CLIMBER_COUNTS):
-                for c in range(n, 4):
-                    box = (c * 24, r * 24, c * 24 + 24, r * 24 + 24)
+                for c in range(n, CLIMBER_COLS):
+                    box = (c * cell, r * cell, c * cell + cell, r * cell + cell)
                     if img.crop(box).getbbox():
                         problems.append("unused cell %d,%d not empty" % (c, r))
+            n = orphans(img)
+            if n:
+                problems.append("%d orphan pixels" % n)
+        ground = next((g for k, g in GROUND if k in rel), None)
+        if ground is not None and lowest_row(img, cell) > ground:
+            problems.append("pixels below ground row %d" % ground)
         ok = ok and not problems
         print("%-45s %dx%d colours=%2d transparent=%5.1f%% %s" % (
             rel, img.width, img.height, colors, 100 * transparent / len(data),
