@@ -12,17 +12,25 @@ const UNIT_DIR := "res://tests/unit"
 func _initialize() -> void:
 	var passed := 0
 	var failed := 0
-	for file in _find_tests():
+	var files := _find_tests()
+	if files.is_empty():
+		printerr("ERROR: no test suites found in %s" % UNIT_DIR)
+		quit(1)
+		return
+	for file in files:
 		var script := load(file) as GDScript
-		if script == null:
+		if script == null or not script.can_instantiate():
 			print("FAIL load %s" % file)
 			failed += 1
 			continue
 		var suite: RefCounted = script.new()
-		for m in suite.get_method_list():
-			var name: String = m["name"]
-			if not name.begins_with("test_"):
-				continue
+		var names: Array[String] = []
+		for m in script.get_script_method_list():
+			var method_name: String = m["name"]
+			if method_name.begins_with("test_"):
+				names.append(method_name)
+		names.sort()
+		for name in names:
 			T.failures.clear()
 			suite.call(name)
 			if T.failures.is_empty():
