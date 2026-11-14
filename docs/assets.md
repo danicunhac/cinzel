@@ -15,6 +15,10 @@ Os scripts em `art-src/` transformam esses originais nas folhas do jogo. Rode co
 - `build_town.py`: cidade (chão pintado de 480x270 e os sprites grandes com sombra). `town_ground_guide.py` desenha o mapa de cores que guiou a geração do chão.
 - `build_ui.py`: ícones dos itens, NPCs da cidade, molduras e ícones da UI, fundo do título. `preview_ui.py` monta uma folha ampliada para revisar.
 - `build_hud.py`: kit do HUD e dos painéis (molduras 9-slice, botões com estados, coração e moeda animados, ampulheta, anel, barras).
+- `build_weapons.py`: camada de arma de cada tipo e as poses de ataque próprias (Task E3).
+- `build_outfits.py`: as roupas visuais (camadas `hair` e `outfit`), repintando a roupa inicial pixel a pixel (Task E3).
+- `build_items.py`: ícones 16x16 de armas, armaduras, capuzes, mochilas, materiais e roupas, e as molduras de raridade (Task E3). `preview_items.py` monta a folha de conferência.
+- `preview_gear.py`: prévias 4x e GIFs do escalador com cada arma e cada roupa, empilhando as camadas como o jogo.
 - `check_art.py`: confere tamanho, transparência, no máximo 32 cores, quadros sem uso vazios, pixels soltos nas camadas do escalador e a linha do chão (escalador e NPCs 30, inimigos 22, chefe 44).
 - `build_rooms_art.py` (precisa também de `numpy`): salas pintadas. `blockout` desenha cada layout de `game/tools/build_rooms.gd` em cores chapadas (480x270; o layout sai em `art-src/gen/rooms/layouts.json` quando o `build_rooms.gd` roda), `score` e `overlay` conferem o alinhamento de uma pintura com a colisão, `final` reduz a pintura escolhida para 480x270 (média por área, no máximo 48 cores, sem pontilhado), desloca até 8 px quando o chão inteiro deslizou e grava `art-src/gen/rooms/align/` (sobreposição e `scores.json`), `doors` monta as portas.
 
@@ -68,6 +72,18 @@ Nenhum desses scripts sobrescreve um arquivo que já existe, porque ele pode ter
 | `game/assets/town/tree_a.png`, `tree_b.png`, `tree_c.png`, `lamp.png`, `well.png`, `planter.png`, `flowerbed.png`, `fence.png`, `fence_post.png`, `barrel.png`, `crates.png`, `sack.png` | Idem | `art-src/gen/town-props.png`, um recorte por objeto (caixas em `build_town.py`); o halo rosa do lampião vira luz âmbar | 2026-11-14 |
 | `game/assets/town/crystal_glow.png` | Feito por script | Brilho azul radial em 4 faixas, desenhado em `build_town.py` | 2026-11-14 |
 | `game/assets/fonts/Silkscreen-Regular.ttf` | Terceiros: fonte Silkscreen, licença SIL OFL 1.1 | Fonte Silkscreen (Jason Kottke), SIL OFL 1.1, de google/fonts; licença em `Silkscreen-OFL.txt` | 2026-11-14 |
+
+| `game/assets/characters/climber/weapons/sword.png` | Gerado por IA + ajuste por script | Cópia de `climber/weapon.png` por `build_weapons.py` | 2026-11-14 |
+| `game/assets/characters/climber/weapons/longsword.png`, `bow.png`, `axe.png`, `spear.png`, `dagger.png` | Gerado por IA (gpt-image-2.5 flare edit) + desenho por script | Linhas de parado, andar, rolamento e morte: a arma é desenhada por `build_weapons.py` na mão, no lugar e na direção da espada de cada quadro. Linhas de ataque: tiras `art-src/gen/r2/climber32-attack-<tipo>-*` (abaixo) | 2026-11-14 |
+| `game/assets/characters/climber/attacks/<tipo>_{body,hair,outfit}.png` (`longsword`, `bow`, `axe`, `spear`, `dagger`) | Gerado por IA (gpt-image-2.5 flare edit) + ajuste por script | Poses de ataque próprias: espada longa (varrida larga com as duas mãos), arco (puxar a corda e soltar), machado (golpe de cima até o chão), lança (estocada) e adaga (duas estocadas rápidas), 8x3 de 32x32, cores levadas para a paleta das camadas do escalador | 2026-11-14 |
+| `game/assets/characters/climber/outfits/starter/*` | Gerado por IA + ajuste por script | Cópias de `climber/hair.png`, `climber/outfit.png` e de `climber/attacks/<tipo>_{hair,outfit}.png` | 2026-11-14 |
+| `game/assets/characters/climber/outfits/casaco_longo/*` | Gerado por IA + ajuste por script | Roupa inicial repintada por `build_outfits.py`: capuz e casaco longo cinza-escuro quase preto, gola alta cinza, abas do casaco sobre as coxas, fivelas prateadas | 2026-11-14 |
+| `game/assets/characters/climber/outfits/cavaleiro_leve/*` | Gerado por IA + ajuste por script | Idem: coifa de malha de aço, peitoral branco-prateado, gola e calça carmim fosco, aba curta sobre as coxas | 2026-11-14 |
+| `game/assets/characters/climber/outfits/tunica_ferreiro/*` | Gerado por IA + ajuste por script | Idem: bandana vermelho-ferrugem, túnica de linho, avental de couro na frente (linhas de frente), cinto e calça marrom-escuros | 2026-11-14 |
+| `game/assets/characters/climber/outfits/manto_mago/*` | Gerado por IA + ajuste por script | Idem: capuz e manto violeta até as botas (o vão entre as pernas vira pano), gola e fivelas verde-água claro | 2026-11-14 |
+| `game/assets/items/<id>.png` (armas, armaduras, capuzes, mochilas, materiais; 35 ícones 16x16) | Gerado por IA (gpt-image-2.5 flare, preset `cinzel-pixel`) + ajuste por script | Folhas `art-src/gen/icons-*.png` por `build_items.py` (lista de ids abaixo) | 2026-11-14 |
+| `game/assets/items/outfit_<id>.png` (5 ícones 16x16) | Feito por script sobre a arte gerada | Busto (cabeça e ombros) do quadro parado de frente de cada roupa, 1:1, por `build_items.py` | 2026-11-14 |
+| `game/assets/items/frames/common.png`, `rare.png`, `epic.png` (18x18) | Autoral (script) | Anel de 2 px desenhado por `build_items.py`: branco, azul e roxo | 2026-11-14 |
 
 Quando o Daniel redesenhar um arquivo à mão, troque a autoria dessa linha para "Autoral (Daniel)".
 
@@ -142,6 +158,35 @@ Escalador: `openai/gpt-image-2.5/flare/edit` com a referência aprovada `cinzel-
 Pedidos do inimigo comum com o preset `cinzel-pixel` e papel `characters` (`cinzel-enemy24-crawler-sheet-*`, `cinzel-enemy24-charger-sheet-*`) vieram como cópias do escalador, porque o papel puxa a referência do herói. Por isso a gosma e o besouro saíram de `edit_image` sobre a arte antiga deles.
 
 
+### Equipamento (Task E3)
+
+Tiras de ataque por arma: `openai/gpt-image-2.5/flare/edit`, 2K, 16:9, papel `characters`, 2 variações por pedido (a outra foi descartada). Referências: o turnaround aprovado `cinzel-climber-turnaround-1-a9700b2c85f6` e a folha atual do escalador ampliada 4x sobre magenta (`hero-sheet-magenta-90b185ad225b`, upload). Prompt base: "Using this exact character (...) from the first image, drawn in the same pixel-art style and proportions as the sprite sheet in the second image, draw a pixel-art animation strip on a flat solid magenta #FF00FF background: ONE horizontal row of exactly 6 frames (...)", mais a pose quadro a quadro. Arma e flecha pedidas em cinza-aço para o script separar a camada de arma pela cor.
+
+Ícones: `style/gpt-image-2.5/flare` (via `generate_styled_image`), preset `cinzel-pixel`, papel `gameplayProps`, 2K, sobre magenta. Originais em `art-src/gen/icons-*.png`.
+
+| Arquivo no repo | Asset no gerador de IA | Modelo | Prompt (resumo) | Data |
+|---|---|---|---|---|
+| `art-src/gen/r2/climber32-attack-longsword-side-1.png` | `cinzel-climber32-attack-longsword-side-1-c2073a63e0d6` | flare edit + turnaround + folha | De lado: espada longa de duas mãos atrás do ombro, passo, varrida com arco creme grande, arco no máximo, acompanhamento, volta | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-longsword-down-1.png` | `cinzel-climber32-attack-longsword-down-1-aa8558da5065` | idem | De frente: espada no alto, desce pelo lado, varrida larga diante das pernas, crescente largo, acompanhamento, volta | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-longsword-up-2.png` | `cinzel-climber32-attack-longsword-up-2-374ad8e020b3` | idem | De costas: espada baixa, sobe pela direita, varrida por cima com arco acima do capuz, acompanhamento, volta | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-bow-side-1.png` | `cinzel-climber32-attack-bow-side-1-88ee522ed65e` | idem | De lado: arco de aço na mão esquerda; pega a flecha, encaixa, puxa até o rosto, segura, solta, baixa o arco. A flecha que sai voando no quadro 5 é apagada no script (o jogo cria a sua) | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-bow-down-2.png` | `cinzel-climber32-attack-bow-down-2-68295bd8c5d6` | idem | De frente: mesma sequência, flecha apontada para a câmera, clarão creme ao soltar | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-bow-up-2.png` | `cinzel-climber32-attack-bow-up-2-29cf1f86ee35` | idem | De costas: arco erguido acima do capuz, mesma sequência | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-axe-side-1.png` | `cinzel-climber32-attack-axe-side-1-92c7c1525483` | flare edit + turnaround + folha | De lado: machado de aço; ergue, machado alto atrás da cabeça, desce com arco creme vertical, bate no chão com faíscas, puxa de volta, volta à guarda | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-axe-down-1.png` | `cinzel-climber32-attack-axe-down-1-ee85ad4675ff` | idem | De frente: machado acima do capuz com as duas mãos, desce reto, bate no chão diante dos pés | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-axe-up-1.png` | `cinzel-climber32-attack-axe-up-1-f8ade21c8018` | idem | De costas: mesmo golpe, arco creme acima do capuz | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-spear-side-2.png` | `cinzel-climber32-attack-spear-side-2-dde6226f21c5` | idem | De lado: lança de aço na horizontal; recua, avança em estocada com rastro creme, extensão total, recolhe, guarda | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-spear-down-1.png` | `cinzel-climber32-attack-spear-down-1-104dc7c75fa6` | idem | De frente: lança em pé ao lado, ergue, estoca para baixo diante dos pés, recolhe | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-spear-up-2.png` | `cinzel-climber32-attack-spear-up-2-6fda54dab7f6` | idem | De costas: estoca para cima acima do capuz | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-dagger-side-1.png` | `cinzel-climber32-attack-dagger-side-1-84c5b86e8c9e` | idem | De lado, agachado: adaga curta; estocada no peito, recolhe, estocada na cintura, recolhe, guarda | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-dagger-down-1.png` | `cinzel-climber32-attack-dagger-down-1-57ba7ba52388` | idem | De frente: duas estocadas rápidas para baixo | 2026-11-14 |
+| `art-src/gen/r2/climber32-attack-dagger-up-1.png` | `cinzel-climber32-attack-dagger-up-1-ca35aa47b5fb` | idem | De costas: duas estocadas rápidas ao lado dos ombros | 2026-11-14 |
+| `art-src/gen/icons-weapons-sheet.png` | `cinzel-icons-weapons-sheet-741fdddc11c5` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayProps` | Grade 4x3 de armas na diagonal: espada de ferro, espada de cavaleiro, espada longa de aço, espada longa em brasa, machado de lenhador, machado de guerra duplo, lança de caçador, lança de dragoon, adaga, adaga curva de presa, arco curto, arco élfico | 2026-11-14 |
+| `art-src/gen/icons-armor-sheet.png` | `cinzel-icons-armor-sheet-132525266767` | idem | Grade 3x2 de armaduras: túnica de pano, gibão de couro, cota de malha, escamas, placas, couro negro com roxo | 2026-11-14 |
+| `art-src/gen/icons-helms-packs-sheet.png` | `cinzel-icons-helms-packs-sheet-edd4b815f870` | idem | Grade 3x2: capuz de pano, elmo de ferro com nasal, elmo com chifres, diadema com gema azul, mochila pequena, mochila média com cobertor | 2026-11-14 |
+| `art-src/gen/icons-backpack-large.png` | `cinzel-icons-gear-sheet-a1199a2b8917` | idem | Pedido de 13 equipamentos numa grade 4x4; veio só a mochila grande (armação, saco de dormir, lanterna, panela), usada para `backpack_large` | 2026-11-14 |
+| `art-src/gen/icons-materials-sheet.png` | `cinzel-icons-materials-sheet-f1dc43bd78b9` | idem | Grade 5x2 de materiais: gel de slime, núcleo de slime, lasca de pedra, olho de sentinela, carapaça, chifre de besouro, obsidiana, pó de brasa, pano espectral, cristal da torre | 2026-11-14 |
+
 ## Layout dos tilesets
 
 Os tilesets da torre têm 8 colunas x 2 linhas de tiles 16x16. As coordenadas são (coluna, linha) no atlas.
@@ -176,3 +221,46 @@ Em todo sprite, a linha de base (onde a parede ou o tronco toca o chão) fica 4 
 | `well.png`, `planter.png`, `flowerbed.png` | 36x46, 32x32, 32x31 | poço, floreira, canteiro |
 | `fence.png`, `fence_post.png` | 42x24, 13x28 | cerca e poste (sem sombra) |
 | `barrel.png`, `crates.png`, `sack.png` | 16x26, 20x30, 16x24 | barril, caixotes, saco |
+
+## Equipamento: armas, roupas e ícones (Task E3)
+
+### Camadas por arma
+
+`game/assets/characters/climber/weapons/<tipo>.png`, com `<tipo>` em `sword`, `longsword`, `axe`, `spear`, `dagger`, `bow`. Mesma grade 8x13 de 32x32 do escalador, só os pixels da arma (e o arco claro do golpe nas linhas de ataque). Substitui `climber/weapon.png` na camada `weapon`; `sword.png` é uma cópia dela.
+
+Tipos com pose de ataque própria trazem também `game/assets/characters/climber/attacks/<tipo>_body.png`, `<tipo>_hair.png` e `<tipo>_outfit.png`: 256x96, 8 colunas x 3 linhas, na ordem `attack_down`, `attack_up`, `attack_side` (6 quadros cada). Com essa arma equipada, o código troca as linhas 6, 7 e 8 das camadas `body`, `hair` e `outfit` por essas 3 linhas; a camada `weapon` já vem certa em `weapons/<tipo>.png`. Fora do ataque nada muda.
+
+| Tipo | `weapons/<tipo>.png` | Pose de ataque própria (`attacks/<tipo>_*.png`) |
+|---|---|---|
+| `sword` | sim | não (usa as linhas do escalador) |
+| `longsword` | sim | sim: varrida larga com as duas mãos |
+| `bow` | sim | sim: puxa a corda e solta |
+| `axe` | sim | sim: golpe de cima até o chão |
+| `spear` | sim | sim: estocada |
+| `dagger` | sim | sim: duas estocadas rápidas |
+
+### Roupas visuais
+
+`game/assets/characters/climber/outfits/<id>/hair.png` e `outfit.png` (8x13 cheio), com `<id>` em `starter`, `casaco_longo`, `cavaleiro_leve`, `tunica_ferreiro` e `manto_mago`. Para cada tipo com pose de ataque própria há também `outfits/<id>/attacks/<tipo>_hair.png` e `<tipo>_outfit.png` (8x3, mesmas linhas). Com a roupa `<id>` e a arma `<tipo>`, as camadas ficam:
+
+- `body`: `climber/body.png`, com as linhas de ataque de `attacks/<tipo>_body.png` se existir;
+- `hair` e `outfit`: `outfits/<id>/<camada>.png`, com as linhas de ataque de `outfits/<id>/attacks/<tipo>_<camada>.png` se existir;
+- `weapon`: `weapons/<tipo>.png`.
+
+A roupa não muda o corpo nem a arma, então qualquer roupa combina com qualquer arma em todo quadro.
+
+### Ícones e molduras de raridade
+
+Ícones de 16x16 em `game/assets/items/<id>.png`, fundo transparente. As molduras de raridade são arquivos separados, não embutidos no ícone: `game/assets/items/frames/common.png` (branca), `rare.png` (azul) e `epic.png` (roxa), 18x18, centro transparente. Desenhe a moldura e o ícone por cima com 1 px de recuo (ícone em (1, 1) da moldura).
+
+Ids (o catálogo da Task E1 usa os mesmos):
+
+- Armas: `sword_iron`, `sword_knight`, `longsword_steel`, `longsword_ember`, `axe_woodcutter`, `axe_war`, `spear_hunter`, `spear_dragoon`, `dagger_rogue`, `dagger_twin_fang`, `bow_short`, `bow_elven`
+- Armaduras: `armor_cloth`, `armor_leather`, `armor_chain`, `armor_scale`, `armor_plate`, `armor_shadow`
+- Capuzes e elmos: `helm_hood`, `helm_iron`, `helm_horned`, `helm_circlet`
+- Mochilas: `backpack_small`, `backpack_medium`, `backpack_large`
+- Materiais: `mat_slime_gel`, `mat_slime_core`, `mat_stone_shard`, `mat_sentinel_eye`, `mat_beetle_shell`, `mat_beetle_horn`, `mat_obsidian`, `mat_ember_dust`, `mat_specter_cloth`, `mat_tower_crystal`
+- Roupas: `outfit_starter`, `outfit_casaco_longo`, `outfit_cavaleiro_leve`, `outfit_tunica_ferreiro`, `outfit_manto_mago`
+- Relíquias (já existiam): `heavy_blade`, `light_boots`, `stone_heart`, `fang`, `wind_cape`, `cracked_hourglass`, `spark`, `glass_shield`
+
+Para refazer tudo: `build_weapons.py`, depois `build_outfits.py`, depois `build_items.py` (os ícones das roupas saem das folhas das roupas), todos com `--force` só quando for para sobrescrever.
