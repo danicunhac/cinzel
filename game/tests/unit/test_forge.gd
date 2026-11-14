@@ -43,8 +43,7 @@ func test_craft_consumes_materials_and_gold() -> void:
 	T.eq(Forge.can_craft(run, &"armor_leather"), true)
 	T.eq(Forge.craft(run, &"armor_leather"), true)
 	T.eq(run.gold, 7)
-	T.eq(run.inventory.count(&"mat_slime_gel"), 0)
-	T.eq(run.inventory.count(&"mat_slime_core"), 0)
+	T.eq(run.inventory.count(&"mat_old_leather"), 0)
 	T.eq(run.inventory.count(&"armor_leather"), 1)
 
 
@@ -63,9 +62,9 @@ func test_craft_missing_material_or_gold_refused() -> void:
 	run.gold -= 1
 	T.eq(Forge.craft(run, &"spear_hunter"), false, "1 gold short")
 	run.gold += 1
-	run.inventory.remove(&"mat_stone_shard", 1)
+	run.inventory.remove(&"mat_iron_ore", 1)
 	T.eq(Forge.craft(run, &"spear_hunter"), false, "1 material short")
-	T.eq(run.inventory.count(&"mat_slime_gel"), 3, "nothing consumed")
+	T.eq(run.inventory.count(&"mat_ash_wood"), 3, "nothing consumed")
 
 
 func test_craft_refused_when_result_does_not_fit() -> void:
@@ -73,25 +72,25 @@ func test_craft_refused_when_result_does_not_fit() -> void:
 	_fill(run, &"helm_iron")
 	run.inventory.add(&"fang", 7)
 	T.eq(run.inventory.is_full(), true)
-	# Using 4 shards frees their slot, so the helm fits.
+	# Using 4 ore frees their slot, so the helm fits.
 	T.eq(Forge.craft(run, &"helm_iron"), true)
 	var run2 := RunState.new()
 	_fill(run2, &"spear_hunter")
-	run2.inventory.add(&"mat_slime_gel", 7)
+	run2.inventory.add(&"mat_ash_wood", 7)
 	run2.inventory.add(&"fang", 6)
-	# Slot 1: 10 gel (3 used leaves 7), slot 2: shards (all used), 6 relics: one free slot after.
+	# Slot 1: 10 wood (3 used leaves 7), slot 2: ore (all used), 6 relics: one free slot after.
 	T.eq(Forge.craft(run2, &"spear_hunter"), true)
 	var run3 := RunState.new()
 	_fill(run3, &"spear_hunter")
-	run3.inventory.add(&"mat_slime_gel", 7)
-	run3.inventory.add(&"mat_stone_shard", 8)
+	run3.inventory.add(&"mat_ash_wood", 7)
+	run3.inventory.add(&"mat_iron_ore", 9)
 	run3.inventory.add(&"fang", 5)
-	# 10 gel, 10 shards, 5 relics... all slots stay used after paying: refused.
+	# 10 wood, 10 ore, 5 relics... all slots stay used after paying: refused.
 	T.eq(run3.inventory.is_full(), false)
 	run3.inventory.add(&"fang")
 	T.eq(Forge.craft(run3, &"spear_hunter"), false)
-	T.eq(run3.inventory.count(&"mat_slime_gel"), 10, "rolled back")
-	T.eq(run3.inventory.count(&"mat_stone_shard"), 10, "rolled back")
+	T.eq(run3.inventory.count(&"mat_ash_wood"), 10, "rolled back")
+	T.eq(run3.inventory.count(&"mat_iron_ore"), 10, "rolled back")
 	T.eq(Forge.any_craftable(run3), false, "no recipe when the result cannot fit")
 	T.eq(Forge.any_craftable(run2), false, "spent: nothing left to forge")
 

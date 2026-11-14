@@ -1,7 +1,10 @@
 class_name LootTable
 extends RefCounted
 ## What drops where. Deterministic for a given RandomNumberGenerator.
-##   Enemies: the material of their type on their floor, half of the time.
+##   Enemies: one of the materials of their type on their floor, half of
+##   the time. Slimes keep the straps of gear they could not digest,
+##   stone sentinels carry ore, beetles shed wood splinters, shell and
+##   horn (and embers on floor 3).
 ##   Chests: one piece of gear or a relic (rarely a chest outfit).
 ##   Bosses: gear of rare or better, 3 floor materials, maybe the tower
 ##   crystal, and the first boss gives an outfit.
@@ -9,10 +12,23 @@ extends RefCounted
 ## Drops are LootDrop (id, qty).
 
 const ENEMY_DROP_CHANCE := 0.5
+## floor -> enemy type -> materials it can drop (picked evenly).
 const ENEMY_MATERIALS: Dictionary[int, Dictionary] = {
-	1: {&"crawler": &"mat_slime_gel", &"charger": &"mat_slime_core", &"shooter": &"mat_stone_shard"},
-	2: {&"crawler": &"mat_beetle_shell", &"charger": &"mat_beetle_horn", &"shooter": &"mat_sentinel_eye"},
-	3: {&"crawler": &"mat_ember_dust", &"charger": &"mat_obsidian", &"shooter": &"mat_specter_cloth"},
+	1: {
+		&"crawler": [&"mat_old_leather"],
+		&"shooter": [&"mat_iron_ore"],
+		&"charger": [&"mat_ash_wood"],
+	},
+	2: {
+		&"crawler": [&"mat_old_leather", &"mat_chitin"],
+		&"shooter": [&"mat_iron_ore", &"mat_silver_ore"],
+		&"charger": [&"mat_chitin", &"mat_beetle_horn"],
+	},
+	3: {
+		&"crawler": [&"mat_specter_cloth", &"mat_old_leather"],
+		&"shooter": [&"mat_obsidian", &"mat_iron_ore"],
+		&"charger": [&"mat_coal"],
+	},
 }
 const CHEST_KIND_WEIGHTS: Dictionary[StringName, float] = {
 	&"weapon": 30.0, &"armor": 20.0, &"helm": 14.0, &"relic": 30.0, &"backpack": 4.0, &"outfit": 2.0,
@@ -50,7 +66,11 @@ static func roll_enemy(enemy_type: StringName, floor_num: int, rng: RandomNumber
 	if not table.has(enemy_type):
 		return out
 	if rng.randf() < ENEMY_DROP_CHANCE:
-		out.append(LootDrop.new(table[enemy_type], 1))
+		var mats: Array = table[enemy_type]
+		# One roll only when there is a choice, so single-material tables
+		# keep the same sequence for a seed.
+		var i := rng.randi_range(0, mats.size() - 1) if mats.size() > 1 else 0
+		out.append(LootDrop.new(mats[i], 1))
 	return out
 
 

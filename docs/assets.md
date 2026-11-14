@@ -91,6 +91,7 @@ Nenhum desses scripts sobrescreve um arquivo que já existe, porque ele pode ter
 | `game/assets/characters/climber/outfits/tunica_ferreiro/*` | Gerado por IA + ajuste por script | Idem: bandana vermelho-ferrugem, túnica de linho, avental de couro na frente (linhas de frente), cinto e calça marrom-escuros | 2026-11-14 |
 | `game/assets/characters/climber/outfits/manto_mago/*` | Gerado por IA + ajuste por script | Idem: capuz e manto violeta até as botas (o vão entre as pernas vira pano), gola e fivelas verde-água claro | 2026-11-14 |
 | `game/assets/items/<id>.png` (armas, armaduras, capuzes, mochilas, materiais; 35 ícones 16x16) | Gerado por IA (gpt-image-2.5 flare, preset `cinzel-pixel`) + ajuste por script | Folhas `art-src/gen/icons-*.png` por `build_items.py` (lista de ids abaixo) | 2026-11-14 |
+| `game/assets/items/mat_iron_ore.png`, `mat_old_leather.png`, `mat_ash_wood.png`, `mat_chitin.png`, `mat_silver_ore.png`, `mat_coal.png` | Gerado por IA (gpt-image-2.5 flare, preset `cinzel-pixel`, papel `gameplayProps`) + ajuste por script | `art-src/gen/icons-materials2-sheet.png` por `build_items.py`; substituem gosma, núcleo, lasca, olho, carapaça e pó de brasa | 2026-11-14 |
 | `game/assets/items/outfit_<id>.png` (5 ícones 16x16) | Feito por script sobre a arte gerada | Busto (cabeça e ombros) do quadro parado de frente de cada roupa, 1:1, por `build_items.py` | 2026-11-14 |
 | `game/assets/items/frames/common.png`, `rare.png`, `epic.png` (18x18) | Autoral (script) | Anel de 2 px desenhado por `build_items.py`: branco, azul e roxo | 2026-11-14 |
 
@@ -198,7 +199,8 @@ Tiras de ataque por arma: `openai/gpt-image-2.5/flare/edit`, 2K, 16:9, papel `ch
 | `art-src/gen/icons-armor-sheet.png` | `cinzel-icons-armor-sheet-132525266767` | idem | Grade 3x2 de armaduras: túnica de pano, gibão de couro, cota de malha, escamas, placas, couro negro com roxo | 2026-11-14 |
 | `art-src/gen/icons-helms-packs-sheet.png` | `cinzel-icons-helms-packs-sheet-edd4b815f870` | idem | Grade 3x2: capuz de pano, elmo de ferro com nasal, elmo com chifres, diadema com gema azul, mochila pequena, mochila média com cobertor | 2026-11-14 |
 | `art-src/gen/icons-backpack-large.png` | `cinzel-icons-gear-sheet-a1199a2b8917` | idem | Pedido de 13 equipamentos numa grade 4x4; veio só a mochila grande (armação, saco de dormir, lanterna, panela), usada para `backpack_large` | 2026-11-14 |
-| `art-src/gen/icons-materials-sheet.png` | `cinzel-icons-materials-sheet-f1dc43bd78b9` | idem | Grade 5x2 de materiais: gel de slime, núcleo de slime, lasca de pedra, olho de sentinela, carapaça, chifre de besouro, obsidiana, pó de brasa, pano espectral, cristal da torre | 2026-11-14 |
+| `art-src/gen/icons-materials-sheet.png` | `cinzel-icons-materials-sheet-f1dc43bd78b9` | idem | Grade 5x2 de materiais: gel de slime, núcleo de slime, lasca de pedra, olho de sentinela, carapaça, chifre de besouro, obsidiana, pó de brasa, pano espectral, cristal da torre. Só chifre, obsidiana, pano espectral e cristal seguem em uso | 2026-11-14 |
+| `art-src/gen/icons-materials2-sheet.png` | `cinzel-icons-materials2-sheet-7756b25dd8f3` | idem | Grade 3x2 de materiais: minério de ferro, couro velho enrolado com fivela, madeira de freixo amarrada, quitina de besouro, minério de prata, carvão em brasa | 2026-11-14 |
 
 ## Layout dos tilesets
 
@@ -272,7 +274,7 @@ Ids (o catálogo da Task E1 usa os mesmos):
 - Armaduras: `armor_cloth`, `armor_leather`, `armor_chain`, `armor_scale`, `armor_plate`, `armor_shadow`
 - Capuzes e elmos: `helm_hood`, `helm_iron`, `helm_horned`, `helm_circlet`
 - Mochilas: `backpack_small`, `backpack_medium`, `backpack_large`
-- Materiais: `mat_slime_gel`, `mat_slime_core`, `mat_stone_shard`, `mat_sentinel_eye`, `mat_beetle_shell`, `mat_beetle_horn`, `mat_obsidian`, `mat_ember_dust`, `mat_specter_cloth`, `mat_tower_crystal`
+- Materiais: `mat_iron_ore`, `mat_old_leather`, `mat_ash_wood`, `mat_chitin`, `mat_beetle_horn`, `mat_silver_ore`, `mat_coal`, `mat_obsidian`, `mat_specter_cloth`, `mat_tower_crystal`
 - Roupas: `outfit_starter`, `outfit_casaco_longo`, `outfit_cavaleiro_leve`, `outfit_tunica_ferreiro`, `outfit_manto_mago`
 - Relíquias (já existiam): `heavy_blade`, `light_boots`, `stone_heart`, `fang`, `wind_cape`, `cracked_hourglass`, `spark`, `glass_shield`
 

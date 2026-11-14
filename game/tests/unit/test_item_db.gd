@@ -44,7 +44,7 @@ func test_materials_by_floor() -> void:
 
 
 func test_stack_sizes() -> void:
-	T.eq(ItemDB.stack_max(&"mat_slime_gel"), 10)
+	T.eq(ItemDB.stack_max(&"mat_old_leather"), 10)
 	T.eq(ItemDB.stack_max(&"sword_iron"), 1)
 	T.eq(ItemDB.stack_max(&"fang"), 1)
 

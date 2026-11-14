@@ -4,7 +4,7 @@ extends Node
 ## A short message for the HUD (e.g. "Mochila cheia").
 signal toast_requested(text: String)
 ## Loot that went into the run (RunState.looted of the current run): the HUD
-## stacks a "+2 Gosma de Slime" toast for it.
+## stacks a "+2 Couro Velho" toast for it.
 signal loot_taken(id: StringName, qty: int)
 
 const SwapItemPanelScene := preload("res://ui/swap_item_panel.tscn")

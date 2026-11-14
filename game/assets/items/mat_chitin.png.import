@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://uduggknnmos1"
-path="res://.godot/imported/mat_slime_core.png-8ae90077b6fdeeb5f1d5c7040a19b297.ctex"
+uid="uid://b8kf48q0y2gc4"
+path="res://.godot/imported/mat_chitin.png-bb7b1d45981ec6d697987b54de452a75.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/items/mat_slime_core.png"
-dest_files=["res://.godot/imported/mat_slime_core.png-8ae90077b6fdeeb5f1d5c7040a19b297.ctex"]
+source_file="res://assets/items/mat_chitin.png"
+dest_files=["res://.godot/imported/mat_chitin.png-bb7b1d45981ec6d697987b54de452a75.ctex"]
 
 [params]
 

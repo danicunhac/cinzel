@@ -91,9 +91,9 @@ func test_enemy_loot_type() -> void:
 	var got := 0
 	for i in 20:
 		for d: LootDrop in e.roll_loot():
-			T.eq(d.id, &"mat_slime_gel")
+			T.eq(d.id, &"mat_old_leather")
 			got += 1
-	T.ok(got > 0, "crawlers drop slime gel")
+	T.ok(got > 0, "crawlers drop old leather")
 	EnemyBase.loot_rng = null
 	e.free()
 
@@ -108,10 +108,10 @@ func _pickup(id: StringName, qty: int) -> PickupItem:
 
 func test_material_pickup_goes_to_backpack() -> void:
 	_game().new_run()
-	var p := _pickup(&"mat_slime_gel", 3)
+	var p := _pickup(&"mat_old_leather", 3)
 	var left: int = await p.take()
 	T.eq(left, 0)
-	T.eq(_game().run.inventory.count(&"mat_slime_gel"), 3)
+	T.eq(_game().run.inventory.count(&"mat_old_leather"), 3)
 	T.ok(p.is_queued_for_deletion(), "pickup gone")
 	await _tree().process_frame
 
@@ -122,15 +122,15 @@ func test_full_backpack_leaves_the_rest_on_floor() -> void:
 	var toasts: Array[String] = []
 	var on_toast := func(t: String) -> void: toasts.append(t)
 	_game().toast_requested.connect(on_toast)
-	# 7 slots of other stuff, 1 slot holding 8 gel: 2 more gel fit.
+	# 7 slots of other stuff, 1 slot holding 8 leather: 2 more fit.
 	for i in run.inventory.capacity - 1:
-		run.inventory.add(&"mat_stone_shard", 10)
-	run.inventory.add(&"mat_slime_gel", 8)
-	var p := _pickup(&"mat_slime_gel", 5)
+		run.inventory.add(&"mat_iron_ore", 10)
+	run.inventory.add(&"mat_old_leather", 8)
+	var p := _pickup(&"mat_old_leather", 5)
 	var left: int = await p.take()
 	T.eq(left, 3)
 	T.eq(p.qty, 3)
-	T.eq(run.inventory.count(&"mat_slime_gel"), 10)
+	T.eq(run.inventory.count(&"mat_old_leather"), 10)
 	T.ok(not p.is_queued_for_deletion(), "stays on the floor")
 	T.eq(toasts, ["Mochila cheia"] as Array[String])
 	_game().toast_requested.disconnect(on_toast)
@@ -141,7 +141,7 @@ func test_full_backpack_keeps_gear_on_floor() -> void:
 	_game().new_run()
 	var run: RunState = _game().run
 	for i in run.inventory.capacity:
-		run.inventory.add(&"mat_stone_shard", 10)
+		run.inventory.add(&"mat_iron_ore", 10)
 	var p := _pickup(&"sword_knight", 1)
 	var toasts: Array[String] = []
 	var on_toast := func(t: String) -> void: toasts.append(t)

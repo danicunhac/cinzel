@@ -15,8 +15,8 @@ GROUPS = [
      "spear_hunter", "spear_dragoon", "dagger_rogue", "dagger_twin_fang", "bow_short", "bow_elven"],
     ["armor_cloth", "armor_leather", "armor_chain", "armor_scale", "armor_plate", "armor_shadow",
      "helm_hood", "helm_iron", "helm_horned", "helm_circlet", "backpack_small", "backpack_medium", "backpack_large"],
-    ["mat_slime_gel", "mat_slime_core", "mat_stone_shard", "mat_sentinel_eye", "mat_beetle_shell",
-     "mat_beetle_horn", "mat_obsidian", "mat_ember_dust", "mat_specter_cloth", "mat_tower_crystal"],
+    ["mat_iron_ore", "mat_old_leather", "mat_ash_wood", "mat_chitin", "mat_beetle_horn",
+     "mat_silver_ore", "mat_coal", "mat_obsidian", "mat_specter_cloth", "mat_tower_crystal"],
     ["outfit_starter", "outfit_casaco_longo", "outfit_cavaleiro_leve", "outfit_tunica_ferreiro", "outfit_manto_mago",
      "heavy_blade", "light_boots", "stone_heart", "fang", "wind_cape", "cracked_hourglass", "spark", "glass_shield"],
 ]

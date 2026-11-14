@@ -99,7 +99,7 @@ var boss_plaque: NinePatchRect
 var special_icon: SpecialIcon
 var toast_box: NinePatchRect
 var toast_label: Label
-## "+2 Gosma de Slime" stack under the life and gold (Game.loot_taken).
+## "+2 Couro Velho" stack under the life and gold (Game.loot_taken).
 var loot_toasts: LootToasts
 
 ## Gold shown by the counter (counts toward Game.run.gold).

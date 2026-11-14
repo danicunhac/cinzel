@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bxi48d5a4nibe"
-path="res://.godot/imported/mat_beetle_shell.png-7e1a07acf169db0a43881da462463ef6.ctex"
+uid="uid://w6tqvnl33dqa"
+path="res://.godot/imported/mat_iron_ore.png-5334e704f6bf9cb8f8d378a6b79ab007.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/items/mat_beetle_shell.png"
-dest_files=["res://.godot/imported/mat_beetle_shell.png-7e1a07acf169db0a43881da462463ef6.ctex"]
+source_file="res://assets/items/mat_iron_ore.png"
+dest_files=["res://.godot/imported/mat_iron_ore.png-5334e704f6bf9cb8f8d378a6b79ab007.ctex"]
 
 [params]
 

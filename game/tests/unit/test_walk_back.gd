@@ -89,7 +89,7 @@ func test_back_and_forth_keeps_cleared_rooms_chests_and_items() -> void:
 	drop.position = Vector2(200, 150)
 	d.room.add_child(drop)
 	var stack := PickupScene.instantiate() as PickupItem
-	stack.item_id = &"mat_slime_gel"
+	stack.item_id = &"mat_old_leather"
 	stack.qty = 3
 	stack.position = Vector2(300, 60)
 	d.room.add_child(stack)
@@ -116,7 +116,7 @@ func test_back_and_forth_keeps_cleared_rooms_chests_and_items() -> void:
 	T.eq(found.size(), 1, "dropped item still on the floor")
 	var stacks := items.filter(func(n: Node) -> bool:
 		var p := n as PickupItem
-		return p.item_id == &"mat_slime_gel" and p.qty == 3 and p.position == Vector2(300, 60))
+		return p.item_id == &"mat_old_leather" and p.qty == 3 and p.position == Vector2(300, 60))
 	T.eq(stacks.size(), 1, "material stack keeps its qty")
 	T.ok(_stairs(d) == null, "no stairs past the first room")
 	d.leave_to_town()

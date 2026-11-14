@@ -57,7 +57,7 @@ func test_compare_marks_better_and_worse() -> void:
 	for r in rows:
 		by[r["label"]] = r
 	T.eq(by["Peso"]["delta"], 1, "lighter armor is better")
-	T.eq(ItemCompare.compare(eq, &"mat_slime_gel").size(), 0, "materials do not compare")
+	T.eq(ItemCompare.compare(eq, &"mat_old_leather").size(), 0, "materials do not compare")
 	var bp := ItemCompare.compare(eq, &"backpack_large")
 	T.eq(bp[0]["label"], "Espaços")
 	T.eq(bp[0]["new"], "20")
@@ -66,8 +66,8 @@ func test_compare_marks_better_and_worse() -> void:
 
 func test_inventory_take_slot_empties_the_whole_stack() -> void:
 	var inv := Inventory.new(8)
-	inv.add(&"mat_slime_gel", 7)
-	T.eq(inv.take_slot(0), {"id": &"mat_slime_gel", "qty": 7})
+	inv.add(&"mat_old_leather", 7)
+	T.eq(inv.take_slot(0), {"id": &"mat_old_leather", "qty": 7})
 	T.ok(inv.is_empty())
 	T.eq(inv.take_slot(0), {}, "empty slot")
 
@@ -80,15 +80,15 @@ func test_market_trend_and_total_follow_decay() -> void:
 	m.wanted.clear()
 	T.eq(m.trend(&"fang"), 0, "normal")
 	var run := RunState.new()
-	run.inventory.add(&"mat_slime_core", 5)
-	var expected := m.sell_total(&"mat_slime_core", 3)
-	var base := ItemDB.price(&"mat_slime_core")
+	run.inventory.add(&"mat_chitin", 5)
+	var expected := m.sell_total(&"mat_chitin", 3)
+	var base := ItemDB.price(&"mat_chitin")
 	T.eq(expected, roundi(base * 1.0) + roundi(base * 0.85) + roundi(base * 0.7))
 	T.eq(m.sell_many(run, 0, 3), expected, "selling 3 pays the previewed total")
-	T.eq(run.inventory.count(&"mat_slime_core"), 2)
-	T.eq(m.trend(&"mat_slime_core"), -1, "sold too much: falling")
-	m.wanted.append(&"mat_slime_core")
-	T.eq(m.trend(&"mat_slime_core"), 1, "wanted wins")
+	T.eq(run.inventory.count(&"mat_chitin"), 2)
+	T.eq(m.trend(&"mat_chitin"), -1, "sold too much: falling")
+	m.wanted.append(&"mat_chitin")
+	T.eq(m.trend(&"mat_chitin"), 1, "wanted wins")
 
 
 func test_market_stock_follows_opened_floors() -> void:
@@ -107,15 +107,15 @@ func test_forge_block_reason_in_order() -> void:
 	var run := RunState.new()
 	T.eq(Forge.block_reason(run, &"sword_knight"), "Vença o chefe do andar 1")
 	T.eq(Forge.block_reason(run, &"helm_iron"), "Faltam materiais")
-	run.inventory.add(&"mat_stone_shard", 4)
+	run.inventory.add(&"mat_iron_ore", 4)
 	T.eq(Forge.block_reason(run, &"helm_iron"), "Ouro insuficiente")
 	run.add_gold(35)
 	T.eq(Forge.block_reason(run, &"helm_iron"), "")
 	for i in 7:
 		run.inventory.add(&"fang")
-	T.eq(Forge.block_reason(run, &"helm_iron"), "", "the shards' slot frees up for the helm")
-	run.inventory.add(&"mat_stone_shard", 1)
-	T.eq(Forge.block_reason(run, &"helm_iron"), "Mochila cheia", "shards stay: no room")
+	T.eq(Forge.block_reason(run, &"helm_iron"), "", "the ore's slot frees up for the helm")
+	run.inventory.add(&"mat_iron_ore", 1)
+	T.eq(Forge.block_reason(run, &"helm_iron"), "Mochila cheia", "ore stays: no room")
 
 
 # --- backpack screen ---------------------------------------------------------
@@ -176,13 +176,13 @@ func test_inventory_relic_swap_asks_which_relic() -> void:
 func test_drop_spawns_pickup_in_dungeon_and_is_off_in_town() -> void:
 	_game().new_run()
 	var run: RunState = _game().run
-	run.inventory.add(&"mat_slime_gel", 6)
+	run.inventory.add(&"mat_old_leather", 6)
 	var town := await _spawn("res://world/town.tscn")
 	var tinv := _open_inventory(town, true)
 	tinv.select_bag(0)
 	T.eq(tinv.drop_button.disabled, true, "no dropping in town")
 	T.eq(tinv.drop(), false)
-	T.eq(run.inventory.count(&"mat_slime_gel"), 6, "nothing lost in town")
+	T.eq(run.inventory.count(&"mat_old_leather"), 6, "nothing lost in town")
 	tinv.close()
 	town.free()
 
@@ -191,10 +191,10 @@ func test_drop_spawns_pickup_in_dungeon_and_is_off_in_town() -> void:
 	inv.select_bag(0)
 	T.eq(inv.drop_button.disabled, false)
 	T.ok(inv.drop(), "dropped")
-	T.eq(run.inventory.count(&"mat_slime_gel"), 0, "the whole stack left")
+	T.eq(run.inventory.count(&"mat_old_leather"), 0, "the whole stack left")
 	var drops: Array[PickupItem] = []
 	for n in d.room.get_children():
-		if n is PickupItem and (n as PickupItem).item_id == &"mat_slime_gel":
+		if n is PickupItem and (n as PickupItem).item_id == &"mat_old_leather":
 			drops.append(n)
 	T.eq(drops.size(), 1, "one pickup in the room")
 	T.eq(drops[0].qty, 6)
@@ -203,7 +203,7 @@ func test_drop_spawns_pickup_in_dungeon_and_is_off_in_town() -> void:
 	inv.close()
 	for i in 3:
 		await _tree().physics_frame
-	T.eq(run.inventory.count(&"mat_slime_gel"), 0, "standing on it does not take it back")
+	T.eq(run.inventory.count(&"mat_old_leather"), 0, "standing on it does not take it back")
 	await _cleanup_dungeon(d)
 
 
@@ -267,15 +267,15 @@ func test_tab_gate() -> void:
 func test_drop_without_a_player_keeps_the_stack() -> void:
 	_game().new_run()
 	var run: RunState = _game().run
-	run.inventory.add(&"mat_slime_gel", 6)
+	run.inventory.add(&"mat_old_leather", 6)
 	var holder := Node.new()
 	_tree().root.add_child(holder)
 	var inv := _open_inventory(holder, false)
 	inv.select_bag(0)
 	T.eq(_tree().get_nodes_in_group(&"player").size(), 0, "no player in the tree")
 	T.eq(inv.drop(), false, "nothing to drop at")
-	T.eq(run.inventory.count(&"mat_slime_gel"), 6, "stack not lost")
-	T.eq(run.inventory.id_at(0), &"mat_slime_gel", "same slot")
+	T.eq(run.inventory.count(&"mat_old_leather"), 6, "stack not lost")
+	T.eq(run.inventory.id_at(0), &"mat_old_leather", "same slot")
 	inv.close()
 	holder.free()
 	_game().new_run()
@@ -286,7 +286,7 @@ func test_drop_without_a_player_keeps_the_stack() -> void:
 func test_full_backpack_swap_drops_the_chosen_stack() -> void:
 	_game().new_run()
 	var run: RunState = _game().run
-	run.inventory.add(&"mat_slime_gel", 7)
+	run.inventory.add(&"mat_old_leather", 7)
 	for i in run.inventory.capacity - 1:
 		run.inventory.add(&"fang")
 	T.ok(run.inventory.is_full())
@@ -307,11 +307,11 @@ func test_full_backpack_swap_drops_the_chosen_stack() -> void:
 	_tree().node_added.disconnect(on_added)
 	T.eq(left, 0, "taken")
 	T.eq(run.inventory.count(&"axe_war"), 1)
-	T.eq(run.inventory.count(&"mat_slime_gel"), 0, "the chosen stack left")
+	T.eq(run.inventory.count(&"mat_old_leather"), 0, "the chosen stack left")
 	await _tree().process_frame
 	var dropped: PickupItem = null
 	for n in _tree().root.get_children():
-		if n is PickupItem and (n as PickupItem).item_id == &"mat_slime_gel":
+		if n is PickupItem and (n as PickupItem).item_id == &"mat_old_leather":
 			dropped = n
 	T.ok(dropped != null, "dropped where the axe was")
 	if dropped != null:
@@ -326,16 +326,16 @@ func test_loot_toasts_stack_merge_and_cap() -> void:
 	_game().new_run()
 	var town := await _spawn("res://world/town.tscn")
 	var hud := town.get_node("Hud") as Hud
-	_game().run.take_loot(&"mat_slime_gel", 2)
+	_game().run.take_loot(&"mat_old_leather", 2)
 	T.eq(hud.loot_toasts.toasts.size(), 1)
-	T.eq((hud.loot_toasts.toasts[0]["label"] as Label).text, "+2 Gosma de Slime")
-	_game().run.take_loot(&"mat_slime_gel", 1)
+	T.eq((hud.loot_toasts.toasts[0]["label"] as Label).text, "+2 Couro Velho")
+	_game().run.take_loot(&"mat_old_leather", 1)
 	T.eq(hud.loot_toasts.toasts.size(), 1, "same item adds up")
-	T.eq((hud.loot_toasts.toasts[0]["label"] as Label).text, "+3 Gosma de Slime")
-	for id: StringName in [&"mat_stone_shard", &"mat_slime_core", &"fang"]:
+	T.eq((hud.loot_toasts.toasts[0]["label"] as Label).text, "+3 Couro Velho")
+	for id: StringName in [&"mat_iron_ore", &"mat_chitin", &"fang"]:
 		_game().run.take_loot(id)
 	T.eq(hud.loot_toasts.toasts.size(), LootToasts.MAX_VISIBLE, "at most 3")
-	T.eq(hud.loot_toasts.toasts[0]["id"], &"mat_stone_shard", "the oldest left")
+	T.eq(hud.loot_toasts.toasts[0]["id"], &"mat_iron_ore", "the oldest left")
 	hud.loot_toasts._process(LootToasts.LIFE + 0.1)
 	T.eq(hud.loot_toasts.toasts.size(), 0, "they fade out")
 	town.free()
@@ -392,8 +392,7 @@ func test_shop_buy_needs_gold_and_buys_outfits() -> void:
 func test_forge_craft_consumes_and_adds() -> void:
 	_game().new_run()
 	var run: RunState = _game().run
-	run.inventory.add(&"mat_slime_gel", 4)
-	run.inventory.add(&"mat_slime_core", 1)
+	run.inventory.add(&"mat_old_leather", 4)
 	run.add_gold(50)
 	var town := await _spawn("res://world/town.tscn")
 	var p := town.open_panel(&"smith") as SmithPanel
@@ -404,8 +403,7 @@ func test_forge_craft_consumes_and_adds() -> void:
 	T.eq(p.craft_button.text, "Confirmar")
 	T.ok(p.press_craft(), "second press forges")
 	T.eq(run.inventory.count(&"armor_leather"), 1)
-	T.eq(run.inventory.count(&"mat_slime_gel"), 0)
-	T.eq(run.inventory.count(&"mat_slime_core"), 0)
+	T.eq(run.inventory.count(&"mat_old_leather"), 0)
 	T.eq(run.gold, 10)
 	T.eq(p.craft_button.disabled, true, "nothing left to forge it again")
 	p.close()
@@ -444,7 +442,7 @@ func test_shop_gear_sells_on_second_press_only() -> void:
 	_game().new_run()
 	var run: RunState = _game().run
 	run.inventory.add(&"axe_war")
-	run.inventory.add(&"mat_slime_gel", 2)
+	run.inventory.add(&"mat_old_leather", 2)
 	var town := await _spawn("res://world/town.tscn")
 	var p := town.open_panel(&"shop") as ShopPanel
 	p.select_sell(0)
@@ -455,9 +453,9 @@ func test_shop_gear_sells_on_second_press_only() -> void:
 	T.ok(p.sell_armed)
 	p.action_button.pressed.emit()
 	T.eq(run.inventory.count(&"axe_war"), 0, "second press sells")
-	p.select_sell(run.inventory.slots.find({"id": &"mat_slime_gel", "qty": 2}))
+	p.select_sell(run.inventory.slots.find({"id": &"mat_old_leather", "qty": 2}))
 	p.action_button.pressed.emit()
-	T.eq(run.inventory.count(&"mat_slime_gel"), 1, "materials sell at once")
+	T.eq(run.inventory.count(&"mat_old_leather"), 1, "materials sell at once")
 	p.close()
 	town.free()
 	_game().new_run()
@@ -466,8 +464,8 @@ func test_shop_gear_sells_on_second_press_only() -> void:
 func test_debug_give_takes_any_catalog_item() -> void:
 	_game().new_run()
 	var run: RunState = _game().run
-	T.eq(_game().give_debug("mat_slime_gel:14"), 14, "materials past one stack")
-	T.eq(run.inventory.count(&"mat_slime_gel"), 14)
+	T.eq(_game().give_debug("mat_old_leather:14"), 14, "materials past one stack")
+	T.eq(run.inventory.count(&"mat_old_leather"), 14)
 	T.eq(_game().give_debug("mat_tower_crystal"), 1, "qty defaults to 1")
 	T.eq(_game().give_debug("helm_iron:1"), 1, "gear")
 	T.eq(run.inventory.count(&"helm_iron"), 1)

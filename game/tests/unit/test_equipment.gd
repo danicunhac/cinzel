@@ -32,9 +32,9 @@ func test_equip_needs_item_in_backpack() -> void:
 func test_equip_wrong_kind_refused() -> void:
 	var eq := Equipment.starter()
 	var inv := Inventory.new(8)
-	inv.add(&"mat_slime_gel")
-	T.eq(eq.equip(&"mat_slime_gel", inv), false)
-	T.eq(inv.count(&"mat_slime_gel"), 1)
+	inv.add(&"mat_old_leather")
+	T.eq(eq.equip(&"mat_old_leather", inv), false)
+	T.eq(inv.count(&"mat_old_leather"), 1)
 
 
 func test_unequip_armor_to_backpack() -> void:

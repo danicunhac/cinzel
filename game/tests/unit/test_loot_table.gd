@@ -72,9 +72,39 @@ func test_enemy_materials_by_floor_and_type() -> void:
 	for i in 200:
 		for drop: LootDrop in LootTable.roll_enemy(&"shooter", 2, rng):
 			seen[drop.id] = true
-	T.eq(seen.keys(), [LootTable.ENEMY_MATERIALS[2][&"shooter"]], "one material per type and floor")
-	T.ok(ItemDB.materials_of_floor(2).has(LootTable.ENEMY_MATERIALS[2][&"shooter"]), "floor 2 material")
+	var table: Array = LootTable.ENEMY_MATERIALS[2][&"shooter"]
+	for id: StringName in seen:
+		T.ok(table.has(id), "%s is in the shooter's floor 2 table" % id)
+	T.eq(seen.size(), table.size(), "every listed material drops")
 	T.ok(LootTable.roll_enemy(&"ghost", 1, rng).is_empty(), "unknown enemy drops nothing")
+
+
+func test_enemy_tables_use_real_materials() -> void:
+	for f: int in LootTable.ENEMY_MATERIALS:
+		var has_floor_material := false
+		for type: StringName in LootTable.ENEMY_MATERIALS[f]:
+			for id: StringName in LootTable.ENEMY_MATERIALS[f][type]:
+				T.eq(ItemDB.kind(id), &"material", "%s on floor %d" % [id, f])
+				if ItemDB.materials_of_floor(f).has(id):
+					has_floor_material = true
+		T.ok(has_floor_material, "floor %d drops its own materials" % f)
+
+
+func test_every_recipe_material_drops_somewhere() -> void:
+	var dropped: Dictionary[StringName, bool] = {LootTable.BOSS_CRYSTAL: true}
+	for f: int in LootTable.ENEMY_MATERIALS:
+		for type: StringName in LootTable.ENEMY_MATERIALS[f]:
+			for id: StringName in LootTable.ENEMY_MATERIALS[f][type]:
+				dropped[id] = true
+	for r: StringName in Forge.RECIPES:
+		for m: StringName in Forge.RECIPES[r]["materials"]:
+			T.ok(dropped.has(m), "%s (%s) drops from an enemy" % [m, r])
+
+
+func test_start_recipes_use_floor_one_materials() -> void:
+	for r: StringName in Forge.unlocked(0):
+		for m: StringName in Forge.RECIPES[r]["materials"]:
+			T.eq(ItemDB.materials_of_floor(1).has(m), true, "%s needs %s" % [r, m])
 
 
 func test_enemy_drop_chance() -> void:

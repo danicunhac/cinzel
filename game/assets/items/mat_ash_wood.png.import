@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnutd61s7wy8e"
-path="res://.godot/imported/mat_stone_shard.png-4ec95c4580b798e8d8858f546c75ad09.ctex"
+uid="uid://dfktfeofvncae"
+path="res://.godot/imported/mat_ash_wood.png-07a6d68f9f966167fd8cac70452db85b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/items/mat_stone_shard.png"
-dest_files=["res://.godot/imported/mat_stone_shard.png-4ec95c4580b798e8d8858f546c75ad09.ctex"]
+source_file="res://assets/items/mat_ash_wood.png"
+dest_files=["res://.godot/imported/mat_ash_wood.png-07a6d68f9f966167fd8cac70452db85b.ctex"]
 
 [params]
 

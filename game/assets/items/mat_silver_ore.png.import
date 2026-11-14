@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://or0e1qkbvmdm"
-path="res://.godot/imported/mat_ember_dust.png-047d70fea4b0ee6c4b46082720685654.ctex"
+uid="uid://dw3cb1bb13qef"
+path="res://.godot/imported/mat_silver_ore.png-42c429b8c3a3628f91361817ad425f7d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/items/mat_ember_dust.png"
-dest_files=["res://.godot/imported/mat_ember_dust.png-047d70fea4b0ee6c4b46082720685654.ctex"]
+source_file="res://assets/items/mat_silver_ore.png"
+dest_files=["res://.godot/imported/mat_silver_ore.png-42c429b8c3a3628f91361817ad425f7d.ctex"]
 
 [params]
 

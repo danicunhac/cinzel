@@ -92,7 +92,12 @@ Comum (branco), Rara (azul), Épica (roxo). A raridade aumenta os números, e as
 
 ## 6. Mochila, saque e loja (novo, proposta)
 
-- Inimigos derrubam **materiais**: gosma de slime, núcleo de pedra, carapaça, essência espectral. Baús e chefes derrubam **equipamentos** e **relíquias**.
+- Inimigos derrubam **materiais**, e cada material vira algo que faz sentido (minério vira lâmina e malha, couro vira gibão e cabo). Baús e chefes derrubam **equipamentos** e **relíquias**.
+  - Andar 1: minério de ferro (sentinelas de pedra), couro velho (os slimes largam as correias do que não digeriram), madeira de freixo (besouros).
+  - Andar 2: quitina e chifre de besouro (besouros; os slimes também largam quitina), minério de prata (sentinelas, que ainda trazem ferro).
+  - Andar 3: carvão de brasa (besouros), obsidiana (sentinelas, com ferro), tecido espectral (slimes, com couro).
+  - Chefes: 3 materiais do andar e, às vezes, o cristal da torre.
+  - Receitas do ferreiro: lança (freixo + ferro), arco (freixo + couro), gibão (couro), elmo de ferro (ferro); depois do 1º chefe escamas (quitina + couro), espada do cavaleiro (ferro + prata + couro), machado de guerra (ferro + freixo), cota de malha (ferro + couro), elmo com chifres (ferro + chifre); depois do 2º chefe espada longa em brasa (ferro + carvão + cristal), adaga de presa (obsidiana + couro), placas (ferro + carvão), armadura das sombras (tecido espectral + cristal).
 - O saque vai para a **mochila**, uma grade de espaços: a mochila inicial tem 8 e as melhores chegam a 20. Mochila cheia obriga a escolher o que largar.
 - **Loja (decidido em 14/11):** preço base fixo por item, corrigido por oferta e procura. A loja paga mais pelo que está em falta e menos pelo que o jogador vendeu demais, e a tabela muda a cada volta da torre. O preço livre com clientes, estilo Moonlighter, fica como evolução depois da entrega.
 - **Ferreiro:** em vez de "2 itens por 1", forja armas e armaduras com materiais e ouro, por receitas que vão sendo liberadas por andar.

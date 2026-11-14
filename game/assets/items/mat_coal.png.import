@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dyg8mtmlcoqlx"
-path="res://.godot/imported/mat_sentinel_eye.png-8b7e0a5edd25809eef0d49d9094acf80.ctex"
+uid="uid://dijt2020ni6xg"
+path="res://.godot/imported/mat_coal.png-b32949d3d4b0c32af6b9b0aaae4169cd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/items/mat_sentinel_eye.png"
-dest_files=["res://.godot/imported/mat_sentinel_eye.png-8b7e0a5edd25809eef0d49d9094acf80.ctex"]
+source_file="res://assets/items/mat_coal.png"
+dest_files=["res://.godot/imported/mat_coal.png-b32949d3d4b0c32af6b9b0aaae4169cd.ctex"]
 
 [params]
 
