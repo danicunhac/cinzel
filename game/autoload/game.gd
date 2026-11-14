@@ -2,6 +2,8 @@ extends Node
 ## Autoload. Holds the current run and scene flow.
 
 const SwapItemPanelScene := preload("res://ui/swap_item_panel.tscn")
+## Scene-change fade-in (see goto).
+const FADE_TIME := 0.35
 
 var run: RunState
 var in_boss_room: bool = false
@@ -9,6 +11,9 @@ var in_boss_room: bool = false
 ## before RunState.die() zeroes it: {"floor": int, "seconds": float, "gold": int}.
 ## Empty until a run ends.
 var last_run: Dictionary[String, Variant] = {}
+
+var _fade: ColorRect
+var _fade_tween: Tween
 
 
 func _ready() -> void:
@@ -24,12 +29,6 @@ func new_run() -> void:
 ## Every scene change uses the same transition: the screen cuts to black and
 ## the new scene fades in (DoD, one transition type). The change itself is not
 ## delayed, so code that waits for the next scene keeps working.
-const FADE_TIME := 0.35
-
-var _fade: ColorRect
-var _fade_tween: Tween
-
-
 func goto(scene_path: String) -> void:
 	get_tree().change_scene_to_file(scene_path)
 	_fade_in()

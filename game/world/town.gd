@@ -85,6 +85,20 @@ const PIECES: Array = [
 	["fence", Vector2(354, 254), Vector2.ZERO],
 	["fence_post", Vector2(376, 254), Vector2.ZERO],
 ]
+## Unreachable areas: from the top of the screen down to the back rows'
+## footprints (shop, house A, house B, forge), behind house C, and the fence
+## line with the grass under it. The north path (x 200-280), the plaza and
+## the south path (x 222-258) stay open.
+const BLOCKED: Array[Rect2] = [
+	Rect2(0, 0, 136, 106),
+	Rect2(136, 0, 64, 86),
+	Rect2(280, 0, 86, 84),
+	Rect2(366, 0, 114, 108),
+	Rect2(466, 108, 14, 22),
+	Rect2(408, 196, 72, 74),
+	Rect2(0, 244, 222, 26),
+	Rect2(258, 244, 150, 26),
+]
 ## Points of light: [position, radius in px, energy].
 const LIGHTS: Array = [
 	[Vector2(209, 70), 44.0, 0.8],
@@ -252,7 +266,8 @@ func _build_ground() -> void:
 	add_child(cm)
 
 
-## Screen edges; buildings add their own footprints in _piece().
+## Screen edges, the areas behind the buildings (the player would vanish
+## there) and the fence line; buildings add their own footprints in _piece().
 func _build_bounds() -> void:
 	var body := StaticBody2D.new()
 	body.name = "Bounds"
@@ -261,6 +276,8 @@ func _build_bounds() -> void:
 	_rect(body, Rect2(SCREEN.x, 0, 16, SCREEN.y))
 	_rect(body, Rect2(0, -16, SCREEN.x, 16 + 18))
 	_rect(body, Rect2(0, SCREEN.y - 6, SCREEN.x, 16))
+	for r: Rect2 in BLOCKED:
+		_rect(body, r)
 
 
 func _rect(body: StaticBody2D, r: Rect2) -> void:
@@ -323,10 +340,11 @@ func _build_spots() -> void:
 		add_child(cta)
 		_ctas[id] = cta
 	# Hint and bubble live on a screen layer (no camera here, so screen and
-	# world coordinates match): no CanvasModulate tint, always above props.
+	# world coordinates match): no CanvasModulate tint, above props and the
+	# HUD (layer 5), below the panels (layer 30).
 	var overlay := CanvasLayer.new()
 	overlay.name = "Talk"
-	overlay.layer = 5
+	overlay.layer = 8
 	add_child(overlay)
 	_hint = UiKit.label("", UiKit.COLOR_ITEM, HORIZONTAL_ALIGNMENT_CENTER)
 	_hint.size = Vector2(80, 10)

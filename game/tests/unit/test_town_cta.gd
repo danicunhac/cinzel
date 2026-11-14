@@ -78,4 +78,26 @@ func test_bubble_lines_fit_25_words_3_lines() -> void:
 		bubble.say(TownScript.LINES[key])
 		await _tree().process_frame
 		T.ok(bubble.line_count() <= TownLogic.BUBBLE_MAX_LINES, "%s: %d lines" % [key, bubble.line_count()])
+		var f := bubble.label.get_parent() as Control
+		T.ok(bubble.label.position.y + bubble.label.size.y <= f.size.y - UiKit.PLAQUE_MARGIN + 1, "%s: text inside the frame" % key)
 	bubble.free()
+
+
+func test_backs_of_buildings_are_blocked_paths_open() -> void:
+	_game().new_run()
+	var town := await _spawn("res://world/town.tscn")
+	await _tree().physics_frame
+	await _tree().physics_frame
+	var space := (town as Node2D).get_world_2d().direct_space_state
+	var q := PhysicsPointQueryParameters2D.new()
+	var blocked: Array[Vector2] = [Vector2(60, 60), Vector2(166, 50), Vector2(316, 50), Vector2(418, 60), Vector2(440, 230), Vector2(150, 256)]
+	for p in blocked:
+		q.position = p
+		T.ok(not space.intersect_point(q).is_empty(), "blocked at %s" % p)
+	var open: Array[Vector2] = [Vector2(240, 40), Vector2(240, 200), Vector2(240, 258), TownScript.SPOTS[&"shop"], TownScript.SPOTS[&"smith"], TownScript.SPOTS[&"teleport"]]
+	for p in open:
+		q.position = p
+		var walls := space.intersect_point(q).filter(func(h: Dictionary) -> bool: return h["collider"] is StaticBody2D)
+		T.ok(walls.is_empty(), "open at %s" % p)
+	town.free()
+	_game().new_run()

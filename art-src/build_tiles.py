@@ -6,11 +6,9 @@ Existing output files are kept unless --force is passed.
 Inputs (see docs/assets.md):
   art-src/gen/tiles-floor1-sheet.png  4x4 dungeon tiles on magenta
   art-src/gen/tiles-props-sheet.png   pillar, crate, chest, open chest, torch
-  art-src/gen/tiles-town-sheet.png    4x4 town tiles on magenta
 Outputs:
   game/assets/tiles/floor1.png, floor2.png, floor3.png  8x2 tiles, layout of
     TILES in make_placeholders.py / world/room_tiles.gd
-  game/assets/tiles/town.png  8x2 tiles, layout in TOWN below and docs/assets.md
 
 Floors 2 and 3 are floor 1 with the stone (low saturation pixels) re-hued:
 floor 2 cold blue, floor 3 dark red ember. Wood, gold, fire and the red lock
@@ -32,32 +30,6 @@ COLORS = 32
 # Grid cells of the generated 4x4 sheets: (x0, x1) per column, (y0, y1) per row.
 FLOOR_COLS = [(7, 250), (263, 506), (518, 761), (774, 1017)]
 FLOOR_ROWS = [(7, 248), (260, 504), (515, 759), (770, 1015)]
-TOWN_COLS = [(8, 250), (263, 505), (519, 761), (775, 1017)]
-TOWN_ROWS = [(7, 250), (261, 505), (517, 761), (772, 1016)]
-
-# Town atlas (col, row) -> (name, source cell (col, row), crop) ; crop is the
-# fraction of the source cell kept (centre-left-top anchored), smaller keeps
-# bigger texture features.
-TOWN = {
-    (0, 0): ("cobble_a", (0, 0), 0.5),
-    (1, 0): ("cobble_b", (1, 0), 0.5),
-    (2, 0): ("grass", (2, 0), 0.5),
-    (3, 0): ("grass_flowers", (3, 0), 0.5),
-    (4, 0): ("wood_planks", (0, 1), 0.5),
-    (5, 0): ("dirt", (1, 1), 0.5),
-    (6, 0): ("roof", (2, 1), 0.5),
-    (7, 0): ("wall_face", (3, 1), 0.55),
-    (0, 1): ("awning", (0, 2), 1.0),
-    (1, 1): ("awning_edge", (1, 2), 1.0),
-    (2, 1): ("house_wall", (2, 2), 1.0),
-    (3, 1): ("house_door", (3, 2), 1.0),
-    (4, 1): ("house_window", (0, 3), 1.0),
-    (5, 1): ("banner", (1, 3), 1.0),
-    (6, 1): ("wall_top", (2, 3), 1.0),
-    (7, 1): ("water", (3, 3), 0.5),
-}
-
-
 def cell(img, cols, rows, c, r, frac=1.0, inset=0):
     x0, x1 = cols[c]
     y0, y1 = rows[r]
@@ -239,16 +211,6 @@ def rehue(img, hue, sat, bright):
     return out
 
 
-def town_tiles(root):
-    sheet = key_magenta(Image.open(os.path.join(root, "art-src/gen/tiles-town-sheet.png")))
-    tiles = {}
-    layout = {}
-    for pos, (name, (c, r), frac) in TOWN.items():
-        tiles[name] = down(cell(sheet, TOWN_COLS, TOWN_ROWS, c, r, frac=frac))
-        layout[pos] = name
-    return assemble(layout, tiles)
-
-
 def main():
     root, force = parse_args(sys.argv)
     out_dir = os.path.join(root, "game/assets/tiles")
@@ -257,7 +219,6 @@ def main():
         "floor1.png": quantize(raw),
         "floor2.png": quantize(rehue(raw, 0.6, 0.16, 0.95)),
         "floor3.png": quantize(rehue(raw, 0.01, 0.22, 0.85)),
-        "town.png": quantize(town_tiles(root)),
     }
     for name, img in outputs.items():
         save_guarded(img, os.path.join(out_dir, name), force)

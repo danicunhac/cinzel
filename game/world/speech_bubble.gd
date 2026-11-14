@@ -1,6 +1,6 @@
 class_name SpeechBubble
 extends Node2D
-## Short NPC line in a bronze frame over the town (no modal, no pause).
+## Short NPC line on an iron plaque over the town (no modal, no pause).
 ## Place it at the speaker's feet; it sits just below them, clamped to the
 ## screen, so it never hides the building behind the speaker. Pops in when
 ## shown. At most 25 words in 3 lines (DP 2.1).
@@ -17,7 +17,9 @@ var _text: String = ""
 func _init() -> void:
 	z_index = 60
 	visible = false
-	_frame = UiKit.frame(Vector2(WIDTH, 20))
+	# The plaque (9-slice margin 4) fits a 1 to 3 line bubble; the window
+	# frame's 18 px iron edge would cover the text.
+	_frame = UiKit.plaque(Vector2(WIDTH, 20))
 	add_child(_frame)
 	label = Label.new()
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -27,10 +29,16 @@ func _init() -> void:
 	label.size = Vector2(WIDTH - PAD * 2, 10)
 	label.position = Vector2(PAD, PAD)
 	_frame.add_child(label)
+	# Tail pointing up at the speaker: dark outline, bronze fill like the
+	# plaque's rim. Drawn after the frame so it bridges the rim.
 	_tail = Polygon2D.new()
-	_tail.polygon = PackedVector2Array([Vector2(-4, 1), Vector2(4, 1), Vector2(0, -4)])
-	_tail.color = Color(0.72, 0.45, 0.25)
+	_tail.polygon = PackedVector2Array([Vector2(-5, 2), Vector2(5, 2), Vector2(0, -4)])
+	_tail.color = Color8(24, 16, 20)
 	add_child(_tail)
+	var fill := Polygon2D.new()
+	fill.polygon = PackedVector2Array([Vector2(-3, 2), Vector2(3, 2), Vector2(0, -2)])
+	fill.color = Color8(149, 107, 62)
+	_tail.add_child(fill)
 
 
 func say(text: String) -> void:

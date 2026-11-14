@@ -35,7 +35,6 @@ Nenhum desses scripts sobrescreve um arquivo que já existe, porque ele pode ter
 | `game/assets/tiles/floor1.png` | Idem | `art-src/gen/tiles-floor1-sheet.png` e `art-src/gen/tiles-props-sheet.png` por `build_tiles.py` | 2026-11-14 |
 | `game/assets/tiles/floor2.png` | Idem | `floor1` com a pedra em azul frio | 2026-11-14 |
 | `game/assets/tiles/floor3.png` | Idem | `floor1` com a pedra em vermelho escuro de brasa | 2026-11-14 |
-| `game/assets/tiles/town.png` | Idem | `art-src/gen/tiles-town-sheet.png` por `build_tiles.py` | 2026-11-14 |
 | `game/assets/items/<id>.png` (8 ícones 16x16) | Gerado por IA (nano-banana-2 edit) + ajuste por script | `cinzel-item-icons-sheet` por `build_ui.py` | 2026-11-14 |
 | `game/assets/characters/npc_shopkeeper.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Lojista de `cinzel-npcs-sheet` por `build_ui.py`, 2 quadros de 32x32 (pés na linha 30, contorno escuro); 2º quadro do idle = tronco 1 px abaixo | 2026-11-14 |
 | `game/assets/characters/npc_blacksmith.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Ferreiro de `cinzel-npcs-sheet` por `build_ui.py`, mesmo formato | 2026-11-14 |
@@ -85,7 +84,7 @@ O nome no gerador de IA leva um hash de conteúdo. O arquivo no repositório é 
 | `art-src/gen/enemy-charger-v2.png` | `cinzel-enemy-charger-v2-958fd2b4b941` | idem | Besouro-javali com casco liso azul-aço, faixa vermelha, chifres de osso, olhos vermelhos, silhueta simples | 2026-11-14 |
 | `art-src/gen/tiles-floor1-sheet.png` | `cinzel-tiles-floor1-sheet-a22089b881f0` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 de tiles da torre: lajes (lisa, clara, rachada, com musgo), parede, topo de parede, pilar, caixote, portas (trancada, aberta, fechada), baús, parede com tocha | 2026-11-14 |
 | `art-src/gen/tiles-props-sheet.png` | `cinzel-tiles-props-sheet-6f9f6685ebad` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayProps` | Pilar, caixote, baú fechado, baú aberto com ouro, tocha de parede, sobre magenta | 2026-11-14 |
-| `art-src/gen/tiles-town-sheet.png` | `cinzel-tiles-town-sheet-07b9e1466613` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 da cidade: calçamento, grama, madeira, terra, telhado, muro, toldo listrado, casa enxaimel, porta, janela, estandarte, topo de muro, água | 2026-11-14 |
+| `art-src/gen/tiles-town-sheet.png` | `cinzel-tiles-town-sheet-07b9e1466613` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 da cidade: calçamento, grama, madeira, terra, telhado, muro, toldo listrado, casa enxaimel, porta, janela, estandarte, topo de muro, água. Não é mais usado: desde a Task P3 a cidade usa `game/assets/town/` e `town.png` saiu | 2026-11-14 |
 | `art-src/gen/boss-final.png` | `cinzel-boss-final-15618594aab4` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `characters` | Chefe final: cavaleiro-espectro encapuzado de armadura negra rachada, olhos e fenda no peito em brasa vermelha, lâmina incandescente, sobre magenta. Não é mais usado: o chefe de 48 px vem de `boss48-final-sheet-2` | 2026-11-14 |
 | `art-src/gen/town-shop.png` | `cinzel-town-shop-2d8e249685e5` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayProps` | Loja do herói vista de cima 3/4: enxaimel, toldo listrado vermelho e creme, balcão com prateleiras de poções, duas mesas de exposição com pano verde, placa de poção, barril, caixote, lanterna, sobre magenta | 2026-11-14 |
 | `art-src/gen/town-forge.png` | `cinzel-town-forge-ef8d59b688fe` | idem | Forja: pedra e madeira escura, chaminé alta de pedra, frente aberta com fornalha acesa, bigorna no toco, suporte de espadas e machados, barril de têmpera, placa de bigorna, lanterna, sobre magenta | 2026-11-14 |
@@ -131,7 +130,7 @@ Pedidos do inimigo comum com o preset `cinzel-pixel` e papel `characters` (`cinz
 
 ## Layout dos tilesets
 
-Todos os tilesets têm 8 colunas x 2 linhas de tiles 16x16. As coordenadas são (coluna, linha) no atlas.
+Os tilesets da torre têm 8 colunas x 2 linhas de tiles 16x16. As coordenadas são (coluna, linha) no atlas.
 
 `floor1.png`, `floor2.png` e `floor3.png` usam o layout de `world/room_tiles.gd`:
 
@@ -145,27 +144,6 @@ Todos os tilesets têm 8 colunas x 2 linhas de tiles 16x16. As coordenadas são 
 | (5, 0) | `wall_top` | (5, 1) | `wall_torch` |
 | (6, 0) | `pillar` | (6, 1) | vazio |
 | (7, 0) | `crate` | (7, 1) | vazio |
-
-`town.png` (Task 12; desde a Task P3 a cidade não usa mais este tileset, ela usa `game/assets/town/`):
-
-| (c, l) | Nome | Uso |
-|---|---|---|
-| (0, 0) | `cobble_a` | calçamento da praça |
-| (1, 0) | `cobble_b` | calçamento, variação |
-| (2, 0) | `grass` | grama |
-| (3, 0) | `grass_flowers` | grama com flores |
-| (4, 0) | `wood_planks` | piso de madeira (loja, ferreiro) |
-| (5, 0) | `dirt` | caminho de terra |
-| (6, 0) | `roof` | telhado de telha vermelha |
-| (7, 0) | `wall_face` | face do muro de pedra clara |
-| (0, 1) | `awning` | toldo listrado vermelho e creme |
-| (1, 1) | `awning_edge` | borda recortada do toldo (metade de baixo transparente) |
-| (2, 1) | `house_wall` | parede enxaimel |
-| (3, 1) | `house_door` | porta de casa |
-| (4, 1) | `house_window` | janela com veneziana |
-| (5, 1) | `banner` | estandarte azul (fundo transparente) |
-| (6, 1) | `wall_top` | topo do muro, visto de cima |
-| (7, 1) | `water` | água rasa |
 
 ## Peças da cidade (`game/assets/town/`)
 
