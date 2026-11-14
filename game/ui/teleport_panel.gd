@@ -11,12 +11,12 @@ var travel: bool = true
 
 func _init() -> void:
 	super._init()
-	panel_size = Vector2(200, 128)
+	panel_size = Vector2(200, 0)
+	panel_title = "Pedra de teleporte"
 
 
 func _build(box: VBoxContainer) -> void:
 	floor_buttons.clear()
-	box.add_child(UiKit.label("Pedra de teleporte", UiKit.COLOR_TITLE))
 	box.add_child(UiKit.label("Escolha um andar liberado.", UiKit.COLOR_MUTED))
 	for n in range(1, Game.run.unlocked_floors + 1):
 		var built := not Dungeon.templates_for(n).is_empty()
