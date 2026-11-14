@@ -9,6 +9,7 @@ Inputs (see docs/assets.md), all on flat magenta:
   art-src/gen/town-houses.png     house A (timber, ivy)
   art-src/gen/town-houses-b.png   house B (stone), house C (timber, bench)
   art-src/gen/town-crystal.png    crystal on dais
+  art-src/gen/town-tower-gate.png base of the tower with the open gate
   art-src/gen/town-props.png      3 trees / lamp, well, planter, flower bed /
                                   fence, post, barrel, crates, sack
   art-src/gen/town-ground.png     ground painted over town-ground-guide.png
@@ -66,6 +67,7 @@ SPRITES = {
     "house_b": ("town-houses-b.png", (0, 0), ("w", 74), 1.0),
     "house_c": ("town-houses-b.png", (0, 1), ("w", 62), 1.0),
     "crystal": ("town-crystal.png", (0, 0), ("h", 60), 1.0),
+    "tower_gate": ("town-tower-gate.png", (0, 0), ("h", 88), 1.0),
     # The props sheet rows touch, so its cells are boxes (x0, y0, x1, y1)
     # around each object; the object is the opaque bbox inside the box.
     "tree_a": ("town-props.png", (190, 10, 400, 214), ("w", 54), 1.0),

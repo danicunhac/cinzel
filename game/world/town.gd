@@ -27,9 +27,11 @@ const ART := "res://assets/town/%s.png"
 const PAD := 8
 
 const SPAWN := Vector2(240, 222)
-## Tower entrance at the top of the north path: the player walks into it.
-const GATE := Rect2(212, 18, 56, 18)
-const GATE_ARRIVAL := Vector2(240, 48)
+## The tower stands at the top of the north path (TOWER_BASE is its base
+## line). The player climbs its steps and walks through the open door (GATE).
+const TOWER_BASE := Vector2(240, 88)
+const GATE := Rect2(228, 40, 24, 24)
+const GATE_ARRIVAL := Vector2(240, 100)
 const CRYSTAL_ARRIVAL := Vector2(240, 180)
 const REACH := 30.0
 const CRYSTAL_POS := Vector2(240, 160)
@@ -73,8 +75,6 @@ const PIECES: Array = [
 	["house_b", Vector2(316, 84), Vector2(70, 16)],
 	["house_c", Vector2(440, 268), Vector2(58, 16)],
 	["tree_b", Vector2(118, 66), Vector2.ZERO],
-	["tree_c", Vector2(206, 40), Vector2.ZERO],
-	["tree_b", Vector2(282, 30), Vector2.ZERO],
 	["tree_a", Vector2(26, 266), Vector2.ZERO],
 	["tree_c", Vector2(80, 270), Vector2.ZERO],
 	["tree_b", Vector2(472, 190), Vector2.ZERO],
@@ -143,6 +143,9 @@ const LIGHTS: Array = [
 	[Vector2(333, 210), 44.0, 0.8],
 	[Vector2(62, 84), 50.0, 0.7],
 	[Vector2(424, 100), 56.0, 1.0],
+	[Vector2(240, 52), 30.0, 0.9],
+	[Vector2(216, 44), 24.0, 0.7],
+	[Vector2(264, 44), 24.0, 0.7],
 ]
 ## Forge chimney top and anvil (smoke and sparks).
 const CHIMNEY := Vector2(399, 32)
@@ -152,7 +155,7 @@ const FORGE_BASE := 130.0
 ## look (VILLAGER_LOOKS), so no two villagers on screen look alike.
 const WALKS: Array = [
 	[Vector2(96, 150), Vector2(170, 150), Vector2(162, 226), Vector2(96, 226)],
-	[Vector2(240, 30), Vector2(240, 104), Vector2(300, 136), Vector2(240, 104)],
+	[Vector2(222, 104), Vector2(258, 104), Vector2(300, 136), Vector2(240, 128)],
 	[Vector2(372, 222), Vector2(316, 222), Vector2(316, 160), Vector2(372, 160)],
 	[Vector2(196, 180), Vector2(284, 180), Vector2(290, 136), Vector2(190, 136)],
 	[Vector2(198, 114), Vector2(188, 118)],
@@ -492,6 +495,7 @@ func _build_pieces() -> void:
 		elif p[0] == "house_a":
 			_glow_targets[&"wardrobe"] = s
 	var crystal := _piece("crystal", CRYSTAL_POS, Vector2(40, 12))
+	_build_tower()
 	_crystal_glow = Sprite2D.new()
 	_crystal_glow.texture = _tex("crystal_glow")
 	_crystal_glow.position = Vector2(0, -42)
@@ -499,6 +503,24 @@ func _build_pieces() -> void:
 	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	_crystal_glow.material = add
 	crystal.add_child(_crystal_glow)
+
+
+## The tower base: walls on both sides of the steps and behind the doorway,
+## so the only way in is up the steps and through the door.
+func _build_tower() -> void:
+	var tower := _piece("tower_gate", TOWER_BASE, Vector2.ZERO)
+	# Y-sort key at the doorway, not the base: whoever is on the steps draws
+	# in front of the tower.
+	var lift := TOWER_BASE.y - GATE.position.y
+	tower.position.y -= lift
+	tower.offset.y += lift
+	var body := StaticBody2D.new()
+	body.name = "TowerWalls"
+	add_child(body)
+	var b := TOWER_BASE
+	_rect(body, Rect2(b.x - 40, 0, 28, b.y))
+	_rect(body, Rect2(b.x + 12, 0, 28, b.y))
+	_rect(body, Rect2(b.x - 12, 0, 24, GATE.position.y - 2))
 
 
 func _build_spots() -> void:
@@ -510,11 +532,10 @@ func _build_spots() -> void:
 		cta.radius = 18.0
 		add_child(cta)
 		_ctas[id] = cta
-	# The tower entrance always pings: it is where the run starts.
+	# The foot of the tower steps always pings: it is where the run starts.
 	_gate_cta = TownCta.new()
-	_gate_cta.color = Color(0.55, 0.9, 1.0)
-	_gate_cta.position = GATE.get_center() + Vector2(0, 4)
-	_gate_cta.radius = 22.0
+	_gate_cta.position = TOWER_BASE + Vector2(0, 6)
+	_gate_cta.radius = 16.0
 	_gate_cta.active = true
 	add_child(_gate_cta)
 	# Hint and bubble live on a screen layer (no camera here, so screen and
@@ -532,13 +553,6 @@ func _build_spots() -> void:
 	overlay.add_child(_hint)
 	_bubble = SpeechBubble.new()
 	overlay.add_child(_bubble)
-	var sign := UiKit.label("Torre", UiKit.COLOR_ITEM, HORIZONTAL_ALIGNMENT_CENTER)
-	sign.name = "GateSign"
-	sign.size = Vector2(60, 10)
-	sign.position = Vector2(GATE.get_center().x - 30, GATE.end.y + 2)
-	sign.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.06))
-	sign.add_theme_constant_override("outline_size", 2)
-	overlay.add_child(sign)
 	_note = UiKit.label("Sem armas na cidade", UiKit.COLOR_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 	_note.size = Vector2(100, 10)
 	_note.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.06))

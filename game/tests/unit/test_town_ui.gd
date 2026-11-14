@@ -230,3 +230,23 @@ func test_stepping_into_the_gate_opens_the_floor_list() -> void:
 	T.ok(town._panel == null, "standing still in the gate does not reopen it")
 	town.free()
 	_game().new_run()
+
+
+func test_walking_up_the_tower_steps_reaches_the_door() -> void:
+	_game().new_run()
+	_game().run.unlock_floor(2)
+	var town := await _spawn("res://world/town.tscn")
+	var player := town.get_node("Player") as Player
+	player.global_position = TownScript.GATE_ARRIVAL
+	await _tree().physics_frame
+	Input.action_press(&"move_up")
+	for i in 120:
+		await _tree().physics_frame
+		if town._panel != null:
+			break
+	Input.action_release(&"move_up")
+	T.ok(town._panel is TeleportPanel, "walked through the door (y %.0f)" % player.global_position.y)
+	if town._panel != null:
+		town._panel.close()
+	town.free()
+	_game().new_run()

@@ -34,7 +34,7 @@ Vitória: vencer o chefe do andar 3.
 - **Cura:** depois de 1,5 s parado, recupera 6 de vida por segundo (era 8; ver `docs/balance.md`), com aura amarela.
 - **Saída:** segurar Q por 2 s. Não funciona na sala do chefe e é cancelada se o jogador levar dano.
 - **Cidade sem armas:** na cidade o ataque não funciona. Apertar o botão mostra o aviso "Sem armas na cidade".
-- **Entrada da torre:** para entrar é preciso caminhar até a entrada, no fim do caminho norte. Com só o andar 1 liberado, entra direto; com mais andares, abre a lista de andares. Quem volta a pé pela escada do andar 1 chega por essa entrada; quem sai por teleporte chega no cristal.
+- **Entrada da torre:** para entrar é preciso subir a escada da torre, no fim do caminho norte, e passar pela porta. Com só o andar 1 liberado, entra direto; com mais andares, abre a lista de andares. Quem volta a pé pela escada do andar 1 chega por essa entrada; quem sai por teleporte chega no cristal.
 - **Morte:** perde tudo e volta ao andar 1 com o relógio zerado.
 - **Andares:** 3 andares. Cada um tem um tutorial (só no andar 1), de 4 a 5 salas sorteadas e um chefe. Vencer o chefe libera o próximo andar na entrada da torre.
 - **Inimigos:**
@@ -103,7 +103,7 @@ Comum (branco), Rara (azul), Épica (roxo). A raridade aumenta os números, e as
 Uma tela única com:
 - a loja do herói
 - o ferreiro
-- a entrada da torre, no fim do caminho norte: o jogador caminha até ela para entrar
+- a torre, no fim do caminho norte: o jogador sobe a escada e entra pela porta aberta
 - o cristal, onde o jogador chega quando sai da torre por teleporte (Q ou portal do chefe)
 - moradores andando
 - fumaça da forja
