@@ -47,6 +47,8 @@ func close() -> void:
 	_open = false
 	open_count -= 1
 	last_closed_frame = Engine.get_process_frames()
+	# The key that pressed "Fechar" (Space) must not also roll the player.
+	UiKit.block_gameplay_input()
 	get_tree().paused = false
 	closed.emit()
 	queue_free()

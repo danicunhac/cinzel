@@ -2,14 +2,21 @@ class_name PauseMenu
 extends CanvasLayer
 ## Esc toggles pause (get_tree().paused). process_mode ALWAYS. Ignores Esc
 ## while another pause owner (a town panel, the swap panel) holds the tree.
+## "Voltar ao título" and "Fechar o jogo" lose the run (there is no save), so
+## each takes a second press.
 ## Debug: `--pause` opens it on start (for screenshots).
 
+const TITLE_SCENE := "res://ui/title.tscn"
 const CONTROLS := "WASD: mover   J ou clique: atacar\nEspaço: rolar   E: interagir\nQ (segurar): sair da torre"
+const CONFIRM_TEXT := "Confirmar: a run se perde"
+const TITLE_TEXT := "Voltar ao título"
+const QUIT_TEXT := "Fechar o jogo"
 
+var title_button: Button
+var quit_button: Button
 var _root: Control
 var _continue: Button
-var _quit: Button
-var _confirm_quit: bool = false
+var _armed: Button = null
 
 
 func _ready() -> void:
@@ -36,9 +43,10 @@ func close() -> void:
 	if not is_open():
 		return
 	_root.visible = false
+	_disarm()
+	# The key that pressed "Continuar" (Space) must not also roll the player.
+	UiKit.block_gameplay_input()
 	get_tree().paused = false
-	_confirm_quit = false
-	_quit.text = "Sair do jogo"
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -64,24 +72,48 @@ func _build() -> void:
 	dim.color = Color(0.03, 0.02, 0.04, 0.7)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(dim)
-	var box := UiKit.centred_frame(_root, Vector2(200, 128))
+	var box := UiKit.centred_frame(_root, Vector2(200, 148))
 	box.add_child(UiKit.label("Pausa", UiKit.COLOR_TITLE, HORIZONTAL_ALIGNMENT_CENTER))
-	_continue = UiKit.button("Continuar")
-	_continue.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_continue = _add_button(box, "Continuar")
 	_continue.pressed.connect(close)
-	box.add_child(_continue)
-	_quit = UiKit.button("Sair do jogo")
-	_quit.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_quit.pressed.connect(_on_quit)
-	box.add_child(_quit)
-	var help := UiKit.label(CONTROLS, UiKit.COLOR_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
-	box.add_child(help)
+	title_button = _add_button(box, TITLE_TEXT)
+	title_button.pressed.connect(_on_title)
+	quit_button = _add_button(box, QUIT_TEXT)
+	quit_button.pressed.connect(_on_quit)
+	box.add_child(UiKit.label(CONTROLS, UiKit.COLOR_MUTED, HORIZONTAL_ALIGNMENT_CENTER))
 
 
-## Quitting loses the run (there is no save), so it takes a second press.
-func _on_quit() -> void:
-	if _confirm_quit:
-		get_tree().quit()
+func _add_button(box: VBoxContainer, text: String) -> Button:
+	var b := UiKit.button(text)
+	b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(b)
+	return b
+
+
+## First press arms the button (asks to confirm); the second runs it.
+func _confirm(b: Button) -> bool:
+	if _armed == b:
+		return true
+	_disarm()
+	_armed = b
+	b.text = CONFIRM_TEXT
+	return false
+
+
+func _disarm() -> void:
+	_armed = null
+	title_button.text = TITLE_TEXT
+	quit_button.text = QUIT_TEXT
+
+
+func _on_title() -> void:
+	if not _confirm(title_button):
 		return
-	_confirm_quit = true
-	_quit.text = "Confirmar: a run se perde"
+	close()
+	Game.new_run()
+	Game.goto(TITLE_SCENE)
+
+
+func _on_quit() -> void:
+	if _confirm(quit_button):
+		get_tree().quit()

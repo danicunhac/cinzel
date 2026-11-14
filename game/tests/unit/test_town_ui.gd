@@ -129,6 +129,49 @@ func test_hud_shows_blocked_message_and_boss_bar() -> void:
 	_game().new_run()
 
 
+func test_space_that_closes_a_panel_does_not_roll() -> void:
+	_game().new_run()
+	var town := await _spawn("res://world/town.tscn")
+	var player := town.get_node("Player") as Player
+	await _tree().physics_frame
+	var p := town.open_panel(&"teleport") as UiPanel
+	# Space is both ui_accept (presses "Fechar") and roll.
+	Input.action_press(&"roll")
+	p.close()
+	T.ok(UiKit.gameplay_input_blocked(), "input blocked right after closing")
+	await _tree().physics_frame
+	await _tree().physics_frame
+	Input.action_release(&"roll")
+	T.ok(player.state != Player.State.ROLL, "player did not roll")
+	T.ok(not UiKit.gameplay_input_blocked(), "block lasts one physics frame")
+	town.free()
+	_game().new_run()
+
+
+func test_pause_title_and_quit_need_two_presses() -> void:
+	_game().new_run()
+	var town := await _spawn("res://world/town.tscn")
+	var pause := town.get_node("Pause") as PauseMenu
+	pause.open()
+	T.eq(pause.title_button.text, "Voltar ao título")
+	T.eq(pause.quit_button.text, "Fechar o jogo")
+	pause.quit_button.pressed.emit()
+	T.eq(pause.quit_button.text, "Confirmar: a run se perde", "quit armed, not quit")
+	pause.title_button.pressed.emit()
+	T.eq(pause.quit_button.text, "Fechar o jogo", "arming one disarms the other")
+	T.eq(pause.is_open(), true, "first press keeps the menu")
+	pause.title_button.pressed.emit()
+	T.eq(_tree().paused, false, "leaving unpauses")
+	town.free()
+	for i in 3:
+		await _tree().process_frame
+	var cur := _tree().current_scene
+	T.ok(cur != null and cur.scene_file_path == "res://ui/title.tscn", "second press goes to the title")
+	if cur != null:
+		cur.free()
+	_game().new_run()
+
+
 class FakeBoss extends Node:
 	signal boss_hp(hp: int, max_hp: int)
 

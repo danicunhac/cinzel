@@ -10,6 +10,7 @@ var summary_label: Label
 func _ready() -> void:
 	UiKit.ensure_wasd_ui()
 	Game.run.clock.running = false
+	UiKit.apply_debug_last_run()
 	var bg := ColorRect.new()
 	bg.color = Color(0.07, 0.04, 0.05)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)

@@ -88,3 +88,29 @@ static func ensure_wasd_ui() -> void:
 			var ev := InputEventKey.new()
 			ev.physical_keycode = key
 			InputMap.action_add_event(action, ev)
+
+
+## Last physics frame on which the player ignores just-pressed actions.
+static var _input_blocked_until: int = -1
+
+
+## Called when a menu closes and unpauses. A key pressed outside a physics
+## step counts as just pressed on the next one (even if released), so Space
+## on "Fechar" would also roll; block that next physics frame.
+static func block_gameplay_input() -> void:
+	_input_blocked_until = Engine.get_physics_frames() + 1
+
+
+static func gameplay_input_blocked() -> bool:
+	return Engine.get_physics_frames() <= _input_blocked_until
+
+
+## Debug for screenshots: `--last-run=floor,seconds,gold` seeds Game.last_run.
+static func apply_debug_last_run() -> void:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--last-run="):
+			var v := a.substr(11).split(",")
+			if v.size() == 3:
+				var last: Dictionary[String, Variant] = {
+					"floor": int(v[0]), "seconds": float(v[1]), "gold": int(v[2])}
+				Game.last_run = last
