@@ -18,9 +18,9 @@ const FRAME_COUNT: Dictionary[StringName, int] = {
 	&"idle": 4, &"walk": 8, &"attack": 6, &"roll": 6, &"death": 6,
 }
 ## Attack plays its 6 frames in about one swing (Player.SWING_TIME 0.27 s),
-## roll in one roll (Player.ROLL_TIME 0.3 s).
+## roll in one roll (Player.ROLL_TIME 0.4 s).
 const FPS: Dictionary[StringName, float] = {
-	&"idle": 6.0, &"walk": 12.0, &"attack": 22.0, &"roll": 20.0, &"death": 9.0,
+	&"idle": 6.0, &"walk": 12.0, &"attack": 22.0, &"roll": 15.0, &"death": 9.0,
 }
 const LOOPING: Array[StringName] = [&"idle", &"walk"]
 const LAYERS: Array[StringName] = [&"body", &"hair", &"outfit", &"weapon"]

@@ -14,13 +14,14 @@ func test_base_stats() -> void:
 	T.eq(s.damage, 10, "iron sword keeps the old base damage")
 	T.eq(s.weapon_type, &"sword")
 	T.near(s.heal_delay, 1.5)
-	T.near(s.roll_distance, 72.0)
+	T.near(s.roll_distance, 54.0)
+	T.near(s.move_speed, 90.0)
 
 
 func test_item_mods_stack() -> void:
 	var s := PlayerStats.from_equipment(_with_relics([&"stone_heart", &"light_boots"] as Array[StringName]))
 	T.eq(s.max_hp, 140)
-	T.near(s.move_speed, 150.0)
+	T.near(s.move_speed, 112.5)
 
 
 func test_hourglass_heal_delay() -> void:

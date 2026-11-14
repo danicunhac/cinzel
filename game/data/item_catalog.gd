@@ -86,13 +86,13 @@ const ITEMS: Dictionary[StringName, Dictionary] = {
 	# Armors: defense, max hp and weight (weight makes the roll slower).
 	&"armor_cloth": {
 		"kind": &"armor", "rarity": &"common",
-		"name": "Roupa Acolchoada", "desc": "Pano grosso. Protege pouco e não pesa nada.",
-		"base_price": 15, "stats": {"defense": 1, "max_hp": 0, "weight": 0}, "mods": {},
+		"name": "Roupa Acolchoada", "desc": "Pano grosso. Protege pouco e deixa o passo leve.",
+		"base_price": 15, "stats": {"defense": 1, "max_hp": 0, "weight": 0}, "mods": {"move_speed_mult": 1.08},
 	},
 	&"armor_leather": {
 		"kind": &"armor", "rarity": &"common",
-		"name": "Armadura de Couro", "desc": "Leve e flexível.",
-		"base_price": 25, "stats": {"defense": 2, "max_hp": 10, "weight": 1}, "mods": {},
+		"name": "Armadura de Couro", "desc": "Leve e flexível. Rolagem um pouco mais longa.",
+		"base_price": 25, "stats": {"defense": 2, "max_hp": 10, "weight": 1}, "mods": {"roll_distance_mult": 1.1},
 	},
 	&"armor_chain": {
 		"kind": &"armor", "rarity": &"rare",
@@ -111,14 +111,14 @@ const ITEMS: Dictionary[StringName, Dictionary] = {
 	},
 	&"armor_shadow": {
 		"kind": &"armor", "rarity": &"epic",
-		"name": "Armadura das Sombras", "desc": "Tecido de sombra. Não pesa e alonga a rolagem.",
-		"base_price": 100, "stats": {"defense": 4, "max_hp": 20, "weight": 0}, "mods": {"roll_distance_mult": 1.2},
+		"name": "Armadura das Sombras", "desc": "Tecido de sombra. Não pesa, acelera o passo e alonga a rolagem.",
+		"base_price": 100, "stats": {"defense": 4, "max_hp": 20, "weight": 0}, "mods": {"roll_distance_mult": 1.2, "move_speed_mult": 1.12},
 	},
 	# Helms: small crit/defense bonus.
 	&"helm_hood": {
 		"kind": &"helm", "rarity": &"common",
-		"name": "Capuz de Viajante", "desc": "Um capuz simples. Um pouco mais de crítico.",
-		"base_price": 15, "stats": {"crit": 0.03, "defense": 0}, "mods": {},
+		"name": "Capuz de Viajante", "desc": "Um capuz simples. Um pouco mais de crítico e de velocidade.",
+		"base_price": 15, "stats": {"crit": 0.03, "defense": 0}, "mods": {"move_speed_mult": 1.05},
 	},
 	&"helm_iron": {
 		"kind": &"helm", "rarity": &"common",

@@ -17,8 +17,9 @@ var weapon_type: StringName = &"sword"
 var defense: int = 0
 var weight: int = 0
 var roll_speed_mult: float = 1.0
-var move_speed: float = 120.0
-var roll_distance: float = 72.0
+## Base walk (px/s) and roll length (px); armor, helms and relics raise them.
+var move_speed: float = 90.0
+var roll_distance: float = 54.0
 var lifesteal: float = 0.0
 var heal_delay: float = 1.5
 var heal_per_sec: float = 6.0

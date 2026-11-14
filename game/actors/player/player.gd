@@ -20,7 +20,9 @@ const HIT_END := 0.74
 ## The attack strip (6 frames at 22 fps) lasts this long at speed_scale 1.
 const ANIM_SWING := 6.0 / 22.0
 const FINISHER_SCALE := 1.25
-const ROLL_TIME := 0.3
+const ROLL_TIME := 0.4
+## Invincible part of the roll (shorter than the roll itself).
+const ROLL_IFRAMES := 0.3
 const ROLL_COOLDOWN := 0.6
 const HURT_IFRAMES := 1.0
 ## Moving while the attack is held to charge.
@@ -529,7 +531,7 @@ func _start_roll(dir: Vector2) -> void:
 	_combo_step = -1
 	_combo_timer = 0.0
 	special.cancel()
-	invincible_time = maxf(invincible_time, ROLL_TIME)
+	invincible_time = maxf(invincible_time, ROLL_IFRAMES)
 	sprite.play(&"roll", facing, true)
 	sprite.position = SPRITE_HOME
 	Sfx.play(&"roll", 0.08)
