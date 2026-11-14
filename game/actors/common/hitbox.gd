@@ -7,6 +7,7 @@ signal landed(hurtbox: Hurtbox)
 @export var damage: int = 0
 @export var team: StringName = &""
 
+var _active: bool = false
 var _already_hit: Array[Hurtbox] = []
 
 
@@ -19,8 +20,9 @@ func can_hit(hurtbox: Hurtbox) -> bool:
 
 
 func set_active(active: bool) -> void:
-	if active:
+	if active and not _active:
 		_already_hit.clear()
+	_active = active
 	for c in get_children():
 		if c is CollisionShape2D:
 			(c as CollisionShape2D).set_deferred("disabled", not active)

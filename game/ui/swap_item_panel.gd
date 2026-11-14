@@ -3,7 +3,7 @@ extends CanvasLayer
 ## Shown when add_item fails. Pauses the tree; the player picks a slot to
 ## replace ("trocar") or keeps the inventory as is ("deixar").
 
-signal closed(swapped: bool)
+signal closed(swapped_out: StringName)
 
 var _new_item: StringName = &""
 var _selected: int = -1
@@ -78,15 +78,15 @@ func _select(slot: int) -> void:
 
 
 func _swap() -> void:
-	Game.run.replace_item(_selected, _new_item)
-	_close(true)
+	var old := Game.run.replace_item(_selected, _new_item)
+	_close(old)
 
 
 func _leave() -> void:
-	_close(false)
+	_close(&"")
 
 
-func _close(swapped: bool) -> void:
+func _close(swapped_out: StringName) -> void:
 	get_tree().paused = false
-	closed.emit(swapped)
+	closed.emit(swapped_out)
 	queue_free()

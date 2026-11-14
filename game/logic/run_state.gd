@@ -9,6 +9,7 @@ const MAX_FLOOR := 3
 var gold: int = 0
 var items: Array[StringName] = []
 var unlocked_floors: int = 1
+var hp: int = PlayerStats.new().max_hp
 var clock: RunClock = RunClock.new()
 
 
@@ -71,6 +72,7 @@ func die() -> void:
 	items.clear()
 	unlocked_floors = 1
 	clock.reset()
+	hp = stats().max_hp
 	changed.emit()
 
 

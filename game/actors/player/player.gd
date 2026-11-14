@@ -52,7 +52,7 @@ func _ready() -> void:
 		Game.new_run()
 	Game.run.changed.connect(_refresh_stats)
 	_refresh_stats()
-	health.hp = health.max_hp
+	health.hp = clampi(Game.run.hp, 0, health.max_hp)
 	blocks_left = _stats.block_per_room
 	_build_arc()
 	hitbox.team = &"player"
@@ -89,6 +89,7 @@ func _physics_process(delta: float) -> void:
 	_update_heal(delta, input_dir)
 	_update_exit(delta)
 	_update_visuals(delta)
+	Game.run.hp = health.hp
 
 
 func _tick_timers(delta: float) -> void:

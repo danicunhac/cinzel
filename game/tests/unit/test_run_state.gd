@@ -82,3 +82,15 @@ func test_replace_bad_slot_noop() -> void:
 	T.eq(r.remove_item(3), &"")
 	T.eq(r.items.size(), 1)
 	T.eq(r.items[0], &"fang")
+
+
+func test_die_restores_hp() -> void:
+	var r := RunState.new()
+	r.add_item(&"stone_heart")
+	r.hp = 5
+	r.die()
+	T.eq(r.hp, 100)
+
+
+func test_hp_defaults_to_base_max() -> void:
+	T.eq(RunState.new().hp, 100)

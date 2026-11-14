@@ -21,12 +21,24 @@ func goto(scene_path: String) -> void:
 	get_tree().change_scene_to_file(scene_path)
 
 
+var _swap_open: bool = false
+
+
 ## Adds the item, or opens the swap panel when the slots are full.
-## Returns true when the new item ended up in the inventory.
-func offer_item(id: StringName) -> bool:
+## Returns {"taken": bool, "swapped_out": StringName}. "taken" is true when the
+## new item is now in the inventory; "swapped_out" is the replaced item id
+## (&"" when nothing was replaced). The caller must drop swapped_out as a pickup.
+## Unknown ids, or a call while a panel is already open, return taken = false.
+func offer_item(id: StringName) -> Dictionary:
+	var none := {"taken": false, "swapped_out": &""}
+	if not ItemDB.has(id) or _swap_open:
+		return none
 	if run.add_item(id):
-		return true
+		return {"taken": true, "swapped_out": &""}
+	_swap_open = true
 	var panel := SwapItemPanelScene.instantiate() as SwapItemPanel
 	get_tree().current_scene.add_child(panel)
 	panel.open(id)
-	return await panel.closed
+	var old: StringName = await panel.closed
+	_swap_open = false
+	return {"taken": old != &"", "swapped_out": old}

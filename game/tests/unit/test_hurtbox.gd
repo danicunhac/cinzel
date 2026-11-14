@@ -29,6 +29,8 @@ func test_other_team_emits_once_per_swing() -> void:
 	T.ok(hurt.receive(hit), "first hit counts")
 	T.ok(not hurt.receive(hit), "second hit same swing ignored")
 	hit.set_active(true)
+	hit.set_active(false)
+	hit.set_active(true)
 	T.ok(hurt.receive(hit), "new swing counts")
 	T.eq(got, [7, 7] as Array[int])
 	hurt.free()
