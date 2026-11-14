@@ -13,6 +13,12 @@ extends SceneTree
 ##   B  big crawler boss (floor 1)       H  big charger boss (floor 2)
 ##   F  final boss (floor 3)             C  chest spot
 ## A room's optional "floor" key (default 1) picks the tileset.
+##
+## Painted rooms: when res://assets/rooms/<room id>.png exists (480 x 270, made
+## by art-src/build_rooms_art.py from the layout dumped to LAYOUTS_JSON), the
+## room shows it as a Background sprite, the Walls layer stays for collision
+## only (hidden), doors get overlay sprites and the torches get lights. Rooms
+## without a painting keep the tile visuals, so new templates work at once.
 
 const W := 30
 const H := 16
@@ -21,6 +27,22 @@ const TEXTURE_PATH := "res://assets/tiles/floor%d.png"
 const FLOORS := 3
 const ROOM_SCRIPT := "res://world/room.gd"
 const DOOR_SCRIPT := "res://world/room_door.gd"
+const PAINT_PATH := "res://assets/rooms/%s.png"
+## Door overlays: 3 columns (shut, locked, open) x 2 rows (front, side), 24x32.
+const DOORS_PATH := "res://assets/rooms/doors.png"
+const DOOR_FRAME := Vector2i(24, 32)
+## Painted rooms draw a thin top wall's brick face over the first floor row,
+## so an extra body blocks that row (gaps under top-wall doors), and the side
+## walls look this much thicker than their cells.
+const TOP_FACE_BAND := 16
+const SIDE_WALL_PAD := 4
+## Layouts for the art pipeline (blockouts, alignment check).
+const LAYOUTS_JSON := "res://../art-src/gen/rooms/layouts.json"
+## Darkening per floor so the torch lights read.
+const AMBIENT: Array[Color] = [
+	Color(0.80, 0.76, 0.74), Color(0.72, 0.77, 0.84), Color(0.78, 0.70, 0.70)]
+const TORCH_COLOR: Array[Color] = [
+	Color(1.0, 0.72, 0.42), Color(1.0, 0.8, 0.6), Color(1.0, 0.55, 0.32)]
 ## No enemy starts closer than this to the player's entry point.
 const MIN_SPAWN_DIST := 144.0
 const WALKABLE := ".,~cshBHFC"
@@ -40,6 +62,10 @@ const TUTORIAL_TOP := [
 ]
 ## Columns of the torches on the wall face of the top wall.
 const TORCH_COLS: Array[int] = [7, 22]
+## Torch columns on a thick top wall, clear of the tutorial sign (x 60-420).
+const TORCH_COLS_SIGN: Array[int] = [2, 27]
+## Tutorial sign rectangle (also a blank plaque in the painting).
+const SIGN_RECT := Rect2(60, 26, 360, 36)
 
 var ROOMS: Array[Dictionary] = [
 	{
@@ -127,8 +153,8 @@ var ROOMS: Array[Dictionary] = [
 		"path": "res://world/rooms/f1/f1_galeria.tscn",
 		"rows": [
 			"##########################X###",
-			"#....................s.......#",
 			"#............................#",
+			"#...................s........#",
 			"#............................#",
 			"#...xxxxxxxx.....xxxxxxxxx...#",
 			"#............................#",
@@ -215,8 +241,8 @@ var ROOMS: Array[Dictionary] = [
 		"path": "res://world/rooms/f1/f1_anel.tscn",
 		"rows": [
 			"##############################",
-			"#..................s.........#",
 			"#............................#",
+			"#.................s..........#",
 			"#..............C.............#",
 			"#.......o............o.......#",
 			"#............................#",
@@ -316,6 +342,7 @@ func _initialize() -> void:
 			printerr(e)
 		quit(1)
 		return
+	_dump_layouts()
 	var tile_sets: Array[TileSet] = []
 	for f in FLOORS:
 		tile_sets.append(_build_tileset(f + 1))
@@ -413,6 +440,11 @@ func _validate(def: Dictionary) -> Array[String]:
 				errs.append("%s: %s spawn %s only %.0f px from entry" % [path, k, c, dist])
 	if enemies == 0 and not def.get("heal", false):
 		errs.append("%s: no enemies" % path)
+	if _top_rows(rows) == 1:
+		for x in W:
+			var ch := rows[1][x]
+			if ENEMY_KINDS.has(ch) or ch == "C":
+				errs.append("%s: '%s' at %s sits under the top wall face (row 1)" % [path, ch, Vector2i(x, 1)])
 	var chests := _find(rows, "C")
 	if not def.get("tutorial", false) and not def.get("boss", false) and chests.size() != 1:
 		errs.append("%s: needs one chest spot" % path)
@@ -485,21 +517,54 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 		room.set("start_hp_ratio", 0.5)
 		room.set("heal_to_clear", true)
 
-	var floor_layer := TileMapLayer.new()
-	floor_layer.name = "Floor"
-	floor_layer.tile_set = tile_set
-	floor_layer.z_index = -1
-	floor_layer.collision_enabled = false
-	_add(room, floor_layer)
+	var floor_num := int(def.get("floor", 1))
+	var paint_path := PAINT_PATH % _room_id(def)
+	var painted := ResourceLoader.exists(paint_path)
+	var floor_layer: TileMapLayer = null
+	if painted:
+		var bg := Sprite2D.new()
+		bg.name = "Background"
+		bg.texture = load(paint_path) as Texture2D
+		bg.centered = false
+		bg.z_index = -5
+		_add(room, bg)
+		var ambient := CanvasModulate.new()
+		ambient.name = "Ambient"
+		ambient.color = AMBIENT[floor_num - 1]
+		_add(room, ambient)
+		var lights := Node2D.new()
+		lights.name = "Torches"
+		_add(room, lights)
+		var light_tex := _light_texture()
+		for t in _torches(rows):
+			var torch := _make_torch(_center(t), floor_num, light_tex)
+			torch.name = "Torch%d" % (lights.get_child_count() + 1)
+			lights.add_child(torch)
+			torch.owner = room
+	else:
+		floor_layer = TileMapLayer.new()
+		floor_layer.name = "Floor"
+		floor_layer.tile_set = tile_set
+		floor_layer.z_index = -1
+		floor_layer.collision_enabled = false
+		_add(room, floor_layer)
 
 	var walls := TileMapLayer.new()
 	walls.name = "Walls"
 	walls.tile_set = tile_set
+	# Painted rooms: collision only.
+	walls.visible = not painted
 	_add(room, walls)
 
 	var spawns := Node2D.new()
 	spawns.name = "Spawns"
 	_add(room, spawns)
+
+	if painted:
+		var blockers := _make_face_blockers(rows)
+		_add(room, blockers)
+		for shape in blockers.get_children():
+			shape.owner = room
 
 	for y in H:
 		for x in W:
@@ -513,7 +578,8 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 				ground = RoomTiles.FLOOR_CRACK
 			elif ch == "~":
 				ground = RoomTiles.FLOOR_MOSS
-			floor_layer.set_cell(c, RoomTiles.SOURCE, ground)
+			if floor_layer != null:
+				floor_layer.set_cell(c, RoomTiles.SOURCE, ground)
 			match ch:
 				"o":
 					walls.set_cell(c, RoomTiles.SOURCE, RoomTiles.PILLAR)
@@ -525,6 +591,11 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 					entry.name = "Entry"
 					entry.position = _center(c + _inward(c))
 					_add(room, entry)
+					if painted:
+						var shut := _make_door_sprite(c, 0)
+						shut.name = "EntryDoor"
+						shut.position += _center(c)
+						_add(room, shut)
 				"X":
 					walls.set_cell(c, RoomTiles.SOURCE, RoomTiles.DOOR_LOCKED, _door_alt(c))
 					var door := Node2D.new()
@@ -532,6 +603,11 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 					door.position = _center(c)
 					door.set_script(load(DOOR_SCRIPT))
 					_add(room, door)
+					if painted:
+						var overlay := _make_door_sprite(c, 1)
+						overlay.name = "Sprite"
+						door.add_child(overlay)
+						overlay.owner = room
 				"C":
 					var spot := Marker2D.new()
 					spot.name = "ChestSpot"
@@ -554,7 +630,7 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 		var sign := _make_sign(def["sign"])
 		_add(room, sign)
 		await process_frame
-		sign.size = Vector2(360, 36)
+		sign.size = SIGN_RECT.size
 		get_root().remove_child(room)
 
 	var packed := PackedScene.new()
@@ -564,6 +640,152 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 	err = ResourceSaver.save(packed, path)
 	room.free()
 	return err
+
+
+## Wall rows at the top (1 for normal rooms, 4 for the tutorial's thick wall).
+func _top_rows(rows: Array[String]) -> int:
+	var top := 0
+	while top < H and _ch(rows, Vector2i(1, top)) == "#":
+		top += 1
+	return top
+
+
+## Static rectangles on the walls' collision layer: the first floor row under
+## a thin top wall (not under a top-wall door), and a SIDE_WALL_PAD strip
+## along the left and right walls (not within a cell of a side door).
+func _make_face_blockers(rows: Array[String]) -> StaticBody2D:
+	var body := StaticBody2D.new()
+	body.name = "WallFaceBlockers"
+	var rects: Array[Rect2] = []
+	var t := RoomTiles.SIZE
+	if _top_rows(rows) == 1:
+		var start := -1
+		for x in range(1, W):
+			var open := x < W - 1 and _ch(rows, Vector2i(x, 0)) == "#"
+			if open and start < 0:
+				start = x
+			elif not open and start >= 0:
+				rects.append(Rect2(start * t, t, (x - start) * t, TOP_FACE_BAND))
+				start = -1
+	for side: int in [0, W - 1]:
+		var y0 := -1
+		for y in range(1, H):
+			# Keep a cell of slack around a side door so the entry spot is clear.
+			var wall := y < H - 1 and _ch(rows, Vector2i(side, y)) == "#" \
+					and not "EX".contains(_ch(rows, Vector2i(side, y - 1))) \
+					and not "EX".contains(_ch(rows, Vector2i(side, y + 1)))
+			if wall and y0 < 0:
+				y0 = y
+			elif not wall and y0 >= 0:
+				var x: int = t if side == 0 else side * t - SIDE_WALL_PAD
+				rects.append(Rect2(x, y0 * t, SIDE_WALL_PAD, (y - y0) * t))
+				y0 = -1
+	for r in rects:
+		var shape := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = r.size
+		shape.shape = rect
+		shape.position = r.get_center()
+		body.add_child(shape)
+	return body
+
+
+func _room_id(def: Dictionary) -> String:
+	return String(def["path"]).get_file().get_basename()
+
+
+## Torch cells: on the top wall face and the bottom wall, at TORCH_COLS
+## (moved aside if a door is there). Shared with the blockouts.
+func _torches(rows: Array[String]) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	var top := 0
+	while top + 1 < H and _ch(rows, Vector2i(1, top + 1)) == "#":
+		top += 1
+	for y in [top, H - 1]:
+		# The tutorial sign covers the middle of the thick top wall.
+		var cols: Array[int] = TORCH_COLS_SIGN if y == top and top > 0 else TORCH_COLS
+		for col in cols:
+			for dx in [0, 2, -2, 4, -4]:
+				var c := Vector2i(col + dx, y)
+				if _ch(rows, c) == "#" and _ch(rows, c + Vector2i.LEFT) == "#" and _ch(rows, c + Vector2i.RIGHT) == "#":
+					out.append(c)
+					break
+	return out
+
+
+## Soft round light shared by a room's torches.
+func _light_texture() -> GradientTexture2D:
+	var grad := Gradient.new()
+	grad.set_color(0, Color(1, 1, 1, 1))
+	grad.set_color(1, Color(1, 1, 1, 0))
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	tex.width = 128
+	tex.height = 128
+	return tex
+
+
+func _make_torch(pos: Vector2, floor_num: int, tex: Texture2D) -> PointLight2D:
+	var light := PointLight2D.new()
+	light.position = pos
+	light.texture = tex
+	light.texture_scale = 1.2
+	light.color = TORCH_COLOR[floor_num - 1]
+	# The painting already has its light pools; this only lifts the actors.
+	light.energy = 0.18
+	return light
+
+
+## Overlay for a door cell: column 0 shut, 1 locked, 2 open; row 0 for doors
+## on the top or bottom wall, row 1 (side view) for the left and right walls.
+## The 24x32 frame grows into the wall away from the floor.
+func _make_door_sprite(c: Vector2i, state: int) -> Sprite2D:
+	var s := Sprite2D.new()
+	s.texture = load(DOORS_PATH) as Texture2D
+	s.hframes = 3
+	s.vframes = 2
+	var side := c.x == 0 or c.x == W - 1
+	s.frame = state + (3 if side else 0)
+	s.flip_h = c.x == W - 1
+	s.z_index = -4
+	var grow := float(DOOR_FRAME.y - RoomTiles.SIZE) / 2.0
+	var wide := float(DOOR_FRAME.x - RoomTiles.SIZE) / 2.0
+	# Top and side doors grow up; the bottom door grows down off the room;
+	# side doors widen outwards, off the floor.
+	var out_x := 0.0
+	if c.x == 0:
+		out_x = -wide
+	elif c.x == W - 1:
+		out_x = wide
+	s.position = Vector2(out_x, 0)
+	s.offset = Vector2(0, grow if c.y == H - 1 else -grow)
+	return s
+
+
+func _dump_layouts() -> void:
+	var out := {}
+	for def in ROOMS:
+		var rows := _rows(def)
+		var torches: Array = []
+		for t in _torches(rows):
+			torches.append([t.x, t.y])
+		out[_room_id(def)] = {
+			"floor": int(def.get("floor", 1)),
+			"tutorial": def.get("tutorial", false),
+			"boss": def.get("boss", false),
+			"rows": rows,
+			"torches": torches,
+			"sign": [SIGN_RECT.position.x, SIGN_RECT.position.y, SIGN_RECT.size.x, SIGN_RECT.size.y] if def.has("sign") else [],
+		}
+	var path := ProjectSettings.globalize_path(LAYOUTS_JSON)
+	DirAccess.make_dir_recursive_absolute(path.get_base_dir())
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(out, "\t") + "\n")
+	f.close()
+	print("wrote %s" % path)
 
 
 ## Plaque on the thick top wall of tutorial rooms.
@@ -583,7 +805,7 @@ func _make_sign(text: String) -> Label:
 	box.set_border_width_all(1)
 	box.set_content_margin_all(2)
 	label.add_theme_stylebox_override(&"normal", box)
-	label.position = Vector2(60, 26)
+	label.position = SIGN_RECT.position
 	return label
 
 

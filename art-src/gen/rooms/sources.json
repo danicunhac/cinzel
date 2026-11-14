@@ -1,0 +1,16 @@
+{
+ "_note": "AI generator asset (projectId asset-gen) behind each chosen painting",
+ "t1_move_attack": {"model": "openai/gpt-image-2.5/sunburst/edit", "original": "cinzel-room-t1_move_attack-1-158244465a0d", "blockout": "t1_move_attack-4x-fc9edb2842c1"},
+ "t2_dodge": {"model": "openai/gpt-image-2.5/sunburst/edit", "original": "cinzel-room-t2_dodge-2-6a647131d03c", "blockout": "t2_dodge-4x-bc3cdbb068d0"},
+ "t3_heal": {"model": "openai/gpt-image-2.5/sunburst/edit", "original": "cinzel-room-t3_heal-1-8b8b0d2de3ff", "blockout": "t3_heal-4x-85a545bb332e"},
+ "f1_anel": {"model": "openai/gpt-image-2.5/sunburst/edit", "original": "cinzel-room-f1_anel-1-def40805e743", "blockout": "f1_anel-4x-d357bb0eb59f"},
+ "f1_antessala": {"model": "openai/gpt-image-2.5/sunburst/edit", "original": "cinzel-room-f1_antessala-2-d03536d58486", "blockout": "f1_antessala-4x-79cd7571e3a3"},
+ "f1_arena": {"model": "openai/gpt-image-2.5/sunburst/edit", "original": "cinzel-room-f1_arena-1-a2a213dbd506", "blockout": "f1_arena-4x-d115b7184947"},
+ "f1_colunas": {"model": "openai/gpt-image-2.5/sunburst/edit", "original": "cinzel-room-f1_colunas-1-b7f21e0d9d64", "blockout": "f1_colunas-4x-e039db0d797f"},
+ "f1_cruz": {"model": "openai/gpt-image-2.5/sunburst/edit", "original": "cinzel-room-f1_cruz-2-70263316d12a", "blockout": "f1_cruz-4x-2a150124ebf1"},
+ "f1_galeria": {"model": "openai/gpt-image-2.5/sunburst/edit", "original": "cinzel-room-f1_galeria-1-f0ffc557a37f", "blockout": "f1_galeria-4x-4cbc4790f903"},
+ "boss_f1": {"model": "openai/gpt-image-2.5/sunburst/edit", "original": "cinzel-room-boss_f1-1-184cf1d3fe2d", "blockout": "boss_f1-4x-7737967479fc"},
+ "boss_f2": {"model": "openai/gpt-image-2.5/sunburst/edit", "original": "cinzel-room-boss_f2-2-48353d741cfd", "blockout": "boss_f2-4x-7337fb4f7588"},
+ "boss_f3": {"model": "openai/gpt-image-2.5/sunburst/edit", "original": "cinzel-room-boss_f3-1-36aad6dbd98e", "blockout": "boss_f3-4x-c24c7a219628"},
+ "doors": {"model": "style/gpt-image-2.5/flare (preset cinzel-pixel, role gameplayProps)", "original": "cinzel-room-doors-sheet-2-52c5ba8fb7e8"}
+}

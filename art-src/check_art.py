@@ -1,6 +1,8 @@
 """Check the shipped sheets: size, transparency, colour count, unused climber
-cells empty, no orphan pixels in the climber layers, nothing below the ground
-row the game expects (climber and NPCs 30, enemies 22, boss 44).
+cells empty, villager cells filled per row, no orphan pixels in the climber
+layers, nothing below the ground row the game expects (climber, NPCs and
+villagers 30, enemies 22, boss 44). Also checks every weapon, attack override,
+outfit, item icon and rarity frame on disk.
 
 python3 -I art-src/check_art.py <repo_root>
 """
@@ -23,6 +25,8 @@ SHEETS = {
     "game/assets/tiles/floor3.png": (128, 32, 16),
     "game/assets/characters/npc_shopkeeper.png": (64, 32, 32),
     "game/assets/characters/npc_blacksmith.png": (64, 32, 32),
+    **{"game/assets/characters/villagers/%s.png" % n: (128, 192, 32) for n in (
+        "oldwoman", "child", "guard", "farmer", "archer", "merchant")},
     "game/assets/items/heavy_blade.png": (16, 16, 16),
     "game/assets/items/light_boots.png": (16, 16, 16),
     "game/assets/items/stone_heart.png": (16, 16, 16),
@@ -55,12 +59,46 @@ SHEETS = {
     "game/assets/ui/hud/fill_exit.png": (1, 6, 1),
     "game/assets/ui/hud/fill_tip.png": (3, 8, 1),
 }
+# Villager sheets: frames per row (idle down/up/side, walk down/up/side).
+VILLAGER_COUNTS = [2, 2, 2, 4, 4, 4]
 # Cells that must stay empty in the climber sheets (frame counts per row).
 CLIMBER_COUNTS = [4, 4, 4, 8, 8, 8, 6, 6, 6, 6, 6, 6, 6]
+# Attack overrides (climber/attacks/, climber/outfits/<id>/attacks/): only
+# the 3 attack rows.
+ATTACK_COUNTS = [6, 6, 6]
+
+
+def extra_sheets(root):
+    """Weapon, attack override, outfit and item files found on disk (Task E3)."""
+    out = {}
+    climber = "game/assets/characters/climber"
+    for sub in ("weapons", "attacks"):
+        d = os.path.join(root, climber, sub)
+        for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+            if f.endswith(".png"):
+                out["%s/%s/%s" % (climber, sub, f)] = (256, 416 if sub == "weapons" else 96, 32)
+    od = os.path.join(root, climber, "outfits")
+    for oid in sorted(os.listdir(od)) if os.path.isdir(od) else []:
+        for f in ("hair.png", "outfit.png"):
+            if os.path.exists(os.path.join(od, oid, f)):
+                out["%s/outfits/%s/%s" % (climber, oid, f)] = (256, 416, 32)
+        ad = os.path.join(od, oid, "attacks")
+        for f in sorted(os.listdir(ad)) if os.path.isdir(ad) else []:
+            if f.endswith(".png"):
+                out["%s/outfits/%s/attacks/%s" % (climber, oid, f)] = (256, 96, 32)
+    items = os.path.join(root, "game/assets/items")
+    for f in sorted(os.listdir(items)):
+        if f.endswith(".png"):
+            out["game/assets/items/" + f] = (16, 16, 16)
+    frames = os.path.join(items, "frames")
+    for f in sorted(os.listdir(frames)) if os.path.isdir(frames) else []:
+        if f.endswith(".png"):
+            out["game/assets/items/frames/" + f] = (18, 18, 18)
+    return out
 CLIMBER_COLS = 8
 # Lowest opaque row allowed in each cell (the feet / ground line the game
 # uses). First matching key wins.
-GROUND = [("climber", 30), ("npc_", 30), ("enemies/boss_final", 44), ("enemies/", 22)]
+GROUND = [("climber", 30), ("npc_", 30), ("villagers/", 30), ("enemies/boss_final", 44), ("enemies/", 22)]
 
 
 def orphans(img):
@@ -90,7 +128,9 @@ def lowest_row(img, cell):
 def main():
     root = sys.argv[1] if len(sys.argv) > 1 else "."
     ok = True
-    for rel, (w, h, cell) in SHEETS.items():
+    sheets = dict(SHEETS)
+    sheets.update(extra_sheets(root))
+    for rel, (w, h, cell) in sheets.items():
         img = Image.open(os.path.join(root, rel)).convert("RGBA")
         data = img.get_flattened_data()
         colors = len({p for p in data if p[3]})
@@ -107,7 +147,8 @@ def main():
             if img.getpixel((0, 0))[3]:
                 problems.append("corner not transparent")
         if "climber" in rel:
-            for r, n in enumerate(CLIMBER_COUNTS):
+            counts = ATTACK_COUNTS if "/attacks/" in rel else CLIMBER_COUNTS
+            for r, n in enumerate(counts):
                 for c in range(n, CLIMBER_COLS):
                     box = (c * cell, r * cell, c * cell + cell, r * cell + cell)
                     if img.crop(box).getbbox():
@@ -115,11 +156,17 @@ def main():
             n = orphans(img)
             if n:
                 problems.append("%d orphan pixels" % n)
+        if "villagers/" in rel:
+            for r, n in enumerate(VILLAGER_COUNTS):
+                for c in range(4):
+                    box = (c * cell, r * cell, c * cell + cell, r * cell + cell)
+                    if bool(img.crop(box).getbbox()) != (c < n):
+                        problems.append("cell %d,%d %s" % (c, r, "empty" if c < n else "not empty"))
         ground = next((g for k, g in GROUND if k in rel), None)
         if ground is not None and lowest_row(img, cell) > ground:
             problems.append("pixels below ground row %d" % ground)
         ok = ok and not problems
-        print("%-45s %dx%d colours=%2d transparent=%5.1f%% %s" % (
+        print("%-70s %dx%d colours=%2d transparent=%5.1f%% %s" % (
             rel, img.width, img.height, colors, 100 * transparent / len(data),
             "OK" if not problems else "FAIL " + ", ".join(problems)))
     sys.exit(0 if ok else 1)
