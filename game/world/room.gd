@@ -154,25 +154,21 @@ func snapshot(save: FloorState.RoomSave) -> void:
 		save.chests_opened.append(0)
 	save.floor_items.clear()
 	for n in get_children():
-		if n is PickupItem and not n.is_queued_for_deletion():
-			var p := n as PickupItem
-			var qty: int = int(p.get(&"qty")) if &"qty" in p else 1
-			save.floor_items.append({"id": p.item_id, "qty": qty, "pos": p.position})
+		var p := n as PickupItem
+		if p != null and not p.is_queued_for_deletion() and p.qty > 0:
+			save.floor_items.append({"id": p.item_id, "qty": p.qty, "pos": p.position})
 
 
 func _drop_item(it: Dictionary) -> void:
 	var p := PickupScene.instantiate() as PickupItem
 	p.item_id = it["id"]
-	if &"qty" in p:
-		p.set(&"qty", it["qty"])
+	p.qty = int(it["qty"])
 	p.position = it["pos"]
 	add_child(p)
 
 
-## An already looted chest: open lid, nothing more to give.
 func _show_chest_open(c: Chest) -> void:
-	c.is_open = true
-	c.sprite.region_rect = RoomTiles.region(RoomTiles.CHEST_OPEN)
+	c.show_looted()
 
 
 func _lower_player_hp() -> void:

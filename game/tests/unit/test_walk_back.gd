@@ -88,6 +88,11 @@ func test_back_and_forth_keeps_cleared_rooms_chests_and_items() -> void:
 	drop.item_id = &"sword_iron"
 	drop.position = Vector2(200, 150)
 	d.room.add_child(drop)
+	var stack := PickupScene.instantiate() as PickupItem
+	stack.item_id = &"mat_slime_gel"
+	stack.qty = 3
+	stack.position = Vector2(300, 60)
+	d.room.add_child(stack)
 	var clock_before: float = _game().run.clock.seconds
 	# Back to room 0 through the entry door.
 	d.player.global_position = d.room.back_door.global_position
@@ -109,6 +114,10 @@ func test_back_and_forth_keeps_cleared_rooms_chests_and_items() -> void:
 		var p := n as PickupItem
 		return p.item_id == &"sword_iron" and p.position == Vector2(200, 150))
 	T.eq(found.size(), 1, "dropped item still on the floor")
+	var stacks := items.filter(func(n: Node) -> bool:
+		var p := n as PickupItem
+		return p.item_id == &"mat_slime_gel" and p.qty == 3 and p.position == Vector2(300, 60))
+	T.eq(stacks.size(), 1, "material stack keeps its qty")
 	T.ok(_stairs(d) == null, "no stairs past the first room")
 	d.leave_to_town()
 	await _cleanup(d)
@@ -185,6 +194,16 @@ func test_descending_to_an_unvisited_floor_builds_it_with_the_boss_beaten() -> v
 	T.ok(await _wait(d, 1, d.state.get_floor(1).plan.size() - 1), "floor 1 boss room")
 	T.ok(d.room.is_boss and d.room.is_cleared, "beaten boss room")
 	T.eq(_portals(d).size(), 2, "portals")
+	var rec := d.state.get_floor(1)
+	for i in rec.rooms.size():
+		T.ok(rec.rooms[i].cleared, "room %d cleared on an unvisited lower floor" % i)
+		T.eq(rec.rooms[i].chests_opened.has(0), i in rec.chest_rooms, "room %d chest looted" % i)
+	# Walking back from the boss room: the room before it has nobody.
+	d.player.global_position = d.room.back_door.global_position
+	T.ok(await _wait(d, 1, rec.plan.size() - 2), "back from the boss room")
+	T.eq(d.room.enemies.size(), 0, "no enemies next to the arrival door")
+	if d.room.chest != null:
+		T.ok(d.room.chest.is_open, "chest shown looted")
 	d.leave_to_town()
 	await _cleanup(d)
 

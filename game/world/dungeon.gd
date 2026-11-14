@@ -108,6 +108,13 @@ func _on_stairs_used() -> void:
 	var rec := state.get_floor(below)
 	if rec == null:
 		rec = _build_floor(below)
+		# Not visited this trip, but beaten earlier in the run: every room
+		# starts cleared (nobody spawns next to the arriving player) and its
+		# chests already looted, so a walk down is not a free-loot loop.
+		for i in rec.rooms.size():
+			rec.rooms[i].cleared = true
+			if i in rec.chest_rooms:
+				rec.rooms[i].chests_opened.append(0)
 	# Standing on floor N means floor N-1's boss is beaten.
 	rec.rooms[-1].cleared = true
 	current_floor = below
