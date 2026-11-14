@@ -60,6 +60,34 @@ static func can_craft(run: RunState, recipe_id: StringName) -> bool:
 	return true
 
 
+## Why the recipe cannot be forged now, for the disabled button ("" = it can).
+## Checked in order: locked, materials, gold, room for the result.
+static func block_reason(run: RunState, recipe_id: StringName) -> String:
+	if not is_unlocked(recipe_id, run.floors_beaten):
+		return "Vença o chefe do andar %d" % int(RECIPES[recipe_id]["floors"]) if RECIPES.has(recipe_id) else "Receita desconhecida"
+	var r: Dictionary = RECIPES[recipe_id]
+	var mats: Dictionary = r["materials"]
+	for m: StringName in mats:
+		if run.inventory.count(m) < int(mats[m]):
+			return "Faltam materiais"
+	if run.gold < int(r["gold"]):
+		return "Ouro insuficiente"
+	if not _fits_after_paying(run, r):
+		return "Mochila cheia"
+	return ""
+
+
+## Whether the result fits once the materials leave the backpack.
+static func _fits_after_paying(run: RunState, r: Dictionary) -> bool:
+	var inv := Inventory.new(run.inventory.capacity)
+	for i in run.inventory.capacity:
+		inv.slots[i] = run.inventory.slots[i].duplicate()
+	var mats: Dictionary = r["materials"]
+	for m: StringName in mats:
+		inv.remove(m, int(mats[m]))
+	return inv.add(r["result"]) == 0
+
+
 ## Whether any unlocked recipe can be forged right now (smith call to action).
 static func any_craftable(run: RunState) -> bool:
 	for id: StringName in RECIPES:

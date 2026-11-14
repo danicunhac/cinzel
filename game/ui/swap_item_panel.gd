@@ -1,100 +1,158 @@
 class_name SwapItemPanel
-extends CanvasLayer
-## Shown when add_item fails. Pauses the tree; the player picks a slot to
-## replace ("Trocar") or keeps the inventory as is ("Deixar"). Same frame,
-## title plaque and slide-in as the other panels.
+extends UiPanel
+## Full-backpack choice, shown when gear or a relic is picked up with no room
+## (Game.offer_item). Left: the new item, compared with what is worn. Right:
+## "Trocar por..." and the backpack grid; the player picks the stack that
+## drops in its place ("Trocar") or leaves the new item on the floor
+## ("Deixar", Esc). Emits picked(slot) once, slot -1 when leaving.
 
-signal closed(swapped_out: StringName)
+signal picked(slot: int)
 
-var _new_item: StringName = &""
-var _selected: int = -1
-var _slot_buttons: Array[Button] = []
-var _swap_button: Button
+const GRID_COLS := 5
+const INFO_W := 120.0
 
+var new_item: StringName = &""
+var selected: int = -1
+var cells: Array[ItemCell] = []
+var swap_button: Button
+var leave_button: Button
 
-## Debug for screenshots: `--swap=<item id>` opens the panel on start, with
-## the slots filled if the run has none.
-func _ready() -> void:
-	for a in OS.get_cmdline_user_args():
-		if a.begins_with("--swap=") and _new_item == &"":
-			while Game.run.can_take_item():
-				Game.run.add_item([&"fang", &"glass_shield", &"light_boots"][Game.run.items.size()])
-			open.call_deferred(StringName(a.substr(7)))
-
-
-func open(new_item: StringName) -> void:
-	_new_item = new_item
-	get_tree().paused = true
-	UiKit.ensure_wasd_ui()
-	_build()
+var _picked_sent: bool = false
+## Slot sent with picked() when the panel closes (-1: leave the item).
+var _choice: int = -1
+var _out_label: Label
 
 
-func _build() -> void:
-	var root := Control.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(root)
-	var dim := ColorRect.new()
-	dim.color = Color(0.03, 0.02, 0.04, 0.7)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.add_child(dim)
+func _init() -> void:
+	super._init()
+	panel_size = Vector2(300, 0)
+	panel_title = "Mochila cheia"
+	close_hint = "Esc: deixar"
+	show_close_button = false
 
-	var box := UiKit.centred_frame(root, Vector2(200, 0), "Inventário cheio")
-	box.add_child(UiKit.label("Escolha o item que sai.", UiKit.COLOR_MUTED, HORIZONTAL_ALIGNMENT_CENTER))
 
-	var items: Array[StringName] = Game.run.items
-	for i in RunState.SLOTS:
-		var has := i < items.size()
-		var b := UiKit.button(_item_name(items[i]) if has else "(vazio)", UiKit.item_icon(items[i]) if has else null)
-		b.toggle_mode = true
-		b.disabled = not has
-		b.pressed.connect(_select.bind(i))
-		box.add_child(b)
-		_slot_buttons.append(b)
+## Shows the choice for `item` (call after adding the panel to the tree).
+func open_for(item: StringName) -> void:
+	new_item = item
+	open()
 
-	var incoming := HBoxContainer.new()
-	incoming.alignment = BoxContainer.ALIGNMENT_CENTER
-	incoming.add_child(UiKit.label("Novo:", UiKit.COLOR_MUTED))
-	var icon := TextureRect.new()
-	icon.texture = UiKit.item_icon(_new_item)
-	incoming.add_child(icon)
-	incoming.add_child(UiKit.label(_item_name(_new_item), UiKit.COLOR_ITEM))
-	box.add_child(incoming)
+
+func _build(box: VBoxContainer) -> void:
+	cells.clear()
+	var cols := HBoxContainer.new()
+	cols.add_theme_constant_override("separation", 10)
+	box.add_child(cols)
+
+	var left := VBoxContainer.new()
+	left.add_theme_constant_override("separation", 3)
+	cols.add_child(left)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 4)
+	left.add_child(head)
+	var incoming := ItemCell.new().set_item(new_item)
+	incoming.focus_mode = Control.FOCUS_NONE
+	incoming.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	head.add_child(incoming)
+	var new_label := UiKit.label("Novo item", UiKit.COLOR_TITLE)
+	new_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(new_label)
+	var info := ItemInfo.new(INFO_W)
+	info.show_item(new_item, ItemCompare.compare(Game.run.equipment, new_item))
+	left.add_child(info)
+
+	var right := VBoxContainer.new()
+	right.add_theme_constant_override("separation", 3)
+	cols.add_child(right)
+	right.add_child(UiKit.label("Trocar por...", UiKit.COLOR_TITLE))
+	var grid := GridContainer.new()
+	grid.columns = GRID_COLS
+	grid.add_theme_constant_override("h_separation", 2)
+	grid.add_theme_constant_override("v_separation", 2)
+	right.add_child(grid)
+	var inv := Game.run.inventory
+	for i in inv.capacity:
+		var c := ItemCell.new().set_item(inv.id_at(i), inv.qty_at(i))
+		c.key = i
+		c.set_selected(i == selected)
+		c.focus_entered.connect(select.bind(i))
+		c.activated.connect(_on_activated.bind(i))
+		grid.add_child(c)
+		cells.append(c)
+	_out_label = UiKit.label("", UiKit.COLOR_MUTED)
+	_out_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_out_label.custom_minimum_size = Vector2(118, 20)
+	right.add_child(_out_label)
 
 	var row := HBoxContainer.new()
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", 6)
-	box.add_child(row)
-	_swap_button = UiKit.button("Trocar")
-	_swap_button.disabled = true
-	_swap_button.pressed.connect(_swap)
-	row.add_child(_swap_button)
-	var leave := UiKit.button("Deixar")
-	leave.pressed.connect(_leave)
-	row.add_child(leave)
-	leave.grab_focus.call_deferred()
+	row.alignment = BoxContainer.ALIGNMENT_END
+	row.add_theme_constant_override("separation", 4)
+	right.add_child(row)
+	swap_button = UiKit.button("Trocar")
+	swap_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	swap_button.pressed.connect(confirm)
+	row.add_child(swap_button)
+	leave_button = UiKit.button("Deixar")
+	leave_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	leave_button.pressed.connect(leave_item)
+	row.add_child(leave_button)
+	_update()
 
 
-func _item_name(id: StringName) -> String:
-	return UiKit.item_name(id)
+## "Deixar" first, so a stray Enter never drops anything.
+func _initial_focus() -> Button:
+	return leave_button
 
 
-func _select(slot: int) -> void:
-	_selected = slot
-	for i in _slot_buttons.size():
-		_slot_buttons[i].set_pressed_no_signal(i == slot)
-	_swap_button.disabled = false
+## Picks the backpack slot that would drop (a second press confirms).
+func select(slot: int) -> void:
+	selected = slot
+	_update()
 
 
-func _swap() -> void:
-	var old := Game.run.replace_item(_selected, _new_item)
-	_close(old)
+func _on_activated(slot: int) -> void:
+	if selected == slot:
+		confirm()
+	else:
+		select(slot)
 
 
-func _leave() -> void:
-	_close(&"")
+func _update() -> void:
+	for c in cells:
+		c.set_selected(c.key == selected)
+	var id := Game.run.inventory.id_at(selected)
+	swap_button.disabled = id == &""
+	if id == &"":
+		_out_label.text = "Escolha o que sai."
+		_out_label.add_theme_color_override("font_color", UiKit.COLOR_MUTED)
+	else:
+		var n := Game.run.inventory.qty_at(selected)
+		_out_label.text = "Sai: %s%s" % [UiKit.item_name(id), " x%d" % n if n > 1 else ""]
+		_out_label.add_theme_color_override("font_color", UiKit.COLOR_DANGER)
 
 
-func _close(swapped_out: StringName) -> void:
-	get_tree().paused = false
-	closed.emit(swapped_out)
-	queue_free()
+## Drops the selected stack for the new item.
+func confirm() -> void:
+	if Game.run.inventory.id_at(selected) == &"":
+		return
+	_choice = selected
+	close()
+
+
+func leave_item() -> void:
+	_choice = -1
+	close()
+
+
+## Unpauses first, then tells Game.offer_item (which resumes at once).
+func close() -> void:
+	if not is_open():
+		return
+	super.close()
+	_send(_choice)
+
+
+func _send(slot: int) -> void:
+	if _picked_sent:
+		return
+	_picked_sent = true
+	picked.emit(slot)

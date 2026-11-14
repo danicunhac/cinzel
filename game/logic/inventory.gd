@@ -79,6 +79,16 @@ func remove_at(slot: int) -> StringName:
 	return id
 
 
+## Empties `slot` and returns what it held: {"id": StringName, "qty": int},
+## or {} when it was empty (dropping a whole stack).
+func take_slot(slot: int) -> Dictionary:
+	if slot < 0 or slot >= slots.size() or slots[slot].is_empty():
+		return {}
+	var s := slots[slot]
+	slots[slot] = {}
+	return {"id": s["id"], "qty": int(s["qty"])}
+
+
 func id_at(slot: int) -> StringName:
 	if slot < 0 or slot >= slots.size() or slots[slot].is_empty():
 		return &""

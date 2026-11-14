@@ -14,6 +14,9 @@ const RETRY_TIME := 0.5
 
 @export var item_id: StringName = &""
 @export var qty: int = 1
+## Dropped by the player (backpack, full-backpack swap): not taken on touch
+## until the player has stepped off it once.
+var wait_exit: bool = false
 
 var _near: bool = false
 var _busy: bool = false
@@ -39,7 +42,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 	if _near and not _busy and not is_material() and Input.is_action_just_pressed(&"interact"):
 		take()
-	elif _near and is_material() and qty > 0 and not is_queued_for_deletion():
+	elif _near and is_material() and not wait_exit and qty > 0 and not is_queued_for_deletion():
 		_retry -= delta
 		if _retry <= 0.0:
 			_retry = RETRY_TIME
@@ -55,13 +58,15 @@ func take() -> int:
 	var result: Dictionary = await Game.offer_item(item_id)
 	_busy = false
 	if not bool(result["taken"]):
-		if not bool(result.get("busy", false)) and ItemDB.kind(item_id) != &"relic":
+		if not bool(result.get("busy", false)) and not bool(result.get("chose", false)):
 			Game.toast(FULL_TEXT)
 		return qty
 	var out: StringName = result["swapped_out"]
 	if out != &"":
 		var p := (load(scene_file_path) as PackedScene).instantiate() as PickupItem
 		p.item_id = out
+		p.qty = int(result.get("swapped_qty", 1))
+		p.wait_exit = true
 		p.position = position
 		get_parent().add_child.call_deferred(p)
 	qty = 0
@@ -105,6 +110,10 @@ func _on_body(body: Node2D, inside: bool) -> void:
 	if body.is_in_group(&"player"):
 		_near = inside
 		prompt.visible = inside
+		if not inside:
+			wait_exit = false
+		elif wait_exit:
+			return
 		if inside and is_material() and not is_queued_for_deletion():
 			_retry = RETRY_TIME
 			_take_stack()

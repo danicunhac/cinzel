@@ -21,10 +21,10 @@ static func nearest_spot(pos: Vector2, spots: Dictionary[StringName, Vector2], r
 
 ## Whether the spot has something to do right now. The shop always can (buy
 ## or sell), the smith when a recipe can be forged (Forge.any_craftable), the
-## crystal always works. `item_count` is the backpack's used slots.
+## crystal and the wardrobe always work. `item_count` is the backpack's used slots.
 static func can_act(id: StringName, _item_count: int, can_forge: bool = false) -> bool:
 	match id:
-		&"shop", &"teleport":
+		&"shop", &"teleport", &"wardrobe":
 			return true
 		&"smith":
 			return can_forge

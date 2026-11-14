@@ -1,19 +1,24 @@
 extends Node2D
 ## Walkable town (one 480x270 screen). A painted ground with large Y-sorted
-## sprites on it (game/assets/town, docs/assets.md). Three spots: the shop
-## (shopkeeper), the forge (blacksmith) and the teleport crystal; E near one
-## opens its panel. Near a spot with an action, a gold ring pings on the ground
+## sprites on it (game/assets/town, docs/assets.md). Four spots: the shop
+## (shopkeeper), the forge (blacksmith), the teleport crystal and the
+## wardrobe at the door of the hero's house (house A, next to the shop); E
+## near one opens its panel. Near a spot with an action, a gold ring pings on the ground
 ## and the building glows; the NPC speaks a short line in a bubble.
 ## The run clock stays stopped here. Every town load starts a market visit
 ## (Market.begin_visit: prices recover, new stock and wanted items).
 ## Debug: `--gold=N`, `--items=fang,spark` and `--floors=N` change the run,
-## `--panel=shop|smith|teleport` opens a panel, `--player=x,y` moves the player.
+## `--outfits` unlocks every outfit, `--wanted=a,b` sets the wanted items,
+## `--sold=id:n` marks n units of id as sold already (lower price), `--panel=shop|smith|teleport|wardrobe`
+## opens a panel (`--tab=buy` picks the shop tab, `--pick=N` the cell, `--qty=N` how many to sell),
+## `--player=x,y` moves the player. `--give`/`--equip`: see Game.
 
 const SHOPKEEPER_TEX := preload("res://assets/characters/npc_shopkeeper.png")
 const SMITH_TEX := preload("res://assets/characters/npc_blacksmith.png")
 const ShopPanelScene := preload("res://ui/shop_panel.tscn")
 const SmithPanelScene := preload("res://ui/smith_panel.tscn")
 const TeleportPanelScene := preload("res://ui/teleport_panel.tscn")
+const WardrobePanelScript := preload("res://ui/wardrobe_panel.gd")
 const ART := "res://assets/town/%s.png"
 ## Every town sprite has PAD px of shadow below its base line (build_town.py).
 const PAD := 8
@@ -27,11 +32,13 @@ const SPOTS: Dictionary[StringName, Vector2] = {
 	&"shop": Vector2(62, 128),
 	&"smith": Vector2(426, 146),
 	&"teleport": Vector2(240, 172),
+	&"wardrobe": Vector2(168, 100),
 }
 const SPOT_NAMES: Dictionary[StringName, String] = {
 	&"shop": "Loja",
 	&"smith": "Ferreiro",
 	&"teleport": "Teleporte",
+	&"wardrobe": "Guarda-roupa",
 }
 const SCREEN := Vector2(480, 270)
 const TINT := Color(0.94, 0.9, 0.84)
@@ -143,7 +150,7 @@ const WALKS: Array = [
 	[Vector2(240, 30), Vector2(240, 104), Vector2(300, 136), Vector2(240, 104)],
 	[Vector2(372, 222), Vector2(316, 222), Vector2(316, 160), Vector2(372, 160)],
 	[Vector2(196, 180), Vector2(284, 180), Vector2(290, 136), Vector2(190, 136)],
-	[Vector2(182, 106), Vector2(168, 110)],
+	[Vector2(198, 114), Vector2(188, 118)],
 ]
 ## Looks: sheet in assets/characters/villagers, walk speed (px/s), bubble
 ## key in LINES.
@@ -180,7 +187,7 @@ func _ready() -> void:
 	Game.in_boss_room = false
 	_rng.randomize()
 	shop = Game.run.market
-	shop.begin_visit(_rng)
+	shop.begin_visit(_rng, Game.run.unlocked_floors)
 	_build_ground()
 	_build_bounds()
 	_build_pieces()
@@ -206,11 +213,44 @@ func _apply_debug_args() -> void:
 			Game.run.add_item(StringName(id))
 	if args.has("floors"):
 		Game.run.beat_floor(int(args["floors"]) - 1)
+		shop.begin_visit(_rng, Game.run.unlocked_floors)
+	if args.has("wanted"):
+		shop.wanted.clear()
+		for id in String(args["wanted"]).split(",", false):
+			shop.wanted.append(StringName(id))
+	if args.has("sold"):
+		for part in String(args["sold"]).split(",", false):
+			var kv := part.split(":")
+			shop.factors[StringName(kv[0])] = maxf(Market.MIN_FACTOR, 1.0 - Market.DECAY_PER_SALE * int(kv[1]))
+	if args.has("outfits"):
+		for id in ItemDB.ids(&"outfit"):
+			Game.run.unlock_outfit(id)
 	if args.has("player"):
 		var xy := String(args["player"]).split(",")
 		player.global_position = Vector2(float(xy[0]), float(xy[1]))
 	if args.has("panel"):
-		open_panel.call_deferred(StringName(String(args["panel"])))
+		_debug_panel.call_deferred(StringName(String(args["panel"])), String(args.get("tab", "")),
+				int(args.get("pick", "-1")), int(args.get("qty", "1")))
+
+
+func _debug_panel(id: StringName, tab: String, pick: int, qty: int) -> void:
+	var p := open_panel(id)
+	if p is ShopPanel and tab != "":
+		(p as ShopPanel).select_tab(StringName(tab))
+	if pick < 0:
+		return
+	if p is ShopPanel:
+		var s := p as ShopPanel
+		if s.tab == &"sell":
+			s.select_sell(pick)
+			s.set_qty(qty)
+		else:
+			s.select_buy(pick)
+	elif p is SmithPanel:
+		(p as SmithPanel).select(pick)
+	elif p is WardrobePanel:
+		var w := p as WardrobePanel
+		w._grab.call_deferred(w.outfit_cells[pick])
 
 
 func _process(delta: float) -> void:
@@ -227,7 +267,7 @@ func _process(delta: float) -> void:
 	_update_bubble(items)
 	if _crystal_glow != null:
 		_crystal_glow.modulate.a = 0.7 + 0.3 * sin(_t * 2.2)
-	if near != &"" and _panel == null and Input.is_action_just_pressed(&"interact"):
+	if near != &"" and _panel == null and not get_tree().paused and Input.is_action_just_pressed(&"interact"):
 		open_panel(near)
 
 
@@ -244,6 +284,8 @@ func open_panel(id: StringName) -> UiPanel:
 			_panel = SmithPanelScene.instantiate() as SmithPanel
 		&"teleport":
 			_panel = TeleportPanelScene.instantiate() as TeleportPanel
+		&"wardrobe":
+			_panel = WardrobePanelScript.new() as WardrobePanel
 		_:
 			return null
 	_panel.closed.connect(func() -> void: _panel = null)
@@ -279,8 +321,8 @@ func _update_hint(items: int) -> void:
 	_hint.add_theme_color_override("font_color", UiKit.COLOR_ITEM if ok else UiKit.COLOR_MUTED)
 	# Over the player's head, except at the crystal, where that would cover
 	# the crystal itself: there it goes under the feet.
-	var p := SPOTS[near] + (Vector2(-40, 12) if near == &"teleport" else Vector2(-40, -36))
-	_hint.position = Vector2(clampf(p.x, 2, SCREEN.x - 82), p.y)
+	var p := SPOTS[near] + (Vector2(-50, 12) if near == &"teleport" else Vector2(-50, -36))
+	_hint.position = Vector2(clampf(p.x, 2, SCREEN.x - 102), p.y)
 
 
 func _update_bubble(items: int) -> void:
@@ -392,6 +434,8 @@ func _build_pieces() -> void:
 			_glow_targets[&"shop"] = s
 		elif p[0] == "forge":
 			_glow_targets[&"smith"] = s
+		elif p[0] == "house_a":
+			_glow_targets[&"wardrobe"] = s
 	var crystal := _piece("crystal", CRYSTAL_POS, Vector2(40, 12))
 	_glow_targets[&"teleport"] = crystal
 	_crystal_glow = Sprite2D.new()
@@ -424,7 +468,7 @@ func _build_spots() -> void:
 	overlay.layer = 8
 	add_child(overlay)
 	_hint = UiKit.label("", UiKit.COLOR_ITEM, HORIZONTAL_ALIGNMENT_CENTER)
-	_hint.size = Vector2(80, 10)
+	_hint.size = Vector2(100, 10)
 	_hint.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.06))
 	_hint.add_theme_constant_override("outline_size", 2)
 	_hint.visible = false

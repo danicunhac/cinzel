@@ -40,12 +40,12 @@ func open() -> void:
 	var id := roll_item()
 	var result: Dictionary = await Game.offer_item(id)
 	if not bool(result["taken"]):
-		if not bool(result.get("busy", false)) and ItemDB.kind(id) != &"relic":
+		if not bool(result.get("busy", false)) and not bool(result.get("chose", false)):
 			Game.toast(PickupItem.FULL_TEXT)
 		_drop(id, Vector2(0, 21))
 	var out: StringName = result["swapped_out"]
 	if out != &"":
-		_drop(out, Vector2(21, 15))
+		_drop(out, Vector2(21, 15), int(result.get("swapped_qty", 1)))
 	opened.emit(id)
 
 
@@ -64,9 +64,10 @@ func roll_item() -> StringName:
 	return LootTable.roll_chest(floor_num, Game.run.clock.level(), _rng, Game.run.unlocked_outfits)
 
 
-func _drop(id: StringName, offset: Vector2) -> void:
+func _drop(id: StringName, offset: Vector2, qty: int = 1) -> void:
 	var p := PickupScene.instantiate() as PickupItem
 	p.item_id = id
+	p.qty = qty
 	p.position = position + offset
 	get_parent().add_child(p)
 

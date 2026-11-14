@@ -14,6 +14,12 @@ static var last_closed_frame: int = -1
 var panel_size: Vector2 = Vector2(240, 140)
 ## Shown on a plaque across the top edge of the frame.
 var panel_title: String = ""
+## Key hints on the bottom row, next to "Fechar".
+var close_hint: String = "Esc: fechar"
+## The bottom-row "Fechar" button (off when the panel has its own way out).
+var show_close_button: bool = true
+## Actions besides Esc that close the panel (the backpack closes on Tab too).
+var close_actions: Array[StringName] = [&"ui_cancel", &"pause"]
 var _root: Control
 var _body: VBoxContainer
 var _open: bool = false
@@ -70,12 +76,13 @@ func refresh() -> void:
 	var close_row := HBoxContainer.new()
 	close_row.alignment = BoxContainer.ALIGNMENT_END
 	close_row.size_flags_vertical = Control.SIZE_SHRINK_END | Control.SIZE_EXPAND
-	var hint := UiKit.label("Esc: fechar", UiKit.COLOR_MUTED)
+	var hint := UiKit.label(close_hint, UiKit.COLOR_MUTED)
 	hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	close_row.add_child(hint)
-	var close_btn := UiKit.button("Fechar")
-	close_btn.pressed.connect(close)
-	close_row.add_child(close_btn)
+	if show_close_button:
+		var close_btn := UiKit.button("Fechar")
+		close_btn.pressed.connect(close)
+		close_row.add_child(close_btn)
 	_body.add_child(close_row)
 	_focus_index(focus_index)
 
@@ -90,7 +97,7 @@ func _buttons() -> Array[Button]:
 		return out
 	for n in _body.find_children("*", "Button", true, false):
 		var b := n as Button
-		if not b.is_queued_for_deletion():
+		if not b.is_queued_for_deletion() and b.focus_mode != Control.FOCUS_NONE:
 			out.append(b)
 	return out
 
@@ -101,7 +108,16 @@ func _focused_index() -> int:
 	return list.find(owner_focus as Button) if owner_focus is Button else -1
 
 
+## Button that gets the cursor when the panel opens (null: the first one).
+func _initial_focus() -> Button:
+	return null
+
+
 func _focus_index(i: int) -> void:
+	var first := _initial_focus() if i < 0 else null
+	if first != null:
+		_grab.call_deferred(first)
+		return
 	var list := _buttons()
 	if i >= 0 and i < list.size() and not list[i].disabled:
 		_grab.call_deferred(list[i])
@@ -120,6 +136,8 @@ func _grab(b: Button) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not _open:
 		return
-	if event.is_action_pressed(&"ui_cancel") or event.is_action_pressed(&"pause"):
-		get_viewport().set_input_as_handled()
-		close()
+	for action in close_actions:
+		if event.is_action_pressed(action):
+			get_viewport().set_input_as_handled()
+			close()
+			return
