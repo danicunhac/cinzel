@@ -10,7 +10,7 @@ Inputs (see docs/assets.md):
 Outputs in game/assets/ui/hud/ (sizes in the HUD constants of game/ui/hud.gd):
   hp_frame.png (9-slice), boss_frame.png (9-slice), slot.png, plaque.png
   (9-slice), button.png, button_hot.png, button_down.png, button_off.png
-  (9-slice), panel.png (9-slice), heart.png (4 frames), coin.png (6 frames),
+  (9-slice), button_focus.png (focus glow overlay), panel.png (9-slice), heart.png (4 frames), coin.png (6 frames),
   hourglass.png, ring.png, fill_hp.png, fill_boss.png, fill_exit.png,
   fill_tip.png
 """
@@ -199,6 +199,37 @@ def symmetric(img, vertical=True):
     return out
 
 
+def uniform(img, left, right, top=None, bottom=None):
+    """Make a 9-slice stretch cleanly: every column between the left and
+    right margins becomes a copy of the centre column, and (when top/bottom
+    are given) every row between them a copy of the centre row. Stretching
+    then repeats identical pixels, so no pixel is doubled unevenly."""
+    w, h = img.size
+    out = img.copy()
+    col = img.crop((w // 2, 0, w // 2 + 1, h))
+    for x in range(left, w - right):
+        out.paste(col, (x, 0))
+    if top is not None:
+        row = out.crop((0, h // 2, w, h // 2 + 1))
+        for y in range(top, h - bottom):
+            out.paste(row, (0, y))
+    return out
+
+
+def ring_only(img):
+    """Focus overlay: only the 1 px glow outside the button, nothing inside,
+    so it can sit over the normal or the pressed look."""
+    glow = hot_glow(img)
+    base = pad(img)
+    gp = glow.load()
+    bp = base.load()
+    for y in range(glow.height):
+        for x in range(glow.width):
+            if bp[x, y][3]:
+                gp[x, y] = (0, 0, 0, 0)
+    return glow
+
+
 def trim(img):
     return img.crop(img.getbbox())
 
@@ -275,17 +306,20 @@ def main():
     frames_b = key(Image.open(os.path.join(gen, "hud-frames-sheet-b.png")))
     icons = key(Image.open(os.path.join(gen, "hud-icons-sheet.png")))
 
-    save(trim(quantize(outline(mirrored_bar(crop(frames_a, HP_BAR), 12, 9, 48)))), "hp_frame.png")
-    save(trim(quantize(outline(mirrored_bar(crop(frames_a, BOSS_BAR), 16, 14, 64)))), "boss_frame.png")
+    # Bars stretch only sideways (drawn at their own height): caps 9 and 14 px.
+    save(uniform(trim(quantize(outline(mirrored_bar(crop(frames_a, HP_BAR), 12, 9, 48)))), 9, 9), "hp_frame.png")
+    save(uniform(trim(quantize(outline(mirrored_bar(crop(frames_a, BOSS_BAR), 16, 14, 64)))), 14, 14), "boss_frame.png")
     save(trim(symmetric(sprite(crop(frames_b, SLOT), 22, 22))), "slot.png")
-    save(trim(symmetric(sprite(crop(frames_b, PLAQUE), 30, 16))), "plaque.png")
+    save(uniform(trim(symmetric(sprite(crop(frames_b, PLAQUE), 30, 16))), 4, 4, 4, 4), "plaque.png")
 
-    button = trim(symmetric(sprite(crop(frames_b, BUTTON), 40, 22), vertical=False))
+    # 9-slice margin 6 on the padded texture = 5 on the button itself.
+    button = uniform(trim(symmetric(sprite(crop(frames_b, BUTTON), 40, 22), vertical=False)), 5, 5, 5, 5)
     save(pad(button), "button.png")
     save(hot_glow(tint(button, brighten)), "button_hot.png")
     save(pad(tint(button, darken)), "button_down.png")
     save(pad(tint(button, grey)), "button_off.png")
-    save(trim(symmetric(dark_body(sprite(crop(frames_b, PANEL), 72, 70)))), "panel.png")
+    save(ring_only(button), "button_focus.png")
+    save(uniform(trim(symmetric(dark_body(sprite(crop(frames_b, PANEL), 72, 70)))), 18, 18, 18, 18), "panel.png")
 
     save(quantize(strip(heart_frames(crop(icons, HEART)))), "heart.png")
     save(quantize(strip(coin_frames(crop(icons, COIN)))), "coin.png")

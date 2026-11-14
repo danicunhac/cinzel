@@ -44,6 +44,7 @@ const COUNT_MIN := 40.0
 const COUNT_SPEED := 8.0
 const COIN_SPIN_FRAME := 0.05
 const COIN_BOUNCE := 4
+const COIN_HOME := Vector2(4, 18)
 
 ## Life lost lingers as a pale trail, then drains.
 const TRAIL_HOLD := 0.35
@@ -52,8 +53,11 @@ const TRAIL_COLOR := Color(1.0, 0.92, 0.78)
 const RING_TIME := 0.5
 
 ## Bar geometry, from the 9-slice art (hp_frame.png 48x12, boss_frame.png
-## 64x16): margins and the groove the fill runs in.
-const HP_MARGIN := Vector4i(5, 3, 5, 3)
+## 64x16). The margins cover the caps, so only uniform middle columns
+## stretch; bars are drawn at the art's own height. The fill runs in the
+## groove, which starts inside the caps.
+const HP_MARGIN := Vector4i(9, 3, 9, 3)
+const HP_GROOVE := Vector4i(5, 3, 5, 3)
 const HP_SIZE := Vector2(86, 12)
 const BOSS_MARGIN := Vector4i(14, 5, 14, 3)
 const BOSS_SIZE := Vector2(244, 16)
@@ -221,7 +225,7 @@ func _update_life(hp: int, max_hp: int, delta: float) -> void:
 		_trail_hold -= delta
 	else:
 		_trail_ratio = move_toward(_trail_ratio, _hp_ratio, TRAIL_SPEED * delta)
-	var inner := HP_SIZE.x - HP_MARGIN.x - HP_MARGIN.z
+	var inner := HP_SIZE.x - HP_GROOVE.x - HP_GROOVE.z
 	hp_fill.size.x = roundf(inner * _hp_ratio)
 	hp_trail.size.x = roundf(inner * _trail_ratio)
 	hp_label.text = "%d/%d" % [hp, max_hp]
@@ -255,7 +259,7 @@ func _update_gold(gold: int, delta: float) -> void:
 ## Gold went up: one spin and a bounce.
 func _coin_gain() -> void:
 	_coin_spin = 0.0
-	var home := Vector2(4, 18)
+	var home := COIN_HOME
 	if _coin_tween != null and _coin_tween.is_valid():
 		_coin_tween.kill()
 	var t := create_tween()
@@ -322,7 +326,7 @@ func _on_exit_progress(p: float) -> void:
 		UiKit.slide_in(exit_box, Vector2(0, 10))
 	exit_box.visible = show
 	_exit_ratio = clampf(p, 0.0, 1.0)
-	exit_fill.size.x = roundf((EXIT_SIZE.x - HP_MARGIN.x - HP_MARGIN.z) * _exit_ratio)
+	exit_fill.size.x = roundf((EXIT_SIZE.x - HP_GROOVE.x - HP_GROOVE.z) * _exit_ratio)
 	_place_tip(exit_tip, exit_fill)
 
 
@@ -387,8 +391,8 @@ func _build() -> void:
 	_top_left = _group(root, Vector2(2, 2))
 	heart = _sheet_icon(_top_left, HEART_TEX, HEART_FRAME, Vector2(1, 1))
 	var hp_frame := _nine(_top_left, HP_FRAME_TEX, HP_MARGIN, Vector2(15, 1), HP_SIZE)
-	var groove := Vector2(HP_MARGIN.x, HP_MARGIN.y)
-	var groove_h := HP_SIZE.y - HP_MARGIN.y - HP_MARGIN.w
+	var groove := Vector2(HP_GROOVE.x, HP_GROOVE.y)
+	var groove_h := HP_SIZE.y - HP_GROOVE.y - HP_GROOVE.w
 	hp_trail = ColorRect.new()
 	hp_trail.color = TRAIL_COLOR
 	hp_trail.position = groove
@@ -397,7 +401,7 @@ func _build() -> void:
 	hp_frame.add_child(hp_trail)
 	hp_fill = _fill(hp_frame, FILL_HP_TEX, Rect2(groove, Vector2(0, groove_h)))
 	hp_label = _label(_top_left, Vector2(104, 2), Vector2(48, 10))
-	coin = _sheet_icon(_top_left, COIN_TEX, COIN_FRAME, Vector2(4, 18))
+	coin = _sheet_icon(_top_left, COIN_TEX, COIN_FRAME, COIN_HOME)
 	gold_label = _label(_top_left, Vector2(16, 16), Vector2(80, 10))
 	gold_label.add_theme_color_override("font_color", UiKit.COLOR_GOLD)
 

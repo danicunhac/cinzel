@@ -70,7 +70,7 @@ func test_exit_bar_fill_and_tip() -> void:
 	_tree().root.add_child(hud)
 	await _tree().process_frame
 	hud._on_exit_progress(0.5)
-	var inner := Hud.EXIT_SIZE.x - Hud.HP_MARGIN.x - Hud.HP_MARGIN.z
+	var inner := Hud.EXIT_SIZE.x - Hud.HP_GROOVE.x - Hud.HP_GROOVE.z
 	T.eq(hud.exit_box.visible, true)
 	T.eq(hud.exit_fill.size.x, roundf(inner * 0.5), "half full")
 	T.ok(hud.exit_tip.visible, "light pulse rides the fill end")

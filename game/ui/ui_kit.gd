@@ -9,7 +9,7 @@ const PLAQUE_TEX := preload("res://assets/ui/hud/plaque.png")
 const PANEL_MARGIN := 18
 const PLAQUE_MARGIN := 4
 ## Inner padding of a centred frame (its iron edge is 8 px; corners 17 px).
-const FRAME_PAD := 10
+const FRAME_PAD := 12
 ## Entrance: every HUD element and panel slides in, this long, this far.
 const SLIDE_TIME := 0.28
 const SLIDE_PANEL := Vector2(0, 18)
@@ -95,13 +95,7 @@ static func centred_frame(parent: Control, size: Vector2, title: String = "", ti
 	f.add_child(margin)
 	if title != "":
 		var p := titled_plaque(title, title_color)
-		var half := floorf(p.size.x / 2.0)
-		p.anchor_left = 0.5
-		p.anchor_right = 0.5
-		p.offset_left = -half
-		p.offset_right = p.size.x - half
-		p.offset_top = -6
-		p.offset_bottom = 8
+		p.position = Vector2(floorf((f.size.x - p.size.x) / 2.0), -6)
 		p.name = "Title"
 		f.add_child(p)
 	var box := VBoxContainer.new()
@@ -120,6 +114,9 @@ static func _fit_frame(f: NinePatchRect, margin: MarginContainer, base: Vector2)
 	if need == f.size:
 		return
 	f.size = need
+	var title := f.get_node_or_null(^"Title") as Control
+	if title != null:
+		title.position.x = floorf((need.x - title.size.x) / 2.0)
 	var home := ((SCREEN - need) / 2.0).floor()
 	var sliding := false
 	if f.has_meta(&"slide_tween"):

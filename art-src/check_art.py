@@ -43,6 +43,7 @@ SHEETS = {
     "game/assets/ui/hud/button_hot.png": (42, 24, 6),
     "game/assets/ui/hud/button_down.png": (42, 24, 6),
     "game/assets/ui/hud/button_off.png": (42, 24, 6),
+    "game/assets/ui/hud/button_focus.png": (42, 24, 6),
     "game/assets/ui/hud/panel.png": (72, 70, 2),
     "game/assets/ui/hud/heart.png": (52, 12, 1),
     "game/assets/ui/hud/coin.png": (54, 9, 9),
