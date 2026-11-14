@@ -56,6 +56,7 @@ var _rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	UiKit.ensure_wasd_ui()
+	Sfx.music(&"town")
 	if Game.run != null:
 		Game.run.clock.running = false
 	_build_scene()

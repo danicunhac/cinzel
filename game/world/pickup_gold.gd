@@ -32,6 +32,10 @@ func collect() -> void:
 		return
 	_collected = true
 	Game.run.add_gold(amount)
+	if is_inside_tree():
+		Sfx.play(&"coin")
+		Fx.burst(&"coin", global_position)
+		Fx.fly_coin(global_position)
 	queue_free()
 
 

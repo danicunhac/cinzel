@@ -37,7 +37,11 @@ func _on_body(body: Node2D) -> void:
 	if _done or not body.is_in_group(&"player"):
 		return
 	_done = true
-	used.emit()
+	Sfx.play(&"teleport", 0.0)
+	Fx.burst(&"teleport", global_position)
+	# Deferred: touching happens in a physics callback, and the handler may
+	# change scene (freeing bodies mid-callback is not allowed).
+	used.emit.call_deferred()
 
 
 func _draw() -> void:

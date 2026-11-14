@@ -32,6 +32,7 @@ func use() -> void:
 		return
 	_done = true
 	prompt.visible = false
+	Sfx.play(&"stairs", 0.0)
 	used.emit()
 
 

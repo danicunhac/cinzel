@@ -7,7 +7,6 @@ const GoldScene := preload("res://world/pickup_gold.tscn")
 const PickupScene := preload("res://world/pickup_item.tscn")
 ## Loot lands this far around the body (px).
 const LOOT_SPREAD := 18.0
-const CRIT_TINT := Color(3.0, 2.4, 0.8)
 const STUN_TINT := Color(0.75, 0.8, 1.3)
 const ROW_IDLE := 0
 const ROW_MOVE := 1
@@ -15,7 +14,9 @@ const ROW_ATTACK := 2
 const ROW_DEATH := 3
 ## Frames per second of the idle, move, attack and death rows.
 const FPS: Array[float] = [6.0, 10.0, 12.0, 9.0]
-const FLASH_TIME := 0.08
+## Death: the body shrinks away over the end of the death strip.
+const SHRINK_DELAY := 0.45
+const SHRINK_TIME := 0.3
 const KNOCKBACK := 135.0
 ## Below this horizontal speed the sprite keeps its facing.
 const FLIP_MIN_SPEED := 1.0
@@ -39,10 +40,8 @@ const TELEGRAPH_RED := Color(1.0, 0.25, 0.25)
 var dead: bool = false
 var _row: int = ROW_IDLE
 var _anim_time: float = 0.0
-var _flash: float = 0.0
 var _telegraph: bool = false
 var _knock: Vector2 = Vector2.ZERO
-var _flash_crit: bool = false
 ## Seconds left stunned: no thinking, no moving (knockback still slides).
 var stunned: float = 0.0
 
@@ -88,15 +87,12 @@ func set_telegraph(on: bool) -> void:
 func _physics_process(delta: float) -> void:
 	_anim_time += delta
 	_update_frame()
-	_flash = maxf(_flash - delta, 0.0)
 	var tint := Color.WHITE
 	if _telegraph:
 		var k := 0.5 + 0.5 * sin(_anim_time * 30.0)
 		tint = Color.WHITE.lerp(TELEGRAPH_RED, 0.6 + 0.4 * k)
 	if stunned > 0.0:
 		tint = STUN_TINT
-	if _flash > 0.0:
-		tint = CRIT_TINT if _flash_crit else Color(3.0, 3.0, 3.0)
 	sprite.modulate = tint
 	if dead:
 		return
@@ -152,10 +148,22 @@ func _face_movement() -> void:
 
 
 func _on_hit(from: Hitbox) -> void:
-	_flash_crit = from.crit
 	if from.stun > 0.0:
 		stun(from.stun)
+	var before := health.hp
 	health.damage(from.damage, from.global_position)
+	var dealt := before - health.hp
+	if dealt > 0:
+		_hit_feedback(dealt, from)
+
+
+## Flash, number, sparks, sound and hit-stop on the Fx ladder: S for a
+## common hit, M for a crit, a finisher or a special.
+func _hit_feedback(dealt: int, from: Hitbox) -> void:
+	var level := Fx.M if from.crit or from.heavy else Fx.S
+	var at := global_position + Vector2(0, -frame_size * 0.5 * sprite.scale.y)
+	Fx.impact(sprite, at, dealt, from.crit, level, from.team == &"player")
+	Sfx.play(&"crit" if from.crit else &"hit")
 
 
 ## Stops acting for `seconds` (the longest stun wins). Bosses are immune, so
@@ -174,7 +182,6 @@ func loot_type() -> StringName:
 
 
 func _on_damaged(_n: int) -> void:
-	_flash = FLASH_TIME
 	_knock = (global_position - health.last_hit_from).normalized() * KNOCKBACK
 
 
@@ -187,10 +194,24 @@ func _on_died() -> void:
 	hurtbox.set_deferred("monitoring", false)
 	($Body as CollisionShape2D).set_deferred("disabled", true)
 	play(ROW_DEATH)
+	_death_feedback()
 	_drop_gold.call_deferred()
 	_drop_loot.call_deferred()
 	killed.emit()
 	get_tree().create_timer(0.8).timeout.connect(queue_free)
+
+
+## Dust and a shrink (S); bosses add a shake and a long hit-stop (L).
+func _death_feedback() -> void:
+	Sfx.play(&"enemy_die")
+	Fx.burst(&"enemy_die", global_position)
+	if is_in_group(&"boss"):
+		Fx.hit_stop(Fx.STOP_FRAMES[Fx.L])
+		Fx.shake(4.0, 0.45)
+		Fx.burst(&"ring", global_position)
+	var tw := create_tween()
+	tw.tween_interval(SHRINK_DELAY)
+	tw.tween_property(sprite, "scale", sprite.scale * 0.2, SHRINK_TIME).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
 
 
 func gold_amount() -> int:

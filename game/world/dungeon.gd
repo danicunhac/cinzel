@@ -61,6 +61,8 @@ func _ready() -> void:
 	if _args.has("room"):
 		_enter_single(String(_args["room"]))
 	else:
+		# Arrival from the town crystal.
+		Sfx.play(&"teleport", 0.0)
 		enter_floor(int(_args.get("floor", str(requested_floor))))
 
 
@@ -194,6 +196,7 @@ func _go_to_room(index: int, with_fade: bool, arrival: Arrival = Arrival.ENTRY) 
 	var has_back := index > 0 or _args.has("revisit")
 	room.start(extra, index in chest_rooms, _rng, state.room(current_floor, index), has_back)
 	Game.in_boss_room = room.is_boss and not room.is_cleared
+	Sfx.music(&"boss" if Game.in_boss_room else &"tower")
 	if _args.has("cleared"):
 		for e in room.enemies:
 			e.health.damage(1 << 20, e.global_position)
@@ -251,6 +254,7 @@ func _on_room_cleared() -> void:
 	if not room.is_boss:
 		return
 	Game.in_boss_room = false
+	Sfx.music(&"tower")
 	# A boss room revisited on a walk back: boss already beaten, portals only.
 	if not room.restored:
 		Game.run.beat_floor(current_floor)
@@ -270,7 +274,9 @@ func _add_portal(pos: Vector2, label: String, color: Color, on_used: Callable) -
 	p.text = label
 	p.color = color
 	p.used.connect(on_used)
-	room.add_child(p)
+	# Deferred: the boss dies inside a physics callback, where a new area
+	# cannot join the space.
+	room.add_child.call_deferred(p)
 
 
 func _next_floor() -> void:
@@ -293,6 +299,7 @@ func _on_player_died() -> void:
 		return
 	_leaving = true
 	Game.run.clock.running = false
+	Sfx.music(&"")
 	state.reset()
 	await get_tree().create_timer(DEATH_DELAY).timeout
 	_snapshot_run()

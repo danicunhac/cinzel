@@ -10,6 +10,8 @@ signal landed(hurtbox: Hurtbox)
 var stun: float = 0.0
 ## The current damage came from a crit roll (enemies flash gold).
 var crit: bool = false
+## A combo finisher, a special or a charged shot: a longer hit-stop (Fx M).
+var heavy: bool = false
 
 var _active: bool = false
 var _already_hit: Array[Hurtbox] = []

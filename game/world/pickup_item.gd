@@ -65,8 +65,14 @@ func take() -> int:
 		p.position = position
 		get_parent().add_child.call_deferred(p)
 	qty = 0
+	_picked()
 	queue_free()
 	return 0
+
+
+func _picked() -> void:
+	Sfx.play(&"item_pickup")
+	Fx.burst(&"ring", global_position)
 
 
 ## `toast`: say "Mochila cheia" when something is left (not on quiet retries).
@@ -76,6 +82,8 @@ func _take_stack(toast: bool = true) -> int:
 			Game.toast(FULL_TEXT)
 		return qty
 	var left := Game.run.take_loot(item_id, qty)
+	if left < qty:
+		_picked()
 	if left > 0 and toast:
 		Game.toast(FULL_TEXT)
 	qty = left

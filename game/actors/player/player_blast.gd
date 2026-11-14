@@ -27,6 +27,7 @@ var _streaks: Array[Vector2] = []
 
 func _ready() -> void:
 	team = &"player"
+	heavy = true
 	var cs := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
 	shape.radius = radius

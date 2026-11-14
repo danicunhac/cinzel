@@ -16,6 +16,8 @@ boot_splash/use_filter=false
 [autoload]
 
 Game="*res://autoload/game.gd"
+Fx="*res://autoload/fx.gd"
+Sfx="*res://autoload/sfx.gd"
 Screenshot="*res://tools/screenshot.gd"
 
 [display]

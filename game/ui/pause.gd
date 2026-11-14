@@ -83,6 +83,8 @@ func _build() -> void:
 	title_button.pressed.connect(_on_title)
 	quit_button = _add_button(box, QUIT_TEXT)
 	quit_button.pressed.connect(_on_quit)
+	box.add_child(Sfx.volume_row("Música", Sfx.MUSIC_BUS))
+	box.add_child(Sfx.volume_row("Efeitos", Sfx.SFX_BUS))
 	box.add_child(UiKit.label(CONTROLS, UiKit.COLOR_MUTED, HORIZONTAL_ALIGNMENT_CENTER))
 
 

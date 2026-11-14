@@ -178,6 +178,7 @@ var _t: float = 0.0
 func _ready() -> void:
 	Game.run.clock.running = false
 	Game.in_boss_room = false
+	Sfx.music(&"town")
 	_rng.randomize()
 	shop = Game.run.market
 	shop.begin_visit(_rng)

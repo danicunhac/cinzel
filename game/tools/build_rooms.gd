@@ -33,6 +33,9 @@ const PAINT_PATH := "res://assets/rooms/%s.png"
 ## Door overlays: 3 columns (shut, locked, open) x 2 rows (front, side), 24x32.
 const DOORS_PATH := "res://assets/rooms/doors.png"
 const DOOR_FRAME := Vector2i(24, 32)
+## Decor props (art-src/build_decor.py), placed by DecorLayout.
+const DECOR_PATH := "res://assets/rooms/decor.png"
+const DECOR_FRAME := 32
 ## Painted rooms draw a thin top wall's brick face over the first floor row,
 ## so an extra body blocks that row (gaps under top-wall doors), and the side
 ## walls look this much thicker than their cells.
@@ -690,6 +693,12 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 		stairs.position = _stairs_spot(rows)
 		_add(room, stairs)
 
+	if painted and ResourceLoader.exists(DECOR_PATH):
+		var decor := _make_decor(rows, def)
+		_add(room, decor)
+		for n in decor.find_children("*", "", true, false):
+			n.owner = room
+
 	if def.has("sign"):
 		# In the tree, so the label measures itself with its 8 px font.
 		get_root().add_child(room)
@@ -706,6 +715,67 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 	err = ResourceSaver.save(packed, path)
 	room.free()
 	return err
+
+
+## Points no decor may come near: door cells, the entry spot, the stairs
+## spot, the chest spots and the enemy spawns.
+func _keep_clear(rows: Array[String], def: Dictionary) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	for ch in ["E", "X", "C"]:
+		for c in _find(rows, ch):
+			out.append(_center(c))
+	var e := _find(rows, "E")[0]
+	out.append(_center(e + _inward(e)))
+	for k: String in ENEMY_KINDS:
+		for c in _find(rows, k):
+			out.append(_center(c))
+	if not def.get("boss", false):
+		out.append(_stairs_spot(rows))
+	return out
+
+
+## Decor props of a painted room (Y-sorted with the actors): solid ones get a
+## small static body at their feet, wall pieces draw just over the painting.
+func _make_decor(rows: Array[String], def: Dictionary) -> Node2D:
+	var root := Node2D.new()
+	root.name = "Decor"
+	root.y_sort_enabled = true
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(String(def["path"]) + "#decor")
+	var tex := load(DECOR_PATH) as Texture2D
+	var count := {}
+	for spot in DecorLayout.spots(rows, _keep_clear(rows, def), rng, def.get("tutorial", false)):
+		var kind: StringName = spot["kind"]
+		count[kind] = int(count.get(kind, 0)) + 1
+		var s := Sprite2D.new()
+		s.name = "%s%d" % [String(kind).capitalize(), count[kind]]
+		s.texture = tex
+		s.hframes = DecorLayout.FRAMES.size()
+		s.frame = DecorLayout.FRAMES.find(kind)
+		s.offset = Vector2(0, -DECOR_FRAME / 2.0)
+		s.position = spot["pos"]
+		s.flip_h = spot["flip"]
+		s.set_meta(&"decor_kind", kind)
+		s.set_meta(&"decor_wall", spot["wall"])
+		s.set_meta(&"decor_solid", spot["solid"])
+		if spot["wall"]:
+			# On the wall: over the painting and the doors, under every actor.
+			s.z_index = -3
+		root.add_child(s)
+		if kind in DecorLayout.SHADOWED:
+			var w := 16 if kind in DecorLayout.SOLID else 11
+			s.add_child(GroundShadow.make(Vector2i(w, 4), Vector2(0, -1)))
+		if spot["solid"]:
+			var body := StaticBody2D.new()
+			body.name = "Body"
+			var shape := CollisionShape2D.new()
+			var rect := RectangleShape2D.new()
+			rect.size = Vector2(14, 8)
+			shape.shape = rect
+			shape.position = Vector2(0, -4)
+			body.add_child(shape)
+			s.add_child(body)
+	return root
 
 
 ## Wall rows at the top (1 for normal rooms, 4 for the tutorial's thick wall).
