@@ -109,9 +109,9 @@ func _process_free(_delta: float, input_dir: Vector2) -> void:
 		sprite.play(&"walk", facing)
 	else:
 		sprite.play(&"idle", facing)
-	if Input.is_action_just_pressed(&"roll") and _roll_cooldown <= 0.0:
+	if _just_pressed(&"roll") and _roll_cooldown <= 0.0:
 		_start_roll(input_dir if input_dir != Vector2.ZERO else facing)
-	elif Input.is_action_just_pressed(&"attack"):
+	elif _just_pressed(&"attack"):
 		_start_attack()
 
 
@@ -135,9 +135,9 @@ func _process_attack(delta: float) -> void:
 	var t := _state_time / _swing_dur
 	velocity = facing.normalized() * LUNGE_SPEED if t < 0.4 else Vector2.ZERO
 	hitbox.set_active(t >= HIT_START / SWING_TIME and t <= HIT_END / SWING_TIME)
-	if Input.is_action_just_pressed(&"attack"):
+	if _just_pressed(&"attack"):
 		_attack_queued = true
-	if Input.is_action_just_pressed(&"roll") and _roll_cooldown <= 0.0:
+	if _just_pressed(&"roll") and _roll_cooldown <= 0.0:
 		hitbox.set_active(false)
 		sprite.speed_scale = 1.0
 		_start_roll(facing)
@@ -170,6 +170,11 @@ func _process_roll(delta: float) -> void:
 	if _state_time >= ROLL_TIME:
 		state = State.FREE
 		velocity = Vector2.ZERO
+
+
+## A key that closed a menu (Space on "Fechar") does not also act in game.
+func _just_pressed(action: StringName) -> bool:
+	return Input.is_action_just_pressed(action) and not UiKit.gameplay_input_blocked()
 
 
 func _sync_invulnerable() -> void:
