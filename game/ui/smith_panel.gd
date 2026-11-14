@@ -12,13 +12,13 @@ var trade_button: Button
 
 func _init() -> void:
 	super._init()
-	panel_size = Vector2(220, 150)
+	panel_size = Vector2(220, 0)
+	panel_title = "Ferreiro"
 	rng.randomize()
 
 
 func _build(box: VBoxContainer) -> void:
 	var run := Game.run
-	box.add_child(UiKit.label("Ferreiro", UiKit.COLOR_TITLE))
 	box.add_child(UiKit.label("Troca 2 itens por 1 aleatório.", UiKit.COLOR_MUTED))
 	var list := VBoxContainer.new()
 	list.add_theme_constant_override("separation", 2)

@@ -1,190 +1,200 @@
-"""Build the enemy sheets from the generated single sprites.
+"""Build the enemy and boss sheets from generated 6x4 animation sheets.
 
-python3 -I art-src/build_enemies.py <repo_root> [--force]
-Existing output files are kept unless --force is passed.
+python3 -I art-src/build_enemies.py <repo_root> [--force] [name ...]
+Existing output files are kept unless --force is passed. With names, only
+those sheets are built (crawler, shooter, charger, boss_final).
 
-Inputs (magenta background, AI generator, see docs/assets.md):
-  art-src/gen/enemy-crawler.png  slime
-  art-src/gen/enemies-sheet.png  hooded caster (shooter)
-  art-src/gen/enemy-charger-v2.png  armored beetle-boar
-Output: game/assets/enemies/{crawler,shooter,charger}.png, 4 cols x 4 rows of
-16x16 (rows idle, move, attack, death; 4 frames each).
+Inputs (magenta background, AI generator, see docs/assets.md), each a 6x4
+grid of poses, rows idle, move, attack, death:
+  art-src/gen/r2/enemy24-crawler-anim-1.png   slime (edit of the old crawler)
+  art-src/gen/r2/enemy24-shooter-sheet-1.png  floating stone-eye sentinel
+  art-src/gen/r2/enemy24-charger-anim-1.png   beetle-boar (edit of the old charger)
+  art-src/gen/r2/boss48-final-sheet-2.png     spectral hooded knight
+Outputs in game/assets/enemies/: crawler, shooter, charger (6 cols x 4 rows
+of 24x24, lowest pixel of each row's ground on row 22) and boss_final (6x4
+of 48x48, ground on row 44).
 
-Each frame is a transform of the one generated pose done at full resolution
-(squash, offset, tilt, red flash, sink), then box-downscaled with the same
-scale, outlined, rim-lit on the top edge and quantized to one palette per
-sheet. One pose keeps every frame on-model.
+Method: key out magenta, split the content box into an even 6x4 grid and
+give each connected blob to the slot holding its centre (so a fired bolt or
+falling rubble stays with its pose), scale the whole sheet by one factor,
+keep every pose where it sits relative to its slot centre and its row's
+ground line (hops and lunges survive), box-downscale, repaint the outline,
+add a light rim on top edges so the sprite reads on the dark floor, and
+quantize to one palette per sheet.
 """
 import os
+import statistics
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from PIL import Image, ImageEnhance  # noqa: E402
 
-from artlib import OUTLINE, frames, key_magenta, parse_args, save_guarded  # noqa: E402
+from artlib import OUTLINE, parse_args, save_guarded  # noqa: E402
+from strips import drop_orphans, key, nearest, palette_of, shrink  # noqa: E402
 
-E = 16
-# Colours per sheet: the charger shell turns to noise with more.
-COLORS = {"crawler": 20, "shooter": 20, "charger": 12}
+COLS, ROWS = 6, 4
+
+# name -> source, cell, ground row, size target (px) and what it measures on
+# the idle row ("w" width or "h" height), colours, rim strength, mask boxes
+# (stray figures to erase in source pixels), brightness, contrast, and
+# cool_greens (olive pixels -> cold grey-violet, so the boss's hood does not
+# read as the hero's).
+JOBS = {
+    "crawler": dict(src="enemy24-crawler-anim-1.png", cell=24, ground=22, size=(18, "w"),
+                    colors=20, rim=55, mask=(), bright=1.0, contrast=1.0),
+    "shooter": dict(src="enemy24-shooter-sheet-1.png", cell=24, ground=22, size=(21, "w"),
+                    colors=24, rim=50, mask=((940, 190, 1088, 440),), bright=1.15, contrast=1.1),
+    "charger": dict(src="enemy24-charger-anim-1.png", cell=24, ground=22, size=(22, "w"),
+                    colors=22, rim=45, mask=(), bright=1.1, contrast=1.1),
+    "boss_final": dict(src="boss48-final-sheet-2.png", cell=48, ground=44, size=(40, "h"),
+                       colors=30, rim=40, mask=(), bright=1.2, contrast=1.15,
+                       cool_greens=True),
+}
 
 
-def source(root, rel):
-    img = key_magenta(Image.open(os.path.join(root, "art-src", rel)))
-    box = frames(img)[0][0]
-    return img.crop(box)
+def cool(img):
+    px = img.load()
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = px[x, y]
+            if a and g >= r and g > b:
+                v = (r + g + b) // 3
+                px[x, y] = (v, max(0, v - 6), min(255, v + 14), a)
+    return img
 
 
-def squash(img, sx, sy):
+def blobs(img):
+    """Connected components (8-way) of opaque pixels: list of pixel lists."""
     w, h = img.size
-    return img.resize((max(1, round(w * sx)), max(1, round(h * sy))), Image.LANCZOS)
-
-
-def tint(img, rgb, amount):
-    """Blend opaque pixels toward rgb (alpha untouched)."""
-    over = Image.new("RGBA", img.size, rgb + (255,))
-    mixed = Image.blend(img, over, amount)
-    mixed.putalpha(img.getchannel("A"))
-    return mixed
-
-
-def darken(img, k):
-    out = ImageEnhance.Brightness(img.convert("RGBA")).enhance(k)
-    out.putalpha(img.getchannel("A"))
+    a = img.getchannel("A").load()
+    seen = bytearray(w * h)
+    out = []
+    for y0 in range(h):
+        for x0 in range(w):
+            if not a[x0, y0] or seen[y0 * w + x0]:
+                continue
+            stack = [(x0, y0)]
+            seen[y0 * w + x0] = 1
+            pts = []
+            while stack:
+                x, y = stack.pop()
+                pts.append((x, y))
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < w and 0 <= ny < h and a[nx, ny] and not seen[ny * w + nx]:
+                            seen[ny * w + nx] = 1
+                            stack.append((nx, ny))
+            out.append(pts)
     return out
 
 
-def fade(img, k):
-    a = img.getchannel("A").point(lambda v: int(v * k))
-    out = img.copy()
-    out.putalpha(a)
-    return out
+def slots(img):
+    """{(col, row): RGBA image of that slot's pose, same size as img} plus
+    slot centres."""
+    comps = [c for c in blobs(img) if len(c) >= 6]
+    xs = [x for c in comps for x, _ in c]
+    ys = [y for c in comps for _, y in c]
+    x0, x1, y0, y1 = min(xs), max(xs) + 1, min(ys), max(ys) + 1
+    sw, sh = (x1 - x0) / COLS, (y1 - y0) / ROWS
+    src = img.load()
+    poses = {}
+    for c in comps:
+        cx = sum(x for x, _ in c) / len(c)
+        cy = sum(y for _, y in c) / len(c)
+        k = (min(COLS - 1, int((cx - x0) / sw)), min(ROWS - 1, int((cy - y0) / sh)))
+        if k not in poses:
+            poses[k] = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        dst = poses[k].load()
+        for p in c:
+            dst[p] = src[p]
+    centres = {k: x0 + sw * (k[0] + 0.5) for k in poses}
+    return poses, centres
 
 
-def frame(src, scale, dx=0.0, dy=0.0, sx=1.0, sy=1.0, rot=0.0, fx=None):
-    """Downscale one transformed pose into a 16x16 cell, bottom-centred."""
-    img = src
-    if sx != 1.0 or sy != 1.0:
-        img = squash(img, sx, sy)
-    if rot:
-        img = img.rotate(rot, resample=Image.BICUBIC, expand=True)
-    if fx:
-        img = fx(img)
-    w, h = img.size
-    small = img.resize((max(1, round(w * scale)), max(1, round(h * scale))), Image.BOX)
-    small.putalpha(small.getchannel("A").point(lambda v: 255 if v >= 110 else 0))
-    cell = Image.new("RGBA", (E, E), (0, 0, 0, 0))
-    ox = round((E - small.width) / 2 + dx)
-    oy = round(E - small.height + dy)
-    cell.alpha_composite(small, (max(ox, 0), max(oy, 0)), (max(-ox, 0), max(-oy, 0)))
-    return cell
-
-
-def finish(cell):
-    """Dark 1 px outline on the silhouette, then a light rim on the top edge
-    so the sprite reads on the dark floor."""
+def finish(cell, rim):
+    """1 px dark outline on the silhouette, light rim on edges open upward."""
+    n = cell.width
     a = cell.getchannel("A").load()
     out = cell.copy()
     px = out.load()
     src = cell.load()
-    for y in range(E):
-        for x in range(E):
+    for y in range(n):
+        for x in range(n):
             if not a[x, y]:
                 continue
             open_up = y == 0 or not a[x, y - 1]
-            edge = any(
-                not (0 <= x + dx < E and 0 <= y + dy < E) or not a[x + dx, y + dy]
-                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
-            )
-            if open_up:
-                r, g, b, _ = src[x, y]
-                px[x, y] = (min(255, r + 90), min(255, g + 80), min(255, b + 80), 255)
-            elif edge:
+            edge = any(not (0 <= x + dx < n and 0 <= y + dy < n) or not a[x + dx, y + dy]
+                       for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+            if edge and not open_up:
                 px[x, y] = OUTLINE
+            elif edge and open_up:
+                r, g, b, _ = src[x, y]
+                px[x, y] = (min(255, r + rim), min(255, g + rim), min(255, b + rim + 10), 255)
     return out
 
 
 def quantize(cells, n):
-    colors = []
-    for c in cells:
-        colors.extend(p[:3] for p in c.get_flattened_data() if p[3])
-    sample = Image.new("RGB", (len(colors), 1))
-    sample.putdata(colors)
-    q = sample.quantize(colors=n, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
-    pal = q.getpalette()[: n * 3]
-    palette = [tuple(pal[i:i + 3]) for i in range(0, len(pal), 3)]
+    colors = [p[:3] for c in cells for p in c.get_flattened_data() if p[3] and p[:3] != OUTLINE[:3]]
+    pal = palette_of(colors, n - 1) + [OUTLINE[:3]]
+    cache = {}
     out = []
     for c in cells:
         c = c.copy()
         px = c.load()
-        for y in range(E):
-            for x in range(E):
+        for y in range(c.height):
+            for x in range(c.width):
                 p = px[x, y]
                 if p[3]:
-                    best = min(palette, key=lambda k: sum((k[i] - p[i]) ** 2 for i in range(3)))
-                    px[x, y] = best + (255,)
-        out.append(c)
+                    if p[:3] not in cache:
+                        cache[p[:3]] = nearest(pal, p[:3])
+                    px[x, y] = cache[p[:3]] + (255,)
+        out.append(drop_orphans(c))
     return out
 
 
-RED = (255, 40, 30)
-
-
-def crawler(src):
-    s = 14 / src.width
-    f = lambda **k: frame(src, s, **k)  # noqa: E731
-    return [
-        [f(), f(sx=1.06, sy=0.92), f(), f(sx=0.95, sy=1.06)],
-        [f(sx=1.1, sy=0.85), f(sy=1.08, sx=0.92, dy=-2), f(dy=-3), f(sx=1.08, sy=0.9)],
-        [f(sx=1.12, sy=0.8), f(sx=0.88, sy=1.15, dy=-2, fx=lambda i: tint(i, RED, 0.25)),
-         f(sx=1.1, sy=0.95, fx=lambda i: tint(i, RED, 0.4)), f(sx=1.05, sy=0.9)],
-        [f(sx=1.1, sy=0.75, fx=lambda i: darken(i, 0.85)), f(sx=1.2, sy=0.5, fx=lambda i: darken(i, 0.7)),
-         f(sx=1.3, sy=0.3, fx=lambda i: darken(i, 0.55)), f(sx=1.35, sy=0.18, fx=lambda i: fade(darken(i, 0.45), 0.9))],
-    ]
-
-
-def shooter(src):
-    # The generated caster is near-black; lift it so it reads on the floor.
-    src = ImageEnhance.Brightness(src).enhance(1.45)
-    s = 15 / src.height
-    f = lambda **k: frame(src, s, **k)  # noqa: E731
-    glow = lambda k: (lambda i: tint(i, RED, k))  # noqa: E731
-    return [
-        [f(), f(dy=1, sy=0.97), f(), f(dy=1, sy=0.97)],
-        [f(dx=-1), f(dy=-1), f(dx=1), f(dy=-1)],
-        [f(sy=1.03, dy=-1), f(dy=-2, fx=glow(0.15)), f(dy=-2, fx=glow(0.3)), f(dy=-1)],
-        [f(rot=-8, fx=lambda i: darken(i, 0.8)), f(rot=-20, sy=0.85, fx=lambda i: darken(i, 0.65)),
-         f(rot=-60, sy=0.7, fx=lambda i: darken(i, 0.5)), f(rot=-90, sy=0.6, fx=lambda i: fade(darken(i, 0.4), 0.9))],
-    ]
-
-
-def charger(src):
-    src = ImageEnhance.Contrast(src).enhance(1.25)
-    s = 16 / src.width
-    f = lambda **k: frame(src, s, **k)  # noqa: E731
-    return [
-        [f(), f(sy=0.96), f(), f(sy=0.96)],
-        [f(dy=-1), f(rot=-4), f(dy=-1), f(rot=4)],
-        [f(rot=8, dx=-1), f(rot=12, dx=-1, fx=lambda i: tint(i, RED, 0.3)),
-         f(rot=-6, dx=1, fx=lambda i: tint(i, RED, 0.3)), f(rot=-3)],
-        [f(rot=8, fx=lambda i: darken(i, 0.8)), f(rot=25, sy=0.85, fx=lambda i: darken(i, 0.65)),
-         f(rot=170, sy=0.8, fx=lambda i: darken(i, 0.5)), f(rot=180, sy=0.6, fx=lambda i: fade(darken(i, 0.4), 0.9))],
-    ]
+def build(root, job):
+    img = key(Image.open(os.path.join(root, "art-src/gen/r2", job["src"])))
+    for box in job["mask"]:
+        img.paste((0, 0, 0, 0), box)
+    if job["bright"] != 1.0 or job["contrast"] != 1.0:
+        alpha = img.getchannel("A")
+        img = ImageEnhance.Contrast(ImageEnhance.Brightness(img).enhance(job["bright"])).enhance(job["contrast"])
+        img.putalpha(alpha)
+    if job.get("cool_greens"):
+        img = cool(img)
+    poses, centres = slots(img)
+    target, axis = job["size"]
+    idle = [poses[(c, 0)].getbbox() for c in range(COLS) if (c, 0) in poses]
+    measure = statistics.median((b[2] - b[0]) if axis == "w" else (b[3] - b[1]) for b in idle)
+    s = target / measure
+    n, ground = job["cell"], job["ground"]
+    cells = []
+    for r in range(ROWS):
+        row_ground = max(poses[(c, r)].getbbox()[3] for c in range(COLS) if (c, r) in poses)
+        for c in range(COLS):
+            cell = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+            if (c, r) in poses:
+                bx0, by0, bx1, by1 = poses[(c, r)].getbbox()
+                small = shrink(poses[(c, r)].crop((bx0, by0, bx1, by1)), s)
+                ox = round(n / 2 + (bx0 - centres[(c, r)]) * s)
+                oy = round(ground + 1 - (row_ground - by0) * s)
+                cell.alpha_composite(small, (max(ox, 0), max(oy, 0)), (max(-ox, 0), max(-oy, 0)))
+            cells.append(finish(cell, job["rim"]))
+    return quantize(cells, job["colors"])
 
 
 def main():
-    root, force = parse_args(sys.argv)
-    jobs = {
-        "crawler": (crawler, "gen/enemy-crawler.png"),
-        "shooter": (shooter, "gen/enemies-sheet.png"),
-        "charger": (charger, "gen/enemy-charger-v2.png"),
-    }
-    for name, (fn, rel) in jobs.items():
-        grid = fn(source(root, rel))
-        cells = quantize([finish(c) for row in grid for c in row], COLORS[name])
-        sheet = Image.new("RGBA", (E * 4, E * 4), (0, 0, 0, 0))
+    root, force = parse_args([a for a in sys.argv if a in sys.argv[:2] or a == "--force"])
+    names = [a for a in sys.argv[2:] if a != "--force"] or list(JOBS)
+    for name in names:
+        job = JOBS[name]
+        n = job["cell"]
+        cells = build(root, job)
+        sheet = Image.new("RGBA", (n * COLS, n * ROWS), (0, 0, 0, 0))
         for k, c in enumerate(cells):
-            sheet.alpha_composite(c, ((k % 4) * E, (k // 4) * E))
+            sheet.alpha_composite(c, ((k % COLS) * n, (k // COLS) * n))
         save_guarded(sheet, os.path.join(root, "game/assets/enemies", name + ".png"), force)
 
 

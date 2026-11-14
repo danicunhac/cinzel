@@ -1,0 +1,144 @@
+# Cinzel: GDD
+
+Versão 2 (rascunho), 14/11/2026. Projeto em Equipe da Trilha 2. Apresentação: 21/11. Entrega: 28/11.
+Itens marcados com **[a decidir]** dependem de resposta do Daniel.
+
+## 1. Visão
+
+Ação roguelike 2D com visão de cima. Um escalador sobe uma torre de andares, como Aincrad em Sword Art Online, e volta para a cidade para vender o que achou e se equipar, como em Moonlighter.
+
+Frase do jogo: **o que custa caro é o tempo, não a vida.**
+
+## 2. Pilares
+
+1. **Tempo como recurso.** Dentro da torre, a dificuldade sobe a cada minuto. Curar exige ficar parado. Sair cedo é seguro; ficar mais rende mais.
+2. **Risco e recompensa da mochila.** Tudo o que você carrega pode ser perdido. Sair vivo transforma o saque em ouro e equipamento.
+3. **Equipamento muda o jeito de jogar.** Armas e peças têm efeitos visíveis no combate e na aparência do personagem.
+4. **Torre ilustrada.** Cada sala parece pintada à mão, no estilo da arte-chave da torre.
+
+## 3. Loop
+
+```
+Cidade (vender, comprar, forjar, equipar)
+  → Teleporte para um andar liberado
+  → Salas de combate (saque, baús) → sala do chefe → próximo andar liberado
+  → Sair (segurar Q, fora da sala do chefe) → Cidade com tudo o que carrega
+  → Morrer → perde TUDO (mochila, equipamento, ouro, andares) → Cidade, andar 1
+Vitória: vencer o chefe do andar 3.
+```
+
+## 4. Regras que já existem no jogo
+
+- **Relógio:** só corre dentro da torre. Na cidade e nos menus ele pausa e não zera. Só zera na morte. Sobe 1 nível a cada 60 s; cada nível dá +10% de vida e +8% de dano aos inimigos, e a partir do nível 5 aparece +1 inimigo por sala.
+- **Combate:** combo de 3 golpes, rolamento com 0,3 s de invencibilidade, vida inicial 100.
+- **Cura:** depois de 1,5 s parado, recupera 8 de vida por segundo, com aura amarela.
+- **Saída:** segurar Q por 2 s. Não funciona na sala do chefe e é cancelada se o jogador levar dano.
+- **Morte:** perde tudo e volta ao andar 1 com o relógio zerado.
+- **Andares:** 3 andares. Cada um tem um tutorial (só no andar 1), de 4 a 5 salas sorteadas e um chefe. Vencer o chefe libera o próximo andar no teleporte.
+- **Inimigos:**
+  - Slime: persegue.
+  - Sentinela de pedra: atira de longe.
+  - Besouro: avisa e investe.
+- **Chefes:**
+  - Andar 1: slime gigante, com onda de choque.
+  - Andar 2: besouro gigante, com investidas.
+  - Andar 3: cavaleiro espectral com 2 fases; na segunda, invoca slimes.
+
+### Caminho de volta (decidido em 14/11)
+- As salas de um andar ficam ligadas nos dois sentidos: a porta de entrada leva de volta à sala anterior, e as salas já limpas continuam limpas.
+- A primeira sala de cada andar tem uma **escada para baixo**, que leva à sala do chefe (já vencido) do andar anterior. No andar 1, a escada leva à cidade.
+- Assim o jogador pode descer a torre a pé a qualquer momento. Segurar Q continua como saída rápida, fora da sala do chefe.
+- O relógio continua correndo enquanto o jogador está dentro da torre, inclusive na volta a pé.
+
+## 5. Equipamento (novo, proposta)
+
+Pedido do Daniel: mais armas, armaduras, roupas e mochilas, mais perto de SAO.
+
+### Espaços do personagem
+| Espaço | O que faz | Aparece no sprite |
+|---|---|---|
+| Arma | Define o estilo de ataque (alcance, velocidade, combo, golpe especial) | Sim (camada `weapon`) |
+| Armadura | Defesa e vida máxima; armaduras pesadas deixam o rolamento mais lento | Sim (camada `outfit`) |
+| Capuz/elmo | Bônus pequeno (crítico, luz, resistência) | Sim (camada `hair`) |
+| Mochila | Quantos espaços de saque cabem | Sim (parte de `outfit`) |
+| Relíquias (até 3) | Os 8 itens atuais, com efeitos passivos | Não |
+
+### Tipos de arma (decidido pelo Daniel em 14/11)
+- **Espada:** equilibrada, combo de 3. Especial: estocada em linha.
+- **Espada longa:** lenta, arco grande, mais dano. Especial: giro em volta do herói.
+- **Machado:** lento e pesado, atordoa por pouco tempo. Especial: golpe no chão com onda curta.
+- **Lança:** alcance longo e estocada. Especial: investida curta.
+- **Adaga:** muito rápida e com pouco alcance, crítico alto. Especial: sequência de 6 cortes.
+- **Arco e flecha:** ataque à distância e rolamento para recuar; a flecha atravessa um inimigo se carregada. Especial: chuva de flechas numa área.
+
+O **golpe especial** imita as Sword Skills de SAO: segurar o ataque por 0,5 s carrega um golpe com rastro de luz, com uma recarga curta.
+
+### Raridade
+Comum (branco), Rara (azul), Épica (roxo). A raridade aumenta os números e pode trazer um efeito extra. **[a decidir: quantas raridades]**
+
+## 6. Mochila, saque e loja (novo, proposta)
+
+- Inimigos derrubam **materiais**: gosma de slime, núcleo de pedra, carapaça, essência espectral. Baús e chefes derrubam **equipamentos** e **relíquias**.
+- O saque vai para a **mochila**, uma grade de espaços: a mochila inicial tem 8 e as melhores chegam a 20. Mochila cheia obriga a escolher o que largar.
+- **Loja:** vende materiais e equipamentos. Os preços variam com a raridade e o andar. **[a decidir: preço dinâmico estilo Moonlighter, em que a reação do cliente mostra se está caro, ou preço fixo]**
+- **Ferreiro:** em vez de "2 itens por 1", forja armas e armaduras com materiais e ouro, por receitas que vão sendo liberadas por andar.
+- **Sem baú de casa (decidido em 14/11):** morrer perde TUDO (equipamento, mochila, ouro e andares liberados). O que protege o jogador é sair a tempo.
+
+## 7. Cidade
+
+Uma tela única com:
+- a loja do herói
+- o ferreiro
+- o cristal de teleporte
+- moradores andando
+- fumaça da forja
+- luz das lanternas
+- falas curtas em balões
+
+Estilo da arte-chave "cidade 1".
+
+## 8. Arte
+
+- Resolução base 480×270, escala inteira.
+- Herói de 32 px, em camadas: corpo, capuz, roupa e arma. O equipamento troca as camadas, e cada peça visível precisa da sua folha.
+- Inimigos de 24 px e chefes de 48 px.
+- **Salas e cidade como pinturas inteiras**, no estilo da arte-chave "torre 1". O layout de cada sala vira um rascunho em blocos, a IA pinta por cima e a colisão vem do layout.
+- Luz 2D (tochas e lanternas), partículas e números de dano.
+- Personagem autoral: o Daniel redesenha o escalador à mão (é exigência da rubrica).
+
+## 9. Áudio
+
+- Efeitos sonoros: golpe, acerto, dano, rolamento, moeda, baú, porta, cura, compra, venda, teleporte, forja e golpe especial.
+- Músicas: cidade, torre e chefe.
+
+## 10. Telas e controles
+
+- **Telas:** título, cidade, torre com HUD, mochila e equipamento, loja, ferreiro, teleporte, pausa, derrota, vitória e créditos.
+- **Teclado:**
+  - WASD move
+  - J ou clique ataca (segurar faz o golpe especial)
+  - Espaço rola
+  - E interage
+  - Q (segurar) sai da torre
+  - Tab abre a mochila
+  - Esc pausa
+- **Controle:** extra, se der tempo.
+
+## 11. Escopo e prazos
+
+- **21/11 (apresentação técnica):**
+  - andar 1 completo com salas pintadas, chefe, cidade, HUD e efeitos
+  - sistema de equipamento com 2 tipos de arma e algumas armaduras
+  - mochila e venda
+- **28/11 (entrega):**
+  - andares 2 e 3
+  - todas as armas escolhidas
+  - ferreiro com receitas
+  - áudio completo
+  - personagem redesenhado pelo Daniel
+  - build Windows
+  - ficha de entrega
+
+## 12. Perguntas em aberto
+
+Ver as marcações **[a decidir]**. As respostas fecham este documento e o plano de implementação.
