@@ -21,7 +21,8 @@ Outputs:
   art-src/gen/rooms/align/<room_id>.png  painting x2 with the collision cells
     outlined, for eyeballing; scores in art-src/gen/rooms/align/scores.json.
   game/assets/rooms/<room_id>.png  480x270, 1 art pixel = 1 game pixel,
-    at most 48 colours, no dithering.
+    graded per floor (GRADE: sharpen, brightness, contrast, saturation, to
+    sit next to the town's ground), at most 48 colours, no dithering.
   game/assets/rooms/doors.png  3x2 frames of 24x32.
 
 Alignment score: each pixel of the painting is classed as "blocking" or
@@ -42,7 +43,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import numpy as np  # noqa: E402
-from PIL import Image, ImageDraw, ImageFilter  # noqa: E402
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter  # noqa: E402
 
 from artlib import key_magenta, save_guarded  # noqa: E402
 
@@ -70,6 +71,11 @@ TORCH = (255, 176, 40)
 SIGN = (72, 46, 30)
 
 DOOR_FRAME = (24, 32)
+
+# Per floor: unsharp percent (darker grout, crisper edges), brightness,
+# contrast, saturation. Tuned against the town screenshot: floor 1 and 2
+# paintings come out pale and flat, floor 3 too dark.
+GRADE = {1: (80, 0.86, 1.35, 1.1), 2: (80, 0.9, 1.4, 1.35), 3: (80, 1.45, 1.25, 1.05)}
 
 
 def load_layouts(root):
@@ -268,6 +274,14 @@ def shift_img(img, dx, dy):
     return Image.fromarray(a)
 
 
+def grade(img, floor):
+    sharpen, bright, contrast, sat = GRADE[floor]
+    img = img.filter(ImageFilter.UnsharpMask(radius=1, percent=sharpen, threshold=2))
+    img = ImageEnhance.Brightness(img).enhance(bright)
+    img = ImageEnhance.Contrast(img).enhance(contrast)
+    return ImageEnhance.Color(img).enhance(sat)
+
+
 def quantize(img, colors=COLORS):
     return img.quantize(colors=colors, method=Image.Quantize.MEDIANCUT,
                         dither=Image.Dither.NONE).convert("RGB")
@@ -336,7 +350,7 @@ def cmd_final(root, rooms, ids, force):
             img = shift_img(img, dx, dy)
             s["applied_shift"] = [dx, dy]
             s["edges_after"] = score(img, room)["edges"]
-        img = quantize(img)
+        img = quantize(grade(img, room["floor"]))
         s["after"] = score(img, room)["mismatch"]
         s["colors"] = len(img.getcolors(1 << 16))
         scores[rid] = s
@@ -351,6 +365,28 @@ def content_box(img):
     a = np.asarray(img.getchannel("A")) > 0
     ys, xs = np.nonzero(a)
     return xs.min(), ys.min(), xs.max() + 1, ys.max() + 1
+
+
+PADLOCK = [  # 7x8, centred on the body: o outline, s shackle, r body, h highlight, k keyhole
+    "..ooo..",
+    ".os.so.",
+    ".o...o.",
+    "ooooooo",
+    "ohhrrro",
+    "orrkrro",
+    "orrrrro",
+    "ooooooo",
+]
+PADLOCK_RGB = {"o": (40, 18, 18), "s": (170, 170, 178), "r": (214, 40, 36),
+               "h": (255, 140, 110), "k": (60, 20, 20)}
+
+
+def draw_padlock(sheet, cx, cy):
+    px = sheet.load()
+    for y, line in enumerate(PADLOCK):
+        for x, ch in enumerate(line):
+            if ch in PADLOCK_RGB:
+                px[cx - 3 + x, cy - 5 + y] = PADLOCK_RGB[ch] + (255,)
 
 
 def cmd_doors(root, force):
@@ -369,10 +405,19 @@ def cmd_doors(root, force):
             nw, nh = max(1, round(part.width * k)), max(1, round(part.height * k))
             part = part.resize((nw, nh), Image.BOX)
             alpha = part.getchannel("A").point(lambda v: 255 if v >= 128 else 0)
-            rgb = quantize(part.convert("RGB"), 16)
+            rgb = quantize(part.convert("RGB"), 32)
             part = rgb.convert("RGBA")
             part.putalpha(alpha)
-            sheet.paste(part, (col * fw + (fw - nw) // 2, row * fh + fh - nh), part)
+            ox, oy = col * fw + (fw - nw) // 2, row * fh + fh - nh
+            sheet.paste(part, (ox, oy), part)
+            if col == 1:
+                # The painted padlock blurs away at 24x32: redraw it by hand
+                # where the source has it, so locked never reads as shut.
+                src_rgb = np.asarray(cell_img.crop(box).convert("RGB"), dtype=int)
+                red = (src_rgb[..., 0] > 170) & (src_rgb[..., 1] < 90) & (src_rgb[..., 2] < 90)
+                ys, xs = np.nonzero(red)
+                if len(xs):
+                    draw_padlock(sheet, ox + round(xs.mean() * k), oy + round(ys.mean() * k))
     out_dir = os.path.join(root, "game/assets/rooms")
     os.makedirs(out_dir, exist_ok=True)
     save_guarded(sheet, os.path.join(out_dir, "doors.png"), force)

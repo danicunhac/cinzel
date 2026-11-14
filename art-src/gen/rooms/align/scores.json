@@ -150,15 +150,15 @@
   ]
  },
  "f1_arena": {
-  "after": 0.279,
-  "best": 0.251,
+  "after": 0.1525,
+  "best": 0.1506,
   "colors": 48,
-  "drift": 35,
+  "drift": 26,
   "edges": [
-   0,
-   246,
-   41,
-   429
+   42,
+   233,
+   18,
+   463
   ],
   "edges_want": [
    16,
@@ -166,11 +166,11 @@
    16,
    464
   ],
-  "mismatch": 0.2803,
-  "obstacles": 0.466,
+  "mismatch": 0.152,
+  "obstacles": 0.404,
   "shift": [
-   -5,
-   -7
+   0,
+   -3
   ]
  },
  "f1_colunas": {
@@ -386,15 +386,15 @@
   ]
  },
  "f2_salao": {
-  "after": 0.1533,
-  "best": 0.1399,
+  "after": 0.084,
+  "best": 0.0605,
   "colors": 48,
-  "drift": 13,
+  "drift": 12,
   "edges": [
-   9,
-   241,
-   29,
-   459
+   4,
+   242,
+   14,
+   465
   ],
   "edges_want": [
    16,
@@ -402,11 +402,11 @@
    16,
    464
   ],
-  "mismatch": 0.1531,
-  "obstacles": 0.004,
+  "mismatch": 0.0825,
+  "obstacles": 0.9,
   "shift": [
-   0,
-   -8
+   -1,
+   -5
   ]
  },
  "f3_camaras": {
@@ -468,15 +468,15 @@
   ]
  },
  "f3_forja": {
-  "after": 0.3336,
-  "best": 0.3089,
+  "after": 0.2722,
+  "best": 0.248,
   "colors": 48,
-  "drift": 14,
+  "drift": 16,
   "edges": [
-   2,
-   241,
-   9,
-   470
+   3,
+   242,
+   0,
+   480
   ],
   "edges_want": [
    16,
@@ -484,11 +484,11 @@
    16,
    464
   ],
-  "mismatch": 0.3472,
-  "obstacles": 0.107,
+  "mismatch": 0.2657,
+  "obstacles": 0.789,
   "shift": [
-   -8,
-   -2
+   1,
+   -8
   ]
  },
  "f3_obsidiana": {

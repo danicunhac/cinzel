@@ -5,7 +5,7 @@ python3 -I art-src/build_decor.py <repo_root> [--force]
 Input (see docs/assets.md): art-src/gen/decor-sheet.png, 4x3
 props on magenta. Output: game/assets/rooms/decor.png, 12 frames of 32x32 in
 one row (order = NAMES), each prop bottom-centred on the frame's last row,
-transparent, <= 32 colours for the whole strip, binary alpha.
+transparent, <= 64 colours for the whole strip, binary alpha.
 """
 import os
 import sys
@@ -19,7 +19,7 @@ from artlib import count_colors, key_magenta, parse_args, save_guarded  # noqa: 
 SRC = "art-src/gen/decor-sheet.png"
 OUT = "game/assets/rooms/decor.png"
 CELL = 32
-COLORS = 32
+COLORS = 64
 # Sheet order (4 columns x 3 rows) and the size each prop is reduced to
 # (largest side fits this box, aspect kept).
 NAMES = [
