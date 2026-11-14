@@ -7,6 +7,10 @@ With <enemies_dir>, also writes crawler.png, shooter.png, charger.png
 
 python3 -I make_placeholders.py --tiles <out_png>
 Writes only the floor tileset: 8 cols x 2 rows of 16x16 tiles (see TILES).
+
+The real art now lives at those paths (game/assets/...), so existing files are
+never overwritten unless --force is passed. Point it at a scratch dir instead,
+e.g. python3 -I make_placeholders.py /tmp/ph /tmp/ph.
 """
 import os
 import sys
@@ -79,7 +83,13 @@ class Cell:
                     self.set(x, y, fill)
 
 
+FORCE = False
+
+
 def write_png(path, w, h, pixels):
+    if os.path.exists(path) and not FORCE:
+        print("skip %s (exists; pass --force to overwrite)" % path)
+        return
     raw = bytearray()
     for y in range(h):
         raw.append(0)
@@ -452,6 +462,10 @@ def write_tiles(path):
 
 
 def main():
+    global FORCE
+    if "--force" in sys.argv:
+        FORCE = True
+        sys.argv.remove("--force")
     if len(sys.argv) > 2 and sys.argv[1] == "--tiles":
         write_tiles(sys.argv[2])
         return
