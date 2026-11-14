@@ -101,3 +101,29 @@ func test_backs_of_buildings_are_blocked_paths_open() -> void:
 		T.ok(walls.is_empty(), "open at %s" % p)
 	town.free()
 	_game().new_run()
+
+
+func test_villagers_have_distinct_looks_shadows_and_lines() -> void:
+	_game().new_run()
+	var town := await _spawn("res://world/town.tscn")
+	var vs: Array[Villager] = town._villagers
+	T.ok(vs.size() >= 4 and vs.size() <= 6, "4 to 6 villagers (%d)" % vs.size())
+	var names := {}
+	for v in vs:
+		names[v.name] = true
+		T.ok(v.line != "", "%s has a line" % v.name)
+		T.ok(TownLogic.bubble_fits(v.line), "%s line fits" % v.name)
+		var shadows := v.get_children().filter(func(c: Node) -> bool: return c is GroundShadow)
+		T.eq(shadows.size(), 1, "%s has a ground shadow" % v.name)
+		T.ok(String(v.animation()).begins_with("idle_") or String(v.animation()).begins_with("walk_"), "%s uses directional animations" % v.name)
+	T.eq(names.size(), vs.size(), "no duplicate looks")
+	# Standing next to a villager away from the spots: it stops and talks.
+	var v := vs[0]
+	var player := town.get_node("Player") as Player
+	player.global_position = v.position - Vector2(0, 6) + Vector2(10, 0)
+	await _tree().process_frame
+	if town.near == &"":
+		T.ok(town._bubble.visible, "villager talks")
+		T.ok(v.talking, "villager stops to talk")
+	town.free()
+	_game().new_run()

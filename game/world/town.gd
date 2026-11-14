@@ -43,6 +43,12 @@ const LINES: Dictionary[String, String] = {
 	"shop_sell": "Achou algo na torre? Eu compro, e pago bem.",
 	"smith": "Me dê dois itens e eu forjo um novo no fogo.",
 	"smith_wait": "Traga dois itens da torre. Eu fundo os dois em um só.",
+	"villager_oldwoman": "Meu marido subiu a torre três vezes. Na quarta, voltou sem botas.",
+	"villager_child": "Quando eu crescer vou subir a torre inteira! Hoje só até a fonte.",
+	"villager_guard": "Nada desce da torre sem eu ver. Quase nada. Olho nas sombras.",
+	"villager_farmer": "A sombra da torre cobre minha horta. Os nabos nem reclamam mais.",
+	"villager_archer": "Dizem que a torre toca as nuvens. Minhas flechas ainda não.",
+	"villager_merchant": "Vendo mapas da torre! Nenhum certo: ela muda toda noite.",
 }
 
 ## Large pieces: [name, base position (origin), footprint size or ZERO for
@@ -130,12 +136,28 @@ const LIGHTS: Array = [
 const CHIMNEY := Vector2(399, 32)
 const ANVIL := Vector2(426, 112)
 const FORGE_BASE := 130.0
-## Villager loops (feet positions).
+## Villager loops (feet positions). Each load gives every loop a different
+## look (VILLAGER_LOOKS), so no two villagers on screen look alike.
 const WALKS: Array = [
 	[Vector2(96, 150), Vector2(170, 150), Vector2(162, 226), Vector2(96, 226)],
 	[Vector2(240, 30), Vector2(240, 104), Vector2(300, 136), Vector2(240, 104)],
 	[Vector2(372, 222), Vector2(316, 222), Vector2(316, 160), Vector2(372, 160)],
+	[Vector2(196, 180), Vector2(284, 180), Vector2(290, 136), Vector2(190, 136)],
+	[Vector2(182, 106), Vector2(168, 110)],
 ]
+## Looks: sheet in assets/characters/villagers, walk speed (px/s), bubble
+## key in LINES.
+const VILLAGER_LOOKS: Dictionary[String, float] = {
+	"oldwoman": 10.0,
+	"child": 24.0,
+	"guard": 15.0,
+	"farmer": 14.0,
+	"archer": 17.0,
+	"merchant": 12.0,
+}
+const VILLAGER_ART := "res://assets/characters/villagers/%s.png"
+## A villager talks when the player's feet are this close (and no spot is).
+const VILLAGER_REACH := 24.0
 
 var shop := Shop.new()
 var near: StringName = &""
@@ -144,6 +166,7 @@ var _panel: UiPanel = null
 var _ctas: Dictionary[StringName, TownCta] = {}
 var _glow_targets: Dictionary[StringName, CanvasItem] = {}
 var _speakers: Dictionary[StringName, Vector2] = {}
+var _villagers: Array[Villager] = []
 var _bubble: SpeechBubble
 var _hint: Label
 var _crystal_glow: Sprite2D
@@ -261,11 +284,34 @@ func _update_hint(items: int) -> void:
 
 func _update_bubble(items: int) -> void:
 	var text := line_for(near, items) if _panel == null else ""
+	var at := _speakers.get(near, Vector2.ZERO) as Vector2
+	var talker := _nearest_villager() if near == &"" and _panel == null else null
+	for v in _villagers:
+		v.talking = v == talker
+		v.look_at_pos = player.global_position
+	if talker != null:
+		text = talker.line
+		at = talker.position + Vector2(0, 2)
 	if text == "":
 		_bubble.hide_bubble()
 		return
-	_bubble.position = _speakers[near]
+	_bubble.position = at
 	_bubble.say(text)
+
+
+## Villager whose feet are within VILLAGER_REACH of the player's, or null.
+func _nearest_villager() -> Villager:
+	if player == null or player.state == Player.State.DEAD:
+		return null
+	var feet := player.global_position + Vector2(0, 6)
+	var best: Villager = null
+	var best_d := VILLAGER_REACH
+	for v in _villagers:
+		var d := v.position.distance_to(feet)
+		if d < best_d:
+			best = v
+			best_d = d
+	return best
 
 
 # --- building the scene -----------------------------------------------------
@@ -406,14 +452,19 @@ func _build_life() -> void:
 	_add_sparks()
 	_add_crystal_motes()
 	_add_leaves()
-	var tints: Array[Color] = [Color(0.75, 0.9, 1.0), Color(1.0, 0.85, 0.75), Color(0.85, 1.0, 0.8)]
-	var texes: Array[Texture2D] = [SHOPKEEPER_TEX, SMITH_TEX, SHOPKEEPER_TEX]
+	var looks: Array = VILLAGER_LOOKS.keys()
+	looks.shuffle()
 	for i in WALKS.size():
+		var look: String = looks[i]
 		var v := Villager.new()
 		var pts: Array[Vector2] = []
 		pts.assign(WALKS[i])
-		v.setup(texes[i], tints[i], pts)
+		v.setup(load(VILLAGER_ART % look) as Texture2D, Color.WHITE, pts)
+		v.speed = VILLAGER_LOOKS[look]
+		v.line = LINES["villager_" + look]
+		v.name = "Villager_" + look
 		add_child(v)
+		_villagers.append(v)
 
 
 static var _light_tex: GradientTexture2D

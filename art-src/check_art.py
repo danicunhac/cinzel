@@ -1,6 +1,7 @@
 """Check the shipped sheets: size, transparency, colour count, unused climber
-cells empty, no orphan pixels in the climber layers, nothing below the ground
-row the game expects (climber and NPCs 30, enemies 22, boss 44).
+cells empty, villager cells filled per row, no orphan pixels in the climber
+layers, nothing below the ground row the game expects (climber, NPCs and
+villagers 30, enemies 22, boss 44).
 
 python3 -I art-src/check_art.py <repo_root>
 """
@@ -23,6 +24,8 @@ SHEETS = {
     "game/assets/tiles/floor3.png": (128, 32, 16),
     "game/assets/characters/npc_shopkeeper.png": (64, 32, 32),
     "game/assets/characters/npc_blacksmith.png": (64, 32, 32),
+    **{"game/assets/characters/villagers/%s.png" % n: (128, 192, 32) for n in (
+        "oldwoman", "child", "guard", "farmer", "archer", "merchant")},
     "game/assets/items/heavy_blade.png": (16, 16, 16),
     "game/assets/items/light_boots.png": (16, 16, 16),
     "game/assets/items/stone_heart.png": (16, 16, 16),
@@ -55,12 +58,14 @@ SHEETS = {
     "game/assets/ui/hud/fill_exit.png": (1, 6, 1),
     "game/assets/ui/hud/fill_tip.png": (3, 8, 1),
 }
+# Villager sheets: frames per row (idle down/up/side, walk down/up/side).
+VILLAGER_COUNTS = [2, 2, 2, 4, 4, 4]
 # Cells that must stay empty in the climber sheets (frame counts per row).
 CLIMBER_COUNTS = [4, 4, 4, 8, 8, 8, 6, 6, 6, 6, 6, 6, 6]
 CLIMBER_COLS = 8
 # Lowest opaque row allowed in each cell (the feet / ground line the game
 # uses). First matching key wins.
-GROUND = [("climber", 30), ("npc_", 30), ("enemies/boss_final", 44), ("enemies/", 22)]
+GROUND = [("climber", 30), ("npc_", 30), ("villagers/", 30), ("enemies/boss_final", 44), ("enemies/", 22)]
 
 
 def orphans(img):
@@ -115,6 +120,12 @@ def main():
             n = orphans(img)
             if n:
                 problems.append("%d orphan pixels" % n)
+        if "villagers/" in rel:
+            for r, n in enumerate(VILLAGER_COUNTS):
+                for c in range(4):
+                    box = (c * cell, r * cell, c * cell + cell, r * cell + cell)
+                    if bool(img.crop(box).getbbox()) != (c < n):
+                        problems.append("cell %d,%d %s" % (c, r, "empty" if c < n else "not empty"))
         ground = next((g for k, g in GROUND if k in rel), None)
         if ground is not None and lowest_row(img, cell) > ground:
             problems.append("pixels below ground row %d" % ground)
