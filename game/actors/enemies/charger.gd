@@ -76,3 +76,8 @@ func _point_warning() -> void:
 func _enter(s: State) -> void:
 	state = s
 	_t = 0.0
+
+
+func _on_died() -> void:
+	warning.visible = false
+	super()

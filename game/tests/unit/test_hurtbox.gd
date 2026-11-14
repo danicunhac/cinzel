@@ -45,3 +45,24 @@ func test_landed_signal() -> void:
 	T.eq(landed[0], 1)
 	(b[0] as Node).free()
 	(b[1] as Node).free()
+
+
+func test_invulnerable_rejects_without_consuming_hitbox() -> void:
+	var b := _boxes(&"enemy", &"player")
+	var hurt := b[0] as Hurtbox
+	var hit := b[1] as Hitbox
+	var hits: Array[int] = [0]
+	var landed: Array[int] = [0]
+	hurt.hit.connect(func(_h: Hitbox) -> void: hits[0] += 1)
+	hit.landed.connect(func(_t: Hurtbox) -> void: landed[0] += 1)
+	hurt.invulnerable = true
+	T.ok(not hurt.receive(hit), "rejected while invulnerable")
+	T.eq(hits[0], 0)
+	T.eq(landed[0], 0)
+	T.eq(hit._already_hit.size(), 0)
+	hurt.invulnerable = false
+	T.ok(hurt.receive(hit), "hits once invulnerability ends")
+	T.eq(hits[0], 1)
+	T.eq(landed[0], 1)
+	hurt.free()
+	hit.free()

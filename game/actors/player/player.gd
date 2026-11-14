@@ -77,6 +77,7 @@ func reset_room_blocks() -> void:
 
 func _physics_process(delta: float) -> void:
 	_tick_timers(delta)
+	_sync_invulnerable()
 	var input_dir := Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
 	match state:
 		State.FREE:
@@ -90,6 +91,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_update_heal(delta, input_dir)
 	_update_exit(delta)
+	_sync_invulnerable()
 	_update_visuals(delta)
 
 
@@ -168,6 +170,10 @@ func _process_roll(delta: float) -> void:
 	if _state_time >= ROLL_TIME:
 		state = State.FREE
 		velocity = Vector2.ZERO
+
+
+func _sync_invulnerable() -> void:
+	hurtbox.invulnerable = state == State.DEAD or invincible_time > 0.0
 
 
 func _update_heal(delta: float, input_dir: Vector2) -> void:
@@ -254,6 +260,8 @@ func _on_hitbox_landed(_target: Hurtbox) -> void:
 
 func _on_died() -> void:
 	state = State.DEAD
+	remove_from_group(&"player")
+	hurtbox.invulnerable = true
 	hitbox.set_active(false)
 	sprite.speed_scale = 1.0
 	sprite.play(&"death", Vector2.DOWN, true)
