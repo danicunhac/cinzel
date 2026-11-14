@@ -103,15 +103,47 @@ func test_heal_room_opens_when_hp_is_full() -> void:
 
 
 func test_templates_follow_layout_rules() -> void:
-	var templates := Dungeon.templates_for(1)
-	T.eq(templates.size(), 6)
-	for path in templates:
-		var room := (load(path) as PackedScene).instantiate() as Room
-		T.ok(room.has_node(^"Exit") and room.has_node(^"ChestSpot"), "%s exit and chest spot" % path)
-		var n := 0
-		for m in room.get_node(^"Spawns").get_children():
-			n += 1
-			var d := (m as Marker2D).position.distance_to((room.get_node(^"Entry") as Marker2D).position)
-			T.ok(d >= Room.EXTRA_MIN_DIST, "%s spawn %s at %.0f px from entry" % [path, m.name, d])
-		T.ok(n >= 3, "%s has %d enemies" % [path, n])
-		room.free()
+	for f in [1, 2, 3]:
+		var templates := Dungeon.templates_for(f)
+		T.eq(templates.size(), 6, "floor %d templates" % f)
+		for path in templates:
+			var room := (load(path) as PackedScene).instantiate() as Room
+			T.ok(room.has_node(^"Exit") and room.has_node(^"ChestSpot"), "%s exit and chest spot" % path)
+			T.ok(room.has_node(^"StairsSpot"), "%s stairs spot (any room can open a floor)" % path)
+			var entry := (room.get_node(^"Entry") as Marker2D).position
+			var n := 0
+			for m in room.get_node(^"Spawns").get_children():
+				n += 1
+				var d := (m as Marker2D).position.distance_to(entry)
+				T.ok(d >= Room.EXTRA_MIN_DIST, "%s spawn %s at %.0f px from entry" % [path, m.name, d])
+				# Row 1 sits under the painted top wall face.
+				T.ok((m as Marker2D).position.y >= 32.0, "%s spawn %s under the top wall" % [path, m.name])
+			T.ok((room.get_node(^"ChestSpot") as Marker2D).position.y >= 32.0, "%s chest under the top wall" % path)
+			T.ok(n >= 3, "%s has %d enemies" % [path, n])
+			if f >= 2:
+				var kinds := {}
+				for m in room.get_node(^"Spawns").get_children():
+					kinds[m.get_meta(&"enemy")] = true
+				T.ok(kinds.has("shooter"), "%s has a sentinel" % path)
+			room.free()
+
+
+## Floor 2 rooms carry more sentinels than floor 1; floor 3 mixes all three.
+func test_floor_enemy_mix() -> void:
+	var shooters: Array[float] = []
+	for f in [1, 2, 3]:
+		var count := 0
+		var total := 0
+		var kinds := {}
+		for path in Dungeon.templates_for(f):
+			var room := (load(path) as PackedScene).instantiate() as Room
+			for m in room.get_node(^"Spawns").get_children():
+				total += 1
+				kinds[m.get_meta(&"enemy")] = true
+				if m.get_meta(&"enemy") == "shooter":
+					count += 1
+			room.free()
+		shooters.append(float(count) / float(total))
+		if f == 3:
+			T.eq(kinds.size(), 3, "floor 3 uses all three enemy kinds")
+	T.ok(shooters[1] > shooters[0], "floor 2 has more sentinels (%.2f vs %.2f)" % [shooters[1], shooters[0]])

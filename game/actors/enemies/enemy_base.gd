@@ -53,10 +53,11 @@ func _ready() -> void:
 	if Game.run == null:
 		Game.new_run()
 	var level := Game.run.clock.level()
-	var max_hp := roundi(base_hp * Difficulty.enemy_hp_mult(level))
+	var floor_num := tower_floor()
+	var max_hp := roundi(base_hp * Difficulty.enemy_hp_mult(level) * Difficulty.floor_hp_mult(floor_num))
 	health.max_hp = max_hp
 	health.hp = max_hp
-	hitbox.damage = roundi(base_damage * Difficulty.enemy_dmg_mult(level))
+	hitbox.damage = roundi(base_damage * Difficulty.enemy_dmg_mult(level) * Difficulty.floor_dmg_mult(floor_num))
 	hitbox.team = &"enemy"
 	hitbox.set_active(false)
 	hurtbox.team = &"enemy"
@@ -228,6 +229,19 @@ func _drop_gold() -> void:
 	parent.add_child(gold)
 
 
+## Floor of the tower this enemy is on (1 outside a Dungeon, e.g. tests).
+func tower_floor() -> int:
+	# The Dungeon above the room, read by name: naming the Dungeon class here
+	# would make a preload cycle (Dungeon -> Room -> enemy scenes -> EnemyBase).
+	var n := get_parent()
+	while n != null:
+		var f: Variant = n.get(&"current_floor")
+		if f is int:
+			return f
+		n = n.get_parent()
+	return 1
+
+
 ## Bosses roll LootTable.roll_boss, the rest roll_enemy by loot_type(). Each
 ## drop is a PickupItem around the body.
 func roll_loot() -> Array[LootDrop]:
@@ -236,11 +250,7 @@ func roll_loot() -> Array[LootDrop]:
 	if loot_rng == null:
 		loot_rng = RandomNumberGenerator.new()
 		loot_rng.randomize()
-	# Read by name: naming the Dungeon class here would make a preload cycle
-	# (Dungeon -> Room -> enemy scenes -> EnemyBase).
-	var scene := get_tree().current_scene if is_inside_tree() else null
-	var f: Variant = scene.get(&"current_floor") if scene != null else null
-	var floor_num: int = f if f is int else 1
+	var floor_num := tower_floor()
 	if is_in_group(&"boss"):
 		return LootTable.roll_boss(floor_num, Game.run.clock.level(), loot_rng, Game.run.unlocked_outfits)
 	return LootTable.roll_enemy(loot_type(), floor_num, loot_rng)

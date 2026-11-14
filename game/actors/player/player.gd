@@ -82,6 +82,8 @@ var rng := RandomNumberGenerator.new()
 
 var _stats: PlayerStats
 var _heal := HealRule.new()
+## Instance ids of the hazards slowing the walk right now (set_slowed).
+var _slowed_by: Dictionary[int, bool] = {}
 var _exit := ExitChannel.new()
 var _fx: WeaponFx
 var _exit_was_blocked: bool = false
@@ -136,6 +138,20 @@ func _exit_tree() -> void:
 
 func reset_room_blocks() -> void:
 	blocks_left = _stats.block_per_room
+	_slowed_by.clear()
+
+
+## A floor hazard (IcePatch) starts or stops slowing the walk; several can
+## overlap, the slow does not stack.
+func set_slowed(source: Object, on: bool) -> void:
+	if on:
+		_slowed_by[source.get_instance_id()] = true
+	else:
+		_slowed_by.erase(source.get_instance_id())
+
+
+func is_slowed() -> bool:
+	return not _slowed_by.is_empty()
 
 
 func stats() -> PlayerStats:
@@ -174,6 +190,8 @@ func _tick_timers(delta: float) -> void:
 
 func _process_free(delta: float, input_dir: Vector2) -> void:
 	var speed := _stats.move_speed
+	if is_slowed():
+		speed *= IcePatch.SLOW_MULT
 	if special.glow() > 0.0:
 		speed *= CHARGE_MOVE_MULT
 	velocity = input_dir * speed

@@ -149,8 +149,7 @@ func test_stairs_on_floor_two_go_to_beaten_floor_one_boss() -> void:
 	_game().run.tutorial_done = true
 	_game().run.beat_floor(1)
 	var d := await _spawn()
-	# Floor 2 has no templates yet: give it floor-1 rooms.
-	var plan: Array[String] = _f1_templates().slice(0, 4)
+	var plan: Array[String] = Dungeon.templates_for(2).slice(0, 4)
 	plan.append("res://world/rooms/boss_f2.tscn")
 	var none: Array[int] = []
 	d.state.start_floor(2, plan, none)
@@ -183,7 +182,7 @@ func test_descending_to_an_unvisited_floor_builds_it_with_the_boss_beaten() -> v
 	_game().run.beat_floor(1)
 	var d := await _spawn()
 	d.state.reset()
-	var plan: Array[String] = _f1_templates().slice(0, 4)
+	var plan: Array[String] = Dungeon.templates_for(2).slice(0, 4)
 	plan.append("res://world/rooms/boss_f2.tscn")
 	var none: Array[int] = []
 	d.state.start_floor(2, plan, none)
@@ -266,7 +265,7 @@ func test_last_run_keeps_the_highest_floor_after_walking_down() -> void:
 	_game().run.tutorial_done = true
 	_game().run.beat_floor(1)
 	var d := await _spawn()
-	var plan: Array[String] = _f1_templates().slice(0, 4)
+	var plan: Array[String] = Dungeon.templates_for(2).slice(0, 4)
 	plan.append("res://world/rooms/boss_f2.tscn")
 	var none: Array[int] = []
 	d.state.start_floor(2, plan, none)

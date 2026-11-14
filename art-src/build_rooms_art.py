@@ -55,6 +55,9 @@ MAX_SHIFT = 8
 FLOOR_RGB = {1: (150, 126, 96), 2: (112, 124, 140), 3: (66, 54, 60)}
 CRACK = (0.82, 0.82, 0.82)
 MOSS = (88, 118, 64)
+# Floor 2 ice patches ("i"); floor 3 ember vents ("v") stay plain floor, the
+# game draws them.
+ICE = (176, 226, 240)
 WALL_TOP = (26, 22, 32)
 WALL_FACE = (92, 80, 76)
 PILLAR = (196, 186, 166)
@@ -117,6 +120,8 @@ def blockout(room):
                 col = tuple(int(c * k) for c, k in zip(floor, CRACK))
             elif ch == "~":
                 col = MOSS
+            elif ch == "i":
+                col = ICE
             d.rectangle(box, fill=col)
             if ch == "o":
                 d.ellipse((x0 + 1, y0 + 1, x0 + 14, y0 + 14), fill=PILLAR, outline=PILLAR_EDGE)

@@ -13,6 +13,15 @@ extends Node
 ##   --no-dodge: never rolls (the old bot), for comparison.
 ##   --skill=0.8: chance to react to each red warning (after a 0.15-0.35 s
 ##     reaction time); the rest land.
+##   --floors=N (default 1): play floors 1..N in one go. After each boss but
+##     the last it picks up the gear on the floor, makes the town stop a
+##     returning player would (forges the first recipe it can pay for, wears
+##     the best gear by price) and takes the "Andar N+1" portal. Clock time is
+##     the same as going through town (the clock is frozen there).
+##   --start=N: start at floor N (with --kit=f2 or f3, a plausible kit for
+##     that floor) and the clock at START_CLOCK[N], for per-floor samples.
+##   Floor 2 ice only slows the walk; floor 3 ember vents: the path avoids
+##     vent cells and it steps off a vent that warns.
 ## Prints one "CHECK <name> PASS|FAIL <detail>" line per check, a RESULT line
 ## (outcome, clock at the boss, cause of death, damage taken by source,
 ## materials) and a summary.
@@ -22,7 +31,7 @@ const MOVES: Array[StringName] = [&"move_left", &"move_right", &"move_up", &"mov
 ## Game-time limits in 60 fps frames (headless runs much faster than real time).
 const RUN_FRAMES := 60 * 60 * 20
 const ROOM_FRAMES := 60 * 240
-const HEAL_FRAMES := 60 * 25
+const HEAL_FRAMES := 60 * 40
 ## Start backing off to heal under this fraction of max HP, fight again over
 ## the second one.
 const LOW_HP := 0.35
@@ -32,6 +41,19 @@ const HEAL_TRY_FRAMES := 60 * 6
 ## Reaction time to a red warning (s), drawn per attack.
 const REACT_MIN := 0.15
 const REACT_MAX := 0.35
+## Forge order between floors: the first one it can pay for.
+const FORGE_ORDER: Array[StringName] = [
+	&"armor_chain", &"sword_knight", &"helm_horned", &"armor_leather", &"helm_iron",
+	&"armor_plate", &"longsword_ember", &"armor_shadow",
+]
+## Kits for --start (what a player plausibly has on reaching that floor).
+const START_KITS: Dictionary[String, Array] = {
+	"f2": [&"armor_leather", &"helm_iron"],
+	"f3": [&"sword_knight", &"armor_leather", &"helm_iron"],
+}
+## Clock (s) at the start of a --start floor, about what the bot shows on
+## arriving there in a --floors=3 run.
+const START_CLOCK: Dictionary[int, float] = {2: 150.0, 3: 330.0}
 
 class ErrorCounter extends Logger:
 	var errors: Array[String] = []
@@ -77,6 +99,11 @@ var _death_room: int = -1
 var _outcome: String = "timeout"
 var _mats_at_death: String = ""
 var _pending: int = 0
+var floors := 1
+var start_floor := 1
+## One "f<N>:<outcome>@<boss clock>-<kill clock>" entry per floor played.
+var _floor_log: Array[String] = []
+var _forged: Array[StringName] = []
 
 
 func _ready() -> void:
@@ -90,6 +117,10 @@ func _ready() -> void:
 			dodge = false
 		elif a.begins_with("--skill="):
 			skill = float(a.substr(8))
+		elif a.begins_with("--floors="):
+			floors = clampi(int(a.substr(9)), 1, RunState.MAX_FLOOR)
+		elif a.begins_with("--start="):
+			start_floor = clampi(int(a.substr(8)), 1, RunState.MAX_FLOOR)
 	_rng.randomize()
 	OS.add_logger(_counter)
 	_run.call_deferred()
@@ -111,7 +142,16 @@ func _run() -> void:
 			Game.run.inventory.add(id, 1)
 			Game.run.equip(id)
 		Game.run.hp = Game.run.stats().max_hp
-	Dungeon.requested_floor = 1
+	elif START_KITS.has(kit):
+		for id: StringName in START_KITS[kit]:
+			Game.run.inventory.add(id, 1)
+			Game.run.equip(id)
+		Game.run.hp = Game.run.stats().max_hp
+	if start_floor > 1:
+		Game.run.beat_floor(start_floor - 1)
+		Game.run.clock.seconds = START_CLOCK.get(start_floor, 0.0)
+	floors = maxi(floors, start_floor)
+	Dungeon.requested_floor = start_floor
 	Game.goto(Dungeon.SCENE)
 	await _frames(30)
 	var d := get_tree().current_scene as Dungeon
@@ -143,9 +183,15 @@ func _finish() -> void:
 
 func _print_result() -> void:
 	var mats := _mats_text() if _outcome != "death" else _mats_at_death
+	print("FLOORS start=%d %s forged=%s gear=%s" % [start_floor, " ".join(_floor_log), _forged, _gear_text()])
 	print("RESULT outcome=%s kit=%s dodge=%s skill=%.2f boss_at=%.0f boss_level=%d boss_kill_at=%.0f end_clock=%.0f death_room=%d cause=%s rolls=%d taken=%s %s gold=%d" % [
 		_outcome, kit, dodge, skill, _boss_at, _boss_level, _boss_kill_at, Game.last_run.get("seconds", Game.run.clock.seconds) if _outcome == "death" else Game.run.clock.seconds,
 		_death_room, _last_source if _outcome == "death" else "-", _rolls, _taken, mats, Game.run.gold])
+
+
+func _gear_text() -> String:
+	var eq := Game.run.equipment
+	return "%s/%s/%s" % [eq.weapon, eq.armor, eq.helm]
 
 
 ## Materials in the backpack and the forge recipes they already pay for.
@@ -155,7 +201,7 @@ func _mats_text() -> String:
 		if not s.is_empty() and ItemDB.kind(s["id"]) == &"material":
 			mats[String(s["id"]).trim_prefix("mat_")] = mats.get(String(s["id"]).trim_prefix("mat_"), 0) + int(s["qty"])
 	var craftable: Array[String] = []
-	for r: StringName in Forge.unlocked(0):
+	for r: StringName in Forge.unlocked(Game.run.floors_beaten):
 		var need: Dictionary = Forge.RECIPES[r]["materials"]
 		var ok := true
 		for m: StringName in need:
@@ -180,17 +226,22 @@ func _on_player_damaged(n: int, d: Dungeon) -> void:
 	if d.player.health.hp <= 0:
 		_outcome = "death"
 		_death_room = d.room_index
+		_floor_log.append("f%d:death@room%d(%s)" % [d.current_floor, d.room_index, d.room.scene_file_path.get_file().get_basename()])
 		_mats_at_death = _mats_text()
 
 
 func _source_name(from: Hitbox) -> String:
 	if from is Shockwave:
 		return "boss_ring"
+	if from is EmberVent:
+		return "vent"
 	if from is Projectile:
-		return "shooter"
+		return "boss_fan" if Game.in_boss_room else "shooter"
 	var owner_node := from.get_parent()
 	if owner_node is BossBig:
 		return "boss_dash" if (owner_node as BossBig).dashes else "boss_bite"
+	if owner_node is BossFinal:
+		return "boss_final"
 	if owner_node is Charger:
 		return "charger"
 	if owner_node is Crawler:
@@ -207,18 +258,27 @@ func _win(d: Dungeon) -> void:
 		if not is_instance_valid(d) or d.player.state == Player.State.DEAD:
 			break
 		var room := d.room
-		_rooms_seen[d.room_index] = room.scene_file_path.get_file()
+		var floor_num := d.current_floor
+		_rooms_seen["f%d_%d" % [floor_num, d.room_index]] = room.scene_file_path.get_file()
 		_note_music()
 		if room.is_boss:
 			_boss_at = Game.run.clock.seconds
 			_boss_level = Game.run.clock.level()
-			check("boss_music", Sfx.current_music() == &"boss", str(Sfx.current_music()))
+			check("boss_music_f%d" % floor_num, Sfx.current_music() == &"boss", str(Sfx.current_music()))
 		var ok := await _clear_room(d)
 		if not ok:
 			break
+		if Game.run.floors_beaten >= RunState.MAX_FLOOR:
+			# The last boss fell: the game goes to the victory screen.
+			_boss_kill_at = Game.run.clock.seconds
+			_floor_log.append("f%d:win@%.0f-%.0f" % [floor_num, _boss_at, _boss_kill_at])
+			boss_beaten = true
+			_outcome = "win"
+			break
 		if room.is_boss:
 			_boss_kill_at = Game.run.clock.seconds
-			boss_beaten = true
+			_floor_log.append("f%d:win@%.0f-%.0f" % [floor_num, _boss_at, _boss_kill_at])
+			boss_beaten = floor_num >= floors
 			_outcome = "win"
 		await _pick_materials(d)
 		# Stand still until healed, as a careful player would.
@@ -235,23 +295,41 @@ func _win(d: Dungeon) -> void:
 		if room.chest != null and is_instance_valid(room.chest) and not room.chest.is_open:
 			await _go_to(d, room.chest.global_position + Vector2(0, 16), 10.0)
 			await _press(&"interact")
+			await _close_swap()
 			await _frames(20)
 			check("chest_opens_%d" % d.room_index, room.chest.is_open)
 		if room.is_boss:
 			await _frames(30)
 			_note_music()
 			check("tower_music_after_boss", Sfx.current_music() == &"tower", str(Sfx.current_music()))
-			check("floor1_marked_beaten", Game.run.floors_beaten >= 1, "floors_beaten %d" % Game.run.floors_beaten)
+			check("floor%d_marked_beaten" % floor_num, Game.run.floors_beaten >= floor_num, "floors_beaten %d" % Game.run.floors_beaten)
+			var onward := floor_num < floors
+			if onward:
+				await _pick_gear(d)
+				_town_stop()
+				# The town stop heals; standing still does the same here.
+				_release_all()
+				for i in HEAL_FRAMES:
+					if _gone(d) or d.player.health.hp >= d.player.health.max_hp:
+						break
+					await _frames(1)
+			var want := "Andar %d" % (floor_num + 1) if onward else "Cidade"
 			var portal: Node2D = null
 			for n in room.get_children():
-				if n is Portal and (n as Portal).text == "Cidade":
+				if n is Portal and (n as Portal).text == want:
 					portal = n
-			check("portals_after_boss", portal != null)
+			check("portal_%s" % want.replace(" ", "_"), portal != null)
 			if portal == null:
 				return
 			await _go_to(d, portal.global_position, 15.0)
 			await _frames(60)
-			break
+			if not onward:
+				break
+			var started := is_instance_valid(d) and d.current_floor == floor_num + 1 and d.room_index == 0
+			check("floor_%d_starts" % (floor_num + 1), started, str(get_tree().current_scene))
+			if not started:
+				return
+			continue
 		var index := d.room_index
 		var door := room.exit_door
 		check("exit_opens_%d" % index, door != null and door.is_open)
@@ -260,17 +338,28 @@ func _win(d: Dungeon) -> void:
 			if d.room_index != index:
 				break
 			await _frames(1)
-		check("next_room_%d" % index, d.room_index == index + 1)
+		var moved := d.room_index == index + 1
+		check("next_room_%d" % index, moved,
+				"" if moved else "%s player %s door %s" % [room.scene_file_path.get_file(), d.player.global_position, door.global_position])
 		if d.room_index == index:
 			return
 	check("boss_beaten", boss_beaten, "rooms %s" % _rooms_seen)
 	if not boss_beaten:
 		return
-	var town := get_tree().current_scene
-	check("back_in_town", town != null and town.scene_file_path == Dungeon.TOWN_SCENE, str(town))
-	await _frames(40)
-	_note_music()
-	check("town_music", Sfx.current_music() == &"town", str(Sfx.current_music()))
+	if Game.run.floors_beaten >= RunState.MAX_FLOOR:
+		for i in 300:
+			var sc := get_tree().current_scene
+			if sc != null and sc.scene_file_path == Dungeon.VICTORY_SCENE:
+				break
+			await _frames(1)
+		var end := get_tree().current_scene
+		check("victory_screen", end != null and end.scene_file_path == Dungeon.VICTORY_SCENE, str(end))
+	else:
+		var town := get_tree().current_scene
+		check("back_in_town", town != null and town.scene_file_path == Dungeon.TOWN_SCENE, str(town))
+		await _frames(40)
+		_note_music()
+		check("town_music", Sfx.current_music() == &"town", str(Sfx.current_music()))
 	check("gold_earned", Game.run.gold > _gold_start, "gold %d" % Game.run.gold)
 	check("hit_stop_seen", _min_scale < 1.0, "min time_scale %.2f" % _min_scale)
 	check("damage_numbers_seen", _hits_seen > 0, "%d numbers" % _hits_seen)
@@ -281,6 +370,8 @@ func _win(d: Dungeon) -> void:
 func _clear_room(d: Dungeon) -> bool:
 	var f0 := _frame
 	while _frame - f0 < ROOM_FRAMES:
+		if Game.run.floors_beaten >= RunState.MAX_FLOOR:
+			return true
 		if _gone(d):
 			check("player_survives_room_%d" % (d.room_index if is_instance_valid(d) else -1), false, "killed by %s" % _last_source)
 			return false
@@ -333,6 +424,8 @@ func _clear_room(d: Dungeon) -> bool:
 			await _frames(2)
 	_release_all()
 	await _frames(10)
+	if Game.run.floors_beaten >= RunState.MAX_FLOOR:
+		return true
 	if _gone(d):
 		return false
 	var cleared := d.room.is_cleared
@@ -411,9 +504,18 @@ func _dodge(d: Dungeon, alive: Array) -> bool:
 		if along > 0.0 and along < 42.0 and side < 11.0 and _reacts(shot, 0, shot._age):
 			await _roll(_perp(shot.direction, rel))
 			return true
+	if await _dodge_vents(d):
+		return true
 	for e: EnemyBase in alive:
 		var to := e.global_position - pp
-		if e is Charger:
+		if e is BossFinal:
+			var f := e as BossFinal
+			if f.state == BossFinal.State.DASH_WARN and f._t >= BossFinal.DASH_WARN_TIME - 0.15 and _reacts(f, f.state, f._t):
+				var rel := pp - f.global_position
+				if absf(rel.cross(f._dir)) < 24.0 and rel.dot(f._dir) > -12.0:
+					await _roll(_perp(f._dir, rel))
+					return true
+		elif e is Charger:
 			var c := e as Charger
 			if c.state == Charger.State.WARN and c._t >= Charger.WARN_TIME - 0.15 and _reacts(c, c.state, c._t):
 				var rel := pp - c.global_position
@@ -440,6 +542,24 @@ func _dodge(d: Dungeon, alive: Array) -> bool:
 					and _reacts(cr, cr.state, cr._t):
 				await _roll((-to).normalized().rotated(0.6))
 				return true
+	return false
+
+
+## Steps off an ember vent that glows red (or burns) under the player.
+func _dodge_vents(d: Dungeon) -> bool:
+	var hz := d.room.get_node_or_null(^"Hazards")
+	if hz == null:
+		return false
+	var pp := d.player.global_position + Vector2(0, 6)
+	for n in hz.get_children():
+		var v := n as EmberVent
+		if v == null or not v.dangerous():
+			continue
+		var away := pp - v.global_position
+		if away.length() < EmberVent.RADIUS + 9.0 and _reacts(v, v.state, v.t):
+			_set_move(away.normalized() if away.length() > 0.5 else Vector2.DOWN)
+			await _frames(5)
+			return true
 	return false
 
 
@@ -515,6 +635,8 @@ func _pick_materials(d: Dungeon) -> void:
 			var it := n as PickupItem
 			if it == null or it.is_queued_for_deletion() or not it.is_material() or it.qty <= 0:
 				continue
+			if _on_portal(d, it.global_position):
+				continue
 			if best == null or it.global_position.distance_to(d.player.global_position) < best.global_position.distance_to(d.player.global_position):
 				best = it
 		if best == null:
@@ -524,6 +646,65 @@ func _pick_materials(d: Dungeon) -> void:
 		if is_instance_valid(best) and not best.is_queued_for_deletion() and best.qty > 0:
 			# Backpack full of it: leave it.
 			return
+
+
+## A full backpack opens the swap panel (the game pauses): leave the new item
+## on the floor, as a player happy with the backpack would.
+func _close_swap() -> void:
+	await _frames(4)
+	var scene := get_tree().current_scene
+	if scene == null:
+		return
+	for n in scene.get_children():
+		if n is SwapItemPanel:
+			(n as SwapItemPanel).leave_item()
+			await _frames(4)
+
+
+## Takes the gear and relics lying in the room (E), while the backpack has
+## room (a full one would open the swap panel).
+func _pick_gear(d: Dungeon) -> void:
+	for i in 6:
+		if _gone(d) or Game.run.inventory.free_slots() <= 0:
+			return
+		var best: PickupItem = null
+		for n in d.room.get_children():
+			var it := n as PickupItem
+			if it == null or it.is_queued_for_deletion() or it.is_material() or it.qty <= 0:
+				continue
+			if _on_portal(d, it.global_position):
+				continue
+			if not ItemDB.kind(it.item_id) in ItemCompare.GEAR_KINDS:
+				continue
+			best = it
+		if best == null:
+			return
+		await _go_to(d, best.global_position, 8.0)
+		await _press(&"interact")
+		await _close_swap()
+		await _frames(15)
+		if is_instance_valid(best) and not best.is_queued_for_deletion():
+			return
+
+
+## What a returning player does in town between floors, minus the walking:
+## forges the first recipe of FORGE_ORDER it can pay for, then wears the
+## priciest weapon, armor and helm it carries.
+func _town_stop() -> void:
+	var run := Game.run
+	for r: StringName in FORGE_ORDER:
+		if Forge.block_reason(run, r) == "" and Forge.craft(run, r):
+			_forged.append(r)
+			break
+	for kind: StringName in [&"weapon", &"armor", &"helm"]:
+		var best := run.equipment.get_slot(kind)
+		for slot: Dictionary in run.inventory.slots:
+			if slot.is_empty() or ItemDB.kind(slot["id"]) != kind:
+				continue
+			if best == &"" or ItemDB.price(slot["id"]) > ItemDB.price(best):
+				best = slot["id"]
+		if best != run.equipment.get_slot(kind):
+			run.equip(best)
 
 
 # --- die ---
@@ -557,14 +738,40 @@ func _die(d: Dungeon) -> void:
 
 func _go_to(d: Dungeon, target: Vector2, seconds: float) -> void:
 	var f0 := _frame
+	var last := Vector2.INF
+	var last_frame := _frame
 	while _frame - f0 < seconds * 60.0:
 		if not is_instance_valid(d) or not d.is_inside_tree() or d.room == null or d._busy:
 			break
 		if d.player.global_position.distance_to(target) < 6.0:
 			break
+		# Caught on a corner (a chest, a prop): a short sidestep frees it.
+		if _frame - last_frame >= 45:
+			if d.player.global_position.distance_to(last) < 3.0 and not _near_portal(d):
+				_set_move(Vector2.from_angle(_rng.randf() * TAU))
+				await _frames(12)
+				if not is_instance_valid(d) or d._busy:
+					break
+			last = d.player.global_position
+			last_frame = _frame
 		_set_move(_next_step(d, target))
 		await _frames(2)
 	_release_moves()
+
+
+## Loot lying on a portal: walking there would take the portal.
+func _on_portal(d: Dungeon, pos: Vector2) -> bool:
+	for n in d.room.get_children():
+		if n is Portal and (n as Portal).global_position.distance_to(pos) < 28.0:
+			return true
+	return false
+
+
+func _near_portal(d: Dungeon) -> bool:
+	for n in d.room.get_children():
+		if n is Portal and (n as Portal).global_position.distance_to(d.player.global_position) < 48.0:
+			return true
+	return false
 
 
 ## Direction toward the next cell of an A* path to `target` (blocked cells
@@ -586,7 +793,22 @@ func _next_step(d: Dungeon, target: Vector2) -> Vector2:
 				if not (hit["collider"] is CharacterBody2D):
 					grid.set_point_solid(Vector2i(x, y))
 					break
-	var from := Vector2i((p / 16.0).floor())
+	var hz := d.room.get_node_or_null(^"Hazards") if d.room != null else null
+	if hz != null:
+		for n in hz.get_children():
+			if n is EmberVent:
+				grid.set_point_solid(Vector2i(((n as Node2D).position / 16.0).floor()))
+	# Keep off the portals it is not heading for (one leads to town).
+	if d.room != null:
+		for n in d.room.get_children():
+			if n is Portal and (n as Portal).global_position.distance_to(target) > 20.0:
+				var c := Vector2i(((n as Portal).global_position / 16.0).floor())
+				for dy in range(-2, 2):
+					for dx in range(-1, 2):
+						var cc := c + Vector2i(dx, dy)
+						if grid.is_in_boundsv(cc):
+							grid.set_point_solid(cc)
+	var from :=Vector2i((p / 16.0).floor())
 	var to := Vector2i((target / 16.0).floor())
 	grid.set_point_solid(from, false)
 	grid.set_point_solid(to, false)
