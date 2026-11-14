@@ -56,17 +56,21 @@ func _fade_in() -> void:
 var _swap_open: bool = false
 
 
-## Adds the item, or opens the swap panel when the slots are full.
+## Takes the item as loot (RunState.take_loot: free slot, else backpack;
+## outfits unlock). When the backpack is full a relic opens the swap panel
+## over the relic slots; anything else stays on the floor.
 ## Returns {"taken": bool, "swapped_out": StringName}. "taken" is true when the
-## new item is now in the inventory; "swapped_out" is the replaced item id
+## new item is now carried; "swapped_out" is the replaced item id
 ## (&"" when nothing was replaced). The caller must drop swapped_out as a pickup.
 ## Unknown ids, or a call while a panel is already open, return taken = false.
 func offer_item(id: StringName) -> Dictionary:
 	var none := {"taken": false, "swapped_out": &""}
 	if not ItemDB.has(id) or _swap_open:
 		return none
-	if run.add_item(id):
+	if run.take_loot(id) == 0:
 		return {"taken": true, "swapped_out": &""}
+	if ItemDB.kind(id) != &"relic":
+		return none
 	_swap_open = true
 	var panel := SwapItemPanelScene.instantiate() as SwapItemPanel
 	get_tree().current_scene.add_child(panel)

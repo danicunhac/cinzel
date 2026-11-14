@@ -1,9 +1,20 @@
 class_name PlayerStats
 extends RefCounted
 
+## Each point of armor weight makes the roll this much slower (the roll keeps
+## its duration, so it also covers less ground).
+const WEIGHT_ROLL_PENALTY := 0.08
+const MIN_ROLL_SPEED_MULT := 0.6
+
 var max_hp: int = 100
 var damage: int = 10
 var attack_speed_mult: float = 1.0
+var attack_range: float = 22.0
+var crit_chance: float = 0.0
+var weapon_type: StringName = &"sword"
+var defense: int = 0
+var weight: int = 0
+var roll_speed_mult: float = 1.0
 var move_speed: float = 120.0
 var roll_distance: float = 72.0
 var lifesteal: float = 0.0
@@ -13,12 +24,30 @@ var trail_damage: int = 0
 var block_per_room: int = 0
 
 
-static func from_items(items: Array[StringName]) -> PlayerStats:
+## Weapon: damage, attack speed, range, crit. Armor: defense, max hp, weight.
+## Helm: crit, defense. Then every "mods" entry (relics and epic extras).
+static func from_equipment(eq: Equipment) -> PlayerStats:
 	var s: PlayerStats = PlayerStats.new()
+	if eq.weapon != &"":
+		var w: Dictionary = ItemDB.get_def(eq.weapon)["stats"]
+		s.weapon_type = ItemDB.weapon_type(eq.weapon)
+		s.damage = int(w["damage"])
+		s.attack_speed_mult = float(w["attack_speed"])
+		s.attack_range = float(w["range"])
+		s.crit_chance += float(w["crit"])
+	if eq.armor != &"":
+		var a: Dictionary = ItemDB.get_def(eq.armor)["stats"]
+		s.defense += int(a["defense"])
+		s.max_hp += int(a["max_hp"])
+		s.weight += int(a["weight"])
+	if eq.helm != &"":
+		var h: Dictionary = ItemDB.get_def(eq.helm)["stats"]
+		s.crit_chance += float(h["crit"])
+		s.defense += int(h["defense"])
 	var dmg_mult: float = 1.0
 	var move_mult: float = 1.0
 	var roll_mult: float = 1.0
-	for id: StringName in items:
+	for id: StringName in eq.stat_items():
 		var mods: Dictionary = ItemDB.get_def(id)["mods"]
 		dmg_mult *= float(mods.get("dmg_mult", 1.0))
 		s.attack_speed_mult *= float(mods.get("attack_speed_mult", 1.0))
@@ -30,7 +59,8 @@ static func from_items(items: Array[StringName]) -> PlayerStats:
 		s.block_per_room += int(mods.get("block_per_room", 0))
 		if mods.has("heal_delay"):
 			s.heal_delay = minf(s.heal_delay, float(mods["heal_delay"]))
+	s.roll_speed_mult = maxf(MIN_ROLL_SPEED_MULT, 1.0 - WEIGHT_ROLL_PENALTY * s.weight)
 	s.damage = roundi(s.damage * dmg_mult)
 	s.move_speed *= move_mult
-	s.roll_distance *= roll_mult
+	s.roll_distance *= roll_mult * s.roll_speed_mult
 	return s

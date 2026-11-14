@@ -32,8 +32,8 @@ func test_cta_needs_range_and_an_action() -> void:
 	T.ok(TownLogic.cta_visible(&"shop", &"shop", 0), "shop in range")
 	T.ok(not TownLogic.cta_visible(&"shop", &"", 3), "out of range")
 	T.ok(not TownLogic.cta_visible(&"shop", &"smith", 3), "in range of another spot")
-	T.ok(not TownLogic.cta_visible(&"smith", &"smith", 1), "smith needs two items")
-	T.ok(TownLogic.cta_visible(&"smith", &"smith", 2), "smith with two items")
+	T.ok(not TownLogic.cta_visible(&"smith", &"smith", 5, false), "smith needs a craftable recipe")
+	T.ok(TownLogic.cta_visible(&"smith", &"smith", 0, true), "smith with a craftable recipe")
 	T.ok(TownLogic.cta_visible(&"teleport", &"teleport", 0), "crystal always works")
 	T.ok(not TownLogic.cta_visible(&"", &"", 0), "no spot")
 
@@ -51,12 +51,14 @@ func test_town_rings_follow_the_player() -> void:
 	player.global_position = TownScript.SPOTS[&"smith"]
 	await _tree().process_frame
 	T.eq(town.near, &"smith")
-	T.ok(not town._ctas[&"smith"].active, "no items: no smith ring")
+	T.ok(not town._ctas[&"smith"].active, "nothing to forge: no smith ring")
 	T.ok(town._bubble.visible, "smith still talks")
-	_game().run.add_item(&"fang")
-	_game().run.add_item(&"spark")
+	T.eq(town._bubble.label.text, TownScript.LINES["smith_wait"])
+	_game().run.inventory.add(&"mat_stone_shard", 4)
+	_game().run.add_gold(35)
 	await _tree().process_frame
-	T.ok(town._ctas[&"smith"].active, "two items: smith ring")
+	T.ok(town._ctas[&"smith"].active, "craftable recipe: smith ring")
+	T.eq(town._bubble.label.text, TownScript.LINES["smith"])
 	player.global_position = TownScript.SPAWN
 	await _tree().process_frame
 	T.eq(town.near, &"")
@@ -65,6 +67,29 @@ func test_town_rings_follow_the_player() -> void:
 		T.ok(not town._ctas[id].active, "%s ring off" % id)
 	town.free()
 	_game().new_run()
+
+
+func test_shop_line_counts_the_backpack() -> void:
+	_game().new_run()
+	var town := await _spawn("res://world/town.tscn")
+	var player := town.get_node("Player") as Player
+	player.global_position = TownScript.SPOTS[&"shop"]
+	_game().run.add_item(&"fang")
+	_game().run.add_item(&"spark")
+	await _tree().process_frame
+	T.eq(town._bubble.label.text, TownScript.LINES["shop"], "equipped relics are not for sale")
+	_game().run.inventory.add(&"mat_slime_gel")
+	await _tree().process_frame
+	T.eq(town._bubble.label.text, TownScript.LINES["shop_sell"], "backpack item: sell line")
+	town.free()
+	_game().new_run()
+
+
+func test_smith_lines_talk_about_forging() -> void:
+	for key: String in ["smith", "smith_wait"]:
+		var text: String = TownScript.LINES[key]
+		T.ok(not text.contains("dois itens"), "%s: no more 2-for-1 trade" % key)
+		T.ok(text.contains("materia"), "%s mentions materials" % key)
 
 
 func test_bubble_lines_fit_25_words_3_lines() -> void:
