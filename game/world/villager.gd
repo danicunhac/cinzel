@@ -31,15 +31,7 @@ func setup(tex: Texture2D, tint: Color, waypoints: Array[Vector2]) -> void:
 	_sprite.modulate = tint
 	add_child(_sprite)
 	_sprite.play()
-	var shadow := Polygon2D.new()
-	var pts := PackedVector2Array()
-	for k in 12:
-		var a := TAU * k / 12.0
-		pts.append(Vector2(cos(a) * 6.0, sin(a) * 2.0))
-	shadow.polygon = pts
-	shadow.color = Color(0.08, 0.05, 0.1, 0.35)
-	shadow.show_behind_parent = true
-	add_child(shadow)
+	add_child(GroundShadow.make(Vector2i(16, 6), Vector2(0, 0)))
 	_rng.randomize()
 	_wait = _rng.randf_range(0.0, 1.5)
 

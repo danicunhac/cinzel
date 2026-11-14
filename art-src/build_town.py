@@ -12,14 +12,25 @@ Inputs (see docs/assets.md), all on flat magenta:
   art-src/gen/town-props.png      3 trees / lamp, well, planter, flower bed /
                                   fence, post, barrel, crates, sack
   art-src/gen/town-ground.png     ground painted over town-ground-guide.png
+  art-src/gen/town-base-decals.png  4x3 ground decals: grass tufts, moss,
+                                  loose foundation stones
 Outputs in game/assets/town/:
   ground.png 480x270 (opaque, 32 colours)
   one PNG per sprite (SPRITES below). Each sprite is keyed, downscaled to its
   width (or height), quantised to <= 32 colours, outlined with 1 px OUTLINE and
-  given a baked soft shadow. The building base line (where the wall meets the
+  given a baked ground shadow. The building base line (where the wall meets the
   ground) sits PAD px above the bottom of the image, so the scene puts the
-  sprite origin at (w / 2, h - PAD).
+  sprite origin at (w / 2, h - PAD). The canvas has MARGIN px free on both
+  sides, so the sprite stays centred.
+  Grounding (so pieces sit in the ground instead of floating): the outline is
+  dropped along the base, the bottom rows where the object meets the ground
+  are darkened (contact occlusion), and the shadow is the silhouette squashed
+  onto the ground below the base and leaned right (light from the upper left,
+  as in the key art), darker in the 2 rows next to the base.
   crystal_glow.png 48x48 soft blue glow (drawn here, additive in the scene).
+  decals.png strip of DECAL px cells (12: 4 grass, 4 moss, 4 stones), each
+  decal bottom-centred, dark outline swapped for a dark ground tone so it
+  blends into the ground. The scene lays them along building and prop bases.
 """
 import math
 import os
@@ -32,32 +43,43 @@ from PIL import Image  # noqa: E402
 from artlib import OUTLINE, count_colors, frames, parse_args, save_guarded  # noqa: E402
 
 COLORS = 32
-PAD = 4
+PAD = 8
+MARGIN = 4
 SHADOW = (20, 12, 24)
+# Shadow length per px of object height, its lean right per px of length,
+# and the alphas of the contact rows and of the rest.
+SHADOW_LEN = 0.14
+SHADOW_LEAN = 0.6
+SHADOW_ALPHA = (150, 96)
+DECAL = 16
+DECAL_SIZES = (14, 12, 10, 8)
+DECAL_EDGE = (62, 52, 46, 255)
+# Rows above the bottom that count as "on the ground" (base zone).
+BASE_ZONE = 3
 
 # name -> (source file, (row, col) in the frames() grid of the keyed source,
-#          ("w" or "h", size in px), shadow width as a fraction of the sprite)
+#          ("w" or "h", size in px), shadow length scale (0 = no shadow))
 SPRITES = {
-    "shop": ("town-shop.png", (0, 0), ("w", 104), 0.9),
-    "forge": ("town-forge.png", (0, 0), ("w", 104), 0.9),
-    "house_a": ("town-houses.png", (0, 0), ("h", 80), 0.9),
-    "house_b": ("town-houses-b.png", (0, 0), ("w", 74), 0.9),
-    "house_c": ("town-houses-b.png", (0, 1), ("w", 62), 0.9),
-    "crystal": ("town-crystal.png", (0, 0), ("h", 60), 0.8),
+    "shop": ("town-shop.png", (0, 0), ("w", 104), 1.0),
+    "forge": ("town-forge.png", (0, 0), ("w", 104), 1.0),
+    "house_a": ("town-houses.png", (0, 0), ("h", 80), 1.0),
+    "house_b": ("town-houses-b.png", (0, 0), ("w", 74), 1.0),
+    "house_c": ("town-houses-b.png", (0, 1), ("w", 62), 1.0),
+    "crystal": ("town-crystal.png", (0, 0), ("h", 60), 1.0),
     # The props sheet rows touch, so its cells are boxes (x0, y0, x1, y1)
     # around each object; the object is the opaque bbox inside the box.
-    "tree_a": ("town-props.png", (190, 10, 400, 214), ("w", 54), 0.8),
-    "tree_b": ("town-props.png", (460, 40, 620, 212), ("w", 40), 0.8),
-    "tree_c": ("town-props.png", (690, 30, 860, 212), ("w", 46), 0.8),
-    "lamp": ("town-props.png", (140, 214, 250, 410), ("h", 38), 0.6),
-    "well": ("town-props.png", (325, 225, 485, 410), ("w", 34), 0.9),
-    "planter": ("town-props.png", (550, 255, 720, 400), ("w", 30), 0.9),
-    "flowerbed": ("town-props.png", (785, 265, 945, 400), ("w", 30), 0.9),
-    "fence": ("town-props.png", (90, 440, 330, 570), ("w", 40), 0.0),
-    "fence_post": ("town-props.png", (370, 440, 450, 570), ("h", 22), 0.0),
-    "barrel": ("town-props.png", (510, 440, 610, 570), ("w", 14), 0.9),
-    "crates": ("town-props.png", (670, 430, 790, 575), ("w", 18), 0.9),
-    "sack": ("town-props.png", (860, 440, 960, 570), ("w", 14), 0.9),
+    "tree_a": ("town-props.png", (190, 10, 400, 214), ("w", 54), 1.0),
+    "tree_b": ("town-props.png", (460, 40, 620, 212), ("w", 40), 1.0),
+    "tree_c": ("town-props.png", (690, 30, 860, 212), ("w", 46), 1.0),
+    "lamp": ("town-props.png", (140, 214, 250, 410), ("h", 38), 0.5),
+    "well": ("town-props.png", (325, 225, 485, 410), ("w", 34), 1.0),
+    "planter": ("town-props.png", (550, 255, 720, 400), ("w", 30), 1.0),
+    "flowerbed": ("town-props.png", (785, 265, 945, 400), ("w", 30), 1.0),
+    "fence": ("town-props.png", (90, 440, 330, 570), ("w", 40), 0.6),
+    "fence_post": ("town-props.png", (370, 440, 450, 570), ("h", 22), 0.6),
+    "barrel": ("town-props.png", (510, 440, 610, 570), ("w", 14), 1.0),
+    "crates": ("town-props.png", (670, 430, 790, 575), ("w", 18), 1.0),
+    "sack": ("town-props.png", (860, 440, 960, 570), ("w", 14), 1.0),
 }
 
 
@@ -122,22 +144,59 @@ def outline(img):
     return out
 
 
-def with_shadow(img, frac):
-    """Canvas with PAD px below the base and a 2-step soft ellipse shadow."""
+def ground_contact(img):
+    """Darken the 2 bottom pixels of every column that reaches the base zone:
+    the contact occlusion where a wall or a foot meets the ground."""
     w, h = img.size
-    out = Image.new("RGBA", (w, h + PAD), (0, 0, 0, 0))
-    if frac > 0:
-        px = out.load()
-        cx, cy = (w - 1) / 2.0, h - 1
-        rx, ry = w * frac / 2.0, max(3.0, w * frac / 9.0)
-        for y in range(h + PAD):
+    a = img.getchannel("A").load()
+    px = img.load()
+    for x in range(w):
+        bottom = next((y for y in range(h - 1, -1, -1) if a[x, y]), None)
+        if bottom is None or bottom < h - BASE_ZONE:
+            continue
+        for y, k in ((bottom, 0.62), (bottom - 1, 0.8)):
+            if y >= 0 and a[x, y]:
+                r, g, b, al = px[x, y]
+                px[x, y] = (int(r * k), int(g * k), int(b * k), al)
+    return img
+
+
+def drop_base_outline(img):
+    """Outline pixels under the object in the base zone -> transparent, so the
+    base meets the shadow instead of a hard dark line."""
+    w, h = img.size
+    px = img.load()
+    for y in range(h - BASE_ZONE, h):
+        for x in range(w):
+            if px[x, y] == OUTLINE and y > 0 and px[x, y - 1][3] and px[x, y - 1] != OUTLINE:
+                px[x, y] = (0, 0, 0, 0)
+    return img
+
+
+def with_shadow(img, scale):
+    """Canvas with MARGIN px on the sides and PAD px below the base; under the
+    sprite, its silhouette squashed onto the ground and leaned right."""
+    w, h = img.size
+    out = Image.new("RGBA", (w + 2 * MARGIN, h + PAD), (0, 0, 0, 0))
+    if scale > 0:
+        a = img.getchannel("A").load()
+        base = h - 1
+        k = min(SHADOW_LEN * scale, (PAD - 1) / float(h))
+        depth = {}
+        for y in range(h):
             for x in range(w):
-                d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2
-                if d <= 0.55:
-                    px[x, y] = SHADOW + (110,)
-                elif d <= 1.0:
-                    px[x, y] = SHADOW + (60,)
-    out.alpha_composite(img, (0, 0))
+                if not a[x, y]:
+                    continue
+                d = base - y
+                sy = base + int(round(d * k))
+                sx = x + MARGIN + int(round((sy - base) * SHADOW_LEAN))
+                if 0 <= sx < w + 2 * MARGIN:
+                    depth[(sx, sy)] = True
+        px = out.load()
+        for (x, y) in depth:
+            alpha = SHADOW_ALPHA[0] if y - base <= 1 else SHADOW_ALPHA[1]
+            px[x, y] = SHADOW + (alpha,)
+    out.alpha_composite(img, (MARGIN, 0))
     return out
 
 
@@ -149,8 +208,31 @@ def sprite(src, cell, size, frac, warm=False):
     else:
         r, c = cell
         obj = keyed.crop(frames(keyed, min_gap=20)[r][c])
-    small = quantize(shrink(obj, size), COLORS - 3)
-    return with_shadow(outline(small), frac)
+    small = quantize(ground_contact(shrink(obj, size)), COLORS - 3)
+    return with_shadow(drop_base_outline(outline(small)), frac)
+
+
+def decals(src):
+    """12 ground decals in one strip of DECAL x DECAL cells, <= COLORS colours."""
+    keyed = key(src)
+    grid = frames(keyed, min_gap=20)
+    out = Image.new("RGBA", (DECAL * 12, DECAL), (0, 0, 0, 0))
+    i = 0
+    for row in grid[:3]:
+        for c, box in enumerate(row[:4]):
+            small = shrink(keyed.crop(box), ("w", DECAL_SIZES[c]))
+            small = small.crop((0, 0, small.width, min(small.height, DECAL)))
+            out.alpha_composite(small, (i * DECAL + (DECAL - small.width) // 2, DECAL - small.height))
+            i += 1
+    assert i == 12, "decal sheet has %d cells" % i
+    out = quantize(out, COLORS - 1)
+    px = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = px[x, y]
+            if a and r + g + b < 120:
+                px[x, y] = DECAL_EDGE
+    return out
 
 
 def crystal_glow(n=48):
@@ -187,6 +269,9 @@ def main(argv):
         assert n <= COLORS, "%s has %d colours" % (name, n)
         save_guarded(img, os.path.join(out_dir, name + ".png"), force)
     save_guarded(crystal_glow(), os.path.join(out_dir, "crystal_glow.png"), force)
+    d = decals(Image.open(os.path.join(gen, "town-base-decals.png")))
+    assert count_colors(d) <= COLORS, "decals have %d colours" % count_colors(d)
+    save_guarded(d, os.path.join(out_dir, "decals.png"), force)
     g = ground(Image.open(os.path.join(gen, "town-ground.png")))
     save_guarded(g, os.path.join(out_dir, "ground.png"), force)
 

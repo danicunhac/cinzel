@@ -16,7 +16,7 @@ const SmithPanelScene := preload("res://ui/smith_panel.tscn")
 const TeleportPanelScene := preload("res://ui/teleport_panel.tscn")
 const ART := "res://assets/town/%s.png"
 ## Every town sprite has PAD px of shadow below its base line (build_town.py).
-const PAD := 4
+const PAD := 8
 
 const SPAWN := Vector2(240, 222)
 const REACH := 30.0
@@ -85,6 +85,24 @@ const PIECES: Array = [
 	["fence", Vector2(354, 254), Vector2.ZERO],
 	["fence_post", Vector2(376, 254), Vector2.ZERO],
 ]
+## Ground decals along the bases (assets/town/decals.png, 16 px cells:
+## 0-3 grass, 4-7 moss, 8-11 loose stones): [cell, bottom-centre position].
+## They sit on the ground under every piece, so walls and props meet the
+## cobbles through grass, moss and stones instead of a clean edge.
+const DECALS: Array = [
+	[8, Vector2(18, 118)], [2, Vector2(40, 117)], [10, Vector2(92, 117)], [4, Vector2(108, 118)],
+	[5, Vector2(142, 90)], [11, Vector2(160, 89)], [1, Vector2(190, 90)],
+	[9, Vector2(286, 88)], [3, Vector2(306, 87)], [6, Vector2(336, 88)], [0, Vector2(352, 89)],
+	[4, Vector2(374, 134)], [10, Vector2(396, 133)], [2, Vector2(452, 134)], [8, Vector2(466, 133)],
+	[1, Vector2(414, 270)], [7, Vector2(462, 270)],
+	[9, Vector2(220, 163)], [6, Vector2(258, 164)], [3, Vector2(234, 165)],
+	[5, Vector2(118, 209)], [11, Vector2(142, 210)],
+	[2, Vector2(208, 99)], [3, Vector2(276, 99)], [7, Vector2(152, 239)], [3, Vector2(332, 239)],
+	[0, Vector2(140, 125)], [10, Vector2(164, 125)], [9, Vector2(320, 125)], [1, Vector2(340, 126)],
+	[6, Vector2(178, 201)], [2, Vector2(198, 201)], [11, Vector2(286, 201)], [0, Vector2(304, 201)],
+	[8, Vector2(118, 113)], [5, Vector2(362, 141)], [3, Vector2(398, 259)],
+]
+const DECAL := 16
 ## Unreachable areas: from the top of the screen down to the back rows'
 ## footprints (shop, house A, house B, forge), behind house C, and the fence
 ## line with the grass under it. The north path (x 200-280), the plaza and
@@ -146,6 +164,8 @@ func _ready() -> void:
 	_build_life()
 	player.global_position = SPAWN
 	player.facing = Vector2.UP
+	# Feet are 6 px below the player's origin (layered_sprite FEET_ROW).
+	player.add_child(GroundShadow.make(Vector2i(16, 6), Vector2(0, 7)))
 	_apply_debug_args()
 
 
@@ -261,6 +281,16 @@ func _build_ground() -> void:
 	g.centered = false
 	g.z_index = -20
 	add_child(g)
+	var sheet := _tex("decals")
+	for d: Array in DECALS:
+		var s := Sprite2D.new()
+		s.texture = sheet
+		s.region_enabled = true
+		s.region_rect = Rect2(int(d[0]) * DECAL, 0, DECAL, DECAL)
+		s.centered = false
+		s.position = (d[1] as Vector2) - Vector2(DECAL / 2.0, DECAL)
+		s.z_index = -19
+		add_child(s)
 	var cm := CanvasModulate.new()
 	cm.color = TINT
 	add_child(cm)
