@@ -9,9 +9,9 @@ Inputs (see docs/assets.md):
   art-src/gen/title-bg.png          title screen background
 Outputs:
   game/assets/items/<id>.png              16x16
-  game/assets/characters/npc_shopkeeper.png, npc_blacksmith.png  48x24 (2 idle frames)
+  game/assets/characters/npc_shopkeeper.png, npc_blacksmith.png  64x32 (2 idle frames of 32x32, feet on row 30)
   game/assets/ui/panel.png (64x40, 9-slice margin 4), slot.png (20x20, margin 3),
-    heart.png (9x8), coin.png (8x8), title_bg.png (320x180)
+    heart.png (9x8), coin.png (8x8), title_bg.png (480x270)
 """
 import os
 import sys
@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from PIL import Image  # noqa: E402
 
 from artlib import key_magenta, magenta_level  # noqa: E402
+from strips import outline  # noqa: E402
 
 COLORS = 32
 
@@ -140,12 +141,14 @@ def main():
 
     npcs = key_magenta(Image.open(os.path.join(gen, "npcs-sheet.png")))
     for name, box in NPCS.items():
-        body = fit(npcs.crop(box), 16, 23)
-        frame = Image.new("RGBA", (24, 24), (0, 0, 0, 0))
-        frame.alpha_composite(body, (4, 1))
-        sheet = Image.new("RGBA", (48, 24), (0, 0, 0, 0))
+        # Same scale as the 32 px climber: 26 px tall, feet on row 30.
+        body = fit(npcs.crop(box), 20, 26)
+        frame = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+        frame.alpha_composite(body, (6, 5))
+        frame = outline(frame)  # dark 1 px outline, like the climber
+        sheet = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
         sheet.alpha_composite(frame, (0, 0))
-        sheet.alpha_composite(breathe(frame), (24, 0))
+        sheet.alpha_composite(breathe(frame), (32, 0))
         quantize(sheet).save(os.path.join(assets, "characters", name + ".png"))
 
     kit = key_strong(Image.open(os.path.join(gen, "ui-kit-sheet.png")))
@@ -159,9 +162,13 @@ def main():
 
     bg = Image.open(os.path.join(gen, "title-bg.png")).convert("RGBA")
     w, h = bg.size
-    ch = round(w * 180 / 320)
-    bg = bg.crop((0, (h - ch) // 2, w, (h - ch) // 2 + ch)) if ch <= h else bg
-    bg = bg.resize((320, 180), Image.BOX)
+    ch = round(w * 270 / 480)
+    if ch <= h:
+        bg = bg.crop((0, (h - ch) // 2, w, (h - ch) // 2 + ch))
+    else:
+        cw = round(h * 480 / 270)
+        bg = bg.crop(((w - cw) // 2, 0, (w - cw) // 2 + cw, h))
+    bg = bg.resize((480, 270), Image.BOX)
     quantize(bg).save(os.path.join(assets, "ui", "title_bg.png"))
 
 
