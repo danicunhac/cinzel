@@ -49,6 +49,14 @@ func open() -> void:
 	opened.emit(id)
 
 
+## A chest already opened on an earlier visit (Room restore): open lid,
+## nothing more to give.
+func show_looted() -> void:
+	is_open = true
+	prompt.visible = false
+	sprite.region_rect = RoomTiles.region(RoomTiles.CHEST_OPEN)
+
+
 ## Random gear or relic from the loot table (rarity by floor and clock).
 func roll_item() -> StringName:
 	var dungeon := get_tree().current_scene as Dungeon

@@ -12,6 +12,8 @@ extends SceneTree
 ##   c  crawler      s  shooter          h  charger
 ##   B  big crawler boss (floor 1)       H  big charger boss (floor 2)
 ##   F  final boss (floor 3)             C  chest spot
+## Every non-boss room also gets a StairsSpot marker (see _stairs_spot) and
+## the entry door a "Back" RoomDoor, for walking back down the tower.
 ## A room's optional "floor" key (default 1) picks the tileset.
 ##
 ## Painted rooms: when res://assets/rooms/<room id>.png exists (480 x 270, made
@@ -448,7 +450,57 @@ func _validate(def: Dictionary) -> Array[String]:
 	var chests := _find(rows, "C")
 	if not def.get("tutorial", false) and not def.get("boss", false) and chests.size() != 1:
 		errs.append("%s: needs one chest spot" % path)
+	if not def.get("boss", false) and _stairs_spot(rows) == Vector2.ZERO:
+		errs.append("%s: no 2x2 floor spot for the stairs near the entry" % path)
 	return errs
+
+
+## Centre of the 2x2 block of plain floor where a floor's first room shows its
+## stairs down: near the entry but off the doorway line (2+ cells aside), with
+## a ring of open cells around it (no wall, pillar, crate, door, spawn or
+## chest), out of the top-wall face band and away from the chest spot.
+## Vector2.ZERO when the layout has no such block.
+func _stairs_spot(rows: Array[String]) -> Vector2:
+	var e := _find(rows, "E")[0]
+	var d := _inward(e)
+	var start := e + d
+	var top := _top_rows(rows)
+	var chests := _find(rows, "C")
+	var best := Vector2.ZERO
+	var best_dist := INF
+	for y in range(top + (1 if top == 1 else 0), H - 1):
+		for x in range(1, W - 1):
+			var c := Vector2i(x, y)
+			var ok := true
+			for dy in range(-1, 3):
+				for dx in range(-1, 3):
+					var n := c + Vector2i(dx, dy)
+					var inner := dx >= 0 and dx <= 1 and dy >= 0 and dy <= 1
+					var ch := _ch(rows, n)
+					if inner and not ".,~".contains(ch):
+						ok = false
+					elif not inner and not WALKABLE.contains(ch):
+						ok = false
+					if inner and top == 1 and n.y <= 1:
+						ok = false
+					# Keep the doorway line clear.
+					var rel := n - start
+					var aside := absi(rel.y) if d.x != 0 else absi(rel.x)
+					if inner and aside < 2:
+						ok = false
+			if not ok:
+				continue
+			var center := Vector2(c * RoomTiles.SIZE) + Vector2(16, 16)
+			var dist := center.distance_to(_center(start))
+			if dist < 40.0:
+				continue
+			for ch in chests:
+				if center.distance_to(_center(ch)) < 48.0:
+					ok = false
+			if ok and dist < best_dist:
+				best_dist = dist
+				best = center
+	return best
 
 
 func _build_tileset(floor_num: int) -> TileSet:
@@ -591,11 +643,19 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 					entry.name = "Entry"
 					entry.position = _center(c + _inward(c))
 					_add(room, entry)
+					# Way back to the previous room: shut in a floor's first
+					# room, locked/open like the exit otherwise (room.gd).
+					var back := Node2D.new()
+					back.name = "Back"
+					back.position = _center(c)
+					back.set_script(load(DOOR_SCRIPT))
+					back.set("starts_shut", true)
+					_add(room, back)
 					if painted:
 						var shut := _make_door_sprite(c, 0)
-						shut.name = "EntryDoor"
-						shut.position += _center(c)
-						_add(room, shut)
+						shut.name = "Sprite"
+						back.add_child(shut)
+						shut.owner = room
 				"X":
 					walls.set_cell(c, RoomTiles.SOURCE, RoomTiles.DOOR_LOCKED, _door_alt(c))
 					var door := Node2D.new()
@@ -623,6 +683,12 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 							m.set_meta(&"base", BOSS_BASE[ch])
 						spawns.add_child(m)
 						m.owner = room
+
+	if not def.get("boss", false):
+		var stairs := Marker2D.new()
+		stairs.name = "StairsSpot"
+		stairs.position = _stairs_spot(rows)
+		_add(room, stairs)
 
 	if def.has("sign"):
 		# In the tree, so the label measures itself with its 8 px font.

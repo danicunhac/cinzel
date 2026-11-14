@@ -3,8 +3,8 @@
 [ext_resource type="Script" path="res://world/room.gd" id="1_s2l1s"]
 [ext_resource type="Texture2D" path="res://assets/rooms/f1_cruz.png" id="2_qr82k"]
 [ext_resource type="TileSet" path="res://world/tiles_floor1.tres" id="3_eb845"]
-[ext_resource type="Texture2D" path="res://assets/rooms/doors.png" id="4_agftt"]
-[ext_resource type="Script" path="res://world/room_door.gd" id="5_o442u"]
+[ext_resource type="Script" path="res://world/room_door.gd" id="4_agftt"]
+[ext_resource type="Texture2D" path="res://assets/rooms/doors.png" id="5_o442u"]
 
 [sub_resource type="Gradient" id="Gradient_wb6h2"]
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
@@ -29,108 +29,116 @@ size = Vector2(4, 96)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_qj6xe"]
 size = Vector2(4, 224)
 
-[node name="F1Cruz" type="Node2D" unique_id=555816120]
+[node name="F1Cruz" type="Node2D" unique_id=2083958840]
 y_sort_enabled = true
 script = ExtResource("1_s2l1s")
 
-[node name="Background" type="Sprite2D" parent="." unique_id=1471685979]
+[node name="Background" type="Sprite2D" parent="." unique_id=70685950]
 z_index = -5
 texture = ExtResource("2_qr82k")
 centered = false
 
-[node name="Ambient" type="CanvasModulate" parent="." unique_id=657004518]
+[node name="Ambient" type="CanvasModulate" parent="." unique_id=1503031644]
 color = Color(0.8, 0.76, 0.74, 1)
 
-[node name="Torches" type="Node2D" parent="." unique_id=243037597]
+[node name="Torches" type="Node2D" parent="." unique_id=804260921]
 
-[node name="Torch1" type="PointLight2D" parent="Torches" unique_id=1485063657]
+[node name="Torch1" type="PointLight2D" parent="Torches" unique_id=125146840]
 position = Vector2(120, 8)
 color = Color(1, 0.72, 0.42, 1)
 energy = 0.18
 texture = SubResource("GradientTexture2D_70bjm")
 texture_scale = 1.2
 
-[node name="Torch2" type="PointLight2D" parent="Torches" unique_id=584727131]
+[node name="Torch2" type="PointLight2D" parent="Torches" unique_id=889703473]
 position = Vector2(360, 8)
 color = Color(1, 0.72, 0.42, 1)
 energy = 0.18
 texture = SubResource("GradientTexture2D_70bjm")
 texture_scale = 1.2
 
-[node name="Torch3" type="PointLight2D" parent="Torches" unique_id=5615992]
+[node name="Torch3" type="PointLight2D" parent="Torches" unique_id=135780870]
 position = Vector2(120, 248)
 color = Color(1, 0.72, 0.42, 1)
 energy = 0.18
 texture = SubResource("GradientTexture2D_70bjm")
 texture_scale = 1.2
 
-[node name="Torch4" type="PointLight2D" parent="Torches" unique_id=1640143336]
+[node name="Torch4" type="PointLight2D" parent="Torches" unique_id=1194333983]
 position = Vector2(392, 248)
 color = Color(1, 0.72, 0.42, 1)
 energy = 0.18
 texture = SubResource("GradientTexture2D_70bjm")
 texture_scale = 1.2
 
-[node name="Walls" type="TileMapLayer" parent="." unique_id=25572176]
+[node name="Walls" type="TileMapLayer" parent="." unique_id=1892332147]
 visible = false
 tile_map_data = PackedByteArray("AAAAAAAAAAAFAAAAAAABAAAAAAAEAAAAAAACAAAAAAAEAAAAAAADAAAAAAAEAAAAAAAEAAAAAAAEAAAAAAAFAAAAAAAEAAAAAAAGAAAAAAAEAAAAAAAHAAAAAAAFAAEAAAAIAAAAAAAEAAAAAAAJAAAAAAAEAAAAAAAKAAAAAAAEAAAAAAALAAAAAAAEAAAAAAAMAAAAAAAEAAAAAAANAAAAAAAEAAAAAAAOAAAAAAAEAAAAAAAPAAAAAAAEAAAAAAAQAAAAAAAEAAAAAAARAAAAAAAEAAAAAAASAAAAAAAEAAAAAAATAAAAAAAEAAAAAAAUAAAAAAAEAAAAAAAVAAAAAAAEAAAAAAAWAAAAAAAFAAEAAAAXAAAAAAAEAAAAAAAYAAAAAAAEAAAAAAAZAAAAAAAEAAAAAAAaAAAAAAAEAAAAAAAbAAAAAAAEAAAAAAAcAAAAAAAEAAAAAAAdAAAAAAAFAAAAAAAAAAEAAAAFAAAAAAAdAAEAAAAFAAAAAAAAAAIAAAAFAAAAAAAdAAIAAAAFAAAAAAAAAAMAAAAFAAAAAAAOAAMAAAAFAAAAAAAPAAMAAAAFAAAAAAAdAAMAAAAFAAAAAAAAAAQAAAAFAAAAAAAOAAQAAAAFAAAAAAAPAAQAAAAFAAAAAAAdAAQAAAAFAAAAAAAAAAUAAAAFAAAAAAAOAAUAAAAFAAAAAAAPAAUAAAAFAAAAAAAdAAUAAAAFAAAAAAAAAAYAAAAFAAAAAAAKAAYAAAAFAAAAAAALAAYAAAAFAAAAAAAMAAYAAAAFAAAAAAANAAYAAAAFAAAAAAAOAAYAAAAFAAAAAAAPAAYAAAAFAAAAAAAQAAYAAAAFAAAAAAARAAYAAAAFAAAAAAASAAYAAAAFAAAAAAATAAYAAAAFAAAAAAAdAAYAAAAFAAAAAAAAAAcAAAACAAEAAEAKAAcAAAAFAAAAAAALAAcAAAAFAAAAAAAMAAcAAAAFAAAAAAANAAcAAAAFAAAAAAAOAAcAAAAFAAAAAAAPAAcAAAAFAAAAAAAQAAcAAAAFAAAAAAARAAcAAAAFAAAAAAASAAcAAAAFAAAAAAATAAcAAAAFAAAAAAAdAAcAAAAFAAAAAAAAAAgAAAAFAAAAAAAKAAgAAAAEAAAAAAALAAgAAAAEAAAAAAAMAAgAAAAEAAAAAAANAAgAAAAEAAAAAAAOAAgAAAAFAAAAAAAPAAgAAAAFAAAAAAAQAAgAAAAEAAAAAAARAAgAAAAEAAAAAAASAAgAAAAEAAAAAAATAAgAAAAEAAAAAAAdAAgAAAAFAAAAAAAAAAkAAAAFAAAAAAAOAAkAAAAFAAAAAAAPAAkAAAAFAAAAAAAdAAkAAAAFAAAAAAAAAAoAAAAFAAAAAAAOAAoAAAAFAAAAAAAPAAoAAAAFAAAAAAAdAAoAAAAFAAAAAAAAAAsAAAAFAAAAAAAOAAsAAAAFAAAAAAAPAAsAAAAFAAAAAAAdAAsAAAAFAAAAAAAAAAwAAAAFAAAAAAAOAAwAAAAEAAAAAAAPAAwAAAAEAAAAAAAdAAwAAAAFAAAAAAAAAA0AAAAFAAAAAAAdAA0AAAAFAAAAAAAAAA4AAAAFAAAAAAAdAA4AAAAFAAAAAAAAAA8AAAAFAAAAAAABAA8AAAAFAAAAAAACAA8AAAAFAAAAAAADAA8AAAAFAAAAAAAEAA8AAAAFAAAAAAAFAA8AAAAFAAAAAAAGAA8AAAAFAAAAAAAHAA8AAAAFAAAAAAAIAA8AAAAFAAAAAAAJAA8AAAAFAAAAAAAKAA8AAAAFAAAAAAALAA8AAAAFAAAAAAAMAA8AAAAFAAAAAAANAA8AAAAFAAAAAAAOAA8AAAAFAAAAAAAPAA8AAAAFAAAAAAAQAA8AAAAFAAAAAAARAA8AAAAFAAAAAAASAA8AAAAFAAAAAAATAA8AAAAFAAAAAAAUAA8AAAAFAAAAAAAVAA8AAAAFAAAAAAAWAA8AAAAAAAEAACAXAA8AAAAFAAAAAAAYAA8AAAAFAAAAAAAZAA8AAAAFAAAAAAAaAA8AAAAFAAAAAAAbAA8AAAAFAAAAAAAcAA8AAAAFAAAAAAAdAA8AAAAFAAAAAAA=")
 tile_set = ExtResource("3_eb845")
 
-[node name="Spawns" type="Node2D" parent="." unique_id=1412535969]
+[node name="Spawns" type="Node2D" parent="." unique_id=49179453]
 
-[node name="Crawler1" type="Marker2D" parent="Spawns" unique_id=1563739808]
+[node name="Crawler1" type="Marker2D" parent="Spawns" unique_id=876552599]
 position = Vector2(376, 72)
 metadata/enemy = "crawler"
 
-[node name="Charger2" type="Marker2D" parent="Spawns" unique_id=2064448508]
+[node name="Charger2" type="Marker2D" parent="Spawns" unique_id=1235354827]
 position = Vector2(408, 120)
 metadata/enemy = "charger"
 
-[node name="Crawler3" type="Marker2D" parent="Spawns" unique_id=1586103356]
+[node name="Crawler3" type="Marker2D" parent="Spawns" unique_id=1775385987]
 position = Vector2(376, 184)
 metadata/enemy = "crawler"
 
-[node name="WallFaceBlockers" type="StaticBody2D" parent="." unique_id=957783159]
+[node name="WallFaceBlockers" type="StaticBody2D" parent="." unique_id=135864484]
 
-[node name="@CollisionShape2D@30" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=157759846]
+[node name="@CollisionShape2D@36" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=286249776]
 position = Vector2(240, 24)
 shape = SubResource("RectangleShape2D_6wvm0")
 
-[node name="@CollisionShape2D@31" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=2129813670]
+[node name="@CollisionShape2D@37" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=732321350]
 position = Vector2(18, 56)
 shape = SubResource("RectangleShape2D_x4at7")
 
-[node name="@CollisionShape2D@32" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=240074907]
+[node name="@CollisionShape2D@38" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=1863196005]
 position = Vector2(18, 192)
 shape = SubResource("RectangleShape2D_kedd5")
 
-[node name="@CollisionShape2D@33" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=615355358]
+[node name="@CollisionShape2D@39" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=1582488059]
 position = Vector2(462, 128)
 shape = SubResource("RectangleShape2D_qj6xe")
 
-[node name="Entry" type="Marker2D" parent="." unique_id=1848247488]
+[node name="Entry" type="Marker2D" parent="." unique_id=708766990]
 position = Vector2(24, 120)
 
-[node name="EntryDoor" type="Sprite2D" parent="." unique_id=1620223960]
+[node name="Back" type="Node2D" parent="." unique_id=35537718]
+position = Vector2(8, 120)
+script = ExtResource("4_agftt")
+starts_shut = true
+
+[node name="Sprite" type="Sprite2D" parent="Back" unique_id=274784197]
 z_index = -4
-position = Vector2(4, 120)
-texture = ExtResource("4_agftt")
+position = Vector2(-4, 0)
+texture = ExtResource("5_o442u")
 offset = Vector2(0, -8)
 hframes = 3
 vframes = 2
 frame = 3
 
-[node name="ChestSpot" type="Marker2D" parent="." unique_id=1611996251]
+[node name="ChestSpot" type="Marker2D" parent="." unique_id=1043552725]
 position = Vector2(88, 168)
 
-[node name="Exit" type="Node2D" parent="." unique_id=656827730]
+[node name="Exit" type="Node2D" parent="." unique_id=104277187]
 position = Vector2(360, 248)
-script = ExtResource("5_o442u")
+script = ExtResource("4_agftt")
 
-[node name="Sprite" type="Sprite2D" parent="Exit" unique_id=2031009645]
+[node name="Sprite" type="Sprite2D" parent="Exit" unique_id=1814649959]
 z_index = -4
-texture = ExtResource("4_agftt")
+texture = ExtResource("5_o442u")
 offset = Vector2(0, 8)
 hframes = 3
 vframes = 2
 frame = 1
+
+[node name="StairsSpot" type="Marker2D" parent="." unique_id=1916234685]
+position = Vector2(48, 80)
