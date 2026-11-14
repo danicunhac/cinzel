@@ -1,84 +1,97 @@
 class_name ItemDB
 extends RefCounted
+## Lookups over the item catalog (game/data/item_catalog.gd). Paths are only
+## returned, never loaded: icons and sprite sheets come from the art tasks.
 
-const _ITEMS: Dictionary = {
-	&"heavy_blade": {
-		"name": "Lâmina Pesada",
-		"desc": "+50% de dano, -25% de velocidade de ataque.",
-		"buy": 60,
-		"sell": 30,
-		"icon": "res://assets/items/heavy_blade.png",
-		"mods": {"dmg_mult": 1.5, "attack_speed_mult": 0.75},
-	},
-	&"light_boots": {
-		"name": "Botas Leves",
-		"desc": "+25% de velocidade de movimento.",
-		"buy": 50,
-		"sell": 25,
-		"icon": "res://assets/items/light_boots.png",
-		"mods": {"move_speed_mult": 1.25},
-	},
-	&"stone_heart": {
-		"name": "Coração de Pedra",
-		"desc": "+40 de vida máxima.",
-		"buy": 50,
-		"sell": 25,
-		"icon": "res://assets/items/stone_heart.png",
-		"mods": {"max_hp_add": 40},
-	},
-	&"fang": {
-		"name": "Presa",
-		"desc": "Recupera 10% do dano causado como vida.",
-		"buy": 70,
-		"sell": 35,
-		"icon": "res://assets/items/fang.png",
-		"mods": {"lifesteal": 0.1},
-	},
-	&"wind_cape": {
-		"name": "Capa do Vento",
-		"desc": "+50% de distância da rolagem.",
-		"buy": 50,
-		"sell": 25,
-		"icon": "res://assets/items/wind_cape.png",
-		"mods": {"roll_distance_mult": 1.5},
-	},
-	&"cracked_hourglass": {
-		"name": "Ampulheta Rachada",
-		"desc": "A cura começa mais cedo.",
-		"buy": 60,
-		"sell": 30,
-		"icon": "res://assets/items/cracked_hourglass.png",
-		"mods": {"heal_delay": 0.75},
-	},
-	&"spark": {
-		"name": "Faísca",
-		"desc": "Deixa um rastro que causa dano.",
-		"buy": 70,
-		"sell": 35,
-		"icon": "res://assets/items/spark.png",
-		"mods": {"trail_damage": 4},
-	},
-	&"glass_shield": {
-		"name": "Escudo de Vidro",
-		"desc": "Bloqueia 1 golpe por sala.",
-		"buy": 80,
-		"sell": 40,
-		"icon": "res://assets/items/glass_shield.png",
-		"mods": {"block_per_room": 1},
-	},
-}
+const KINDS: Array[StringName] = [&"weapon", &"armor", &"helm", &"backpack", &"relic", &"material", &"outfit"]
+const WEAPON_TYPES: Array[StringName] = [&"sword", &"longsword", &"axe", &"spear", &"dagger", &"bow"]
+const RARITY_MULT: Dictionary[StringName, float] = {&"common": 1.0, &"rare": 1.5, &"epic": 2.5}
+const MATERIAL_STACK := 10
+const ICON_DIR := "res://assets/items/"
+const WEAPON_SPRITE_DIR := "res://assets/characters/climber/weapons/"
+const OUTFIT_SPRITE_DIR := "res://assets/characters/climber/outfits/"
 
 
-static func ids() -> Array[StringName]:
+## All ids, or only the ones of `kind`, in catalog order.
+static func ids(kind: StringName = &"") -> Array[StringName]:
 	var out: Array[StringName] = []
-	for k: StringName in _ITEMS.keys():
-		out.append(k)
+	for k: StringName in ItemCatalog.ITEMS:
+		if kind == &"" or ItemCatalog.ITEMS[k]["kind"] == kind:
+			out.append(k)
+	return out
+
+
+## Ids of `kind` and `rarity`.
+static func ids_by(kind: StringName, rarity: StringName) -> Array[StringName]:
+	var out: Array[StringName] = []
+	for k: StringName in ids(kind):
+		if ItemCatalog.ITEMS[k]["rarity"] == rarity:
+			out.append(k)
 	return out
 
 
 static func has(id: StringName) -> bool:
-	return _ITEMS.has(id)
+	return ItemCatalog.ITEMS.has(id)
 
 
+## A copy of the entry, plus "icon" (see item_catalog.gd for the schema).
 static func get_def(id: StringName) -> Dictionary:
-	return (_ITEMS[id] as Dictionary).duplicate(true)
+	var d := (ItemCatalog.ITEMS[id] as Dictionary).duplicate(true)
+	d["icon"] = icon_path(id)
+	return d
+
+
+static func kind(id: StringName) -> StringName:
+	return ItemCatalog.ITEMS[id]["kind"] if has(id) else &""
+
+
+static func rarity(id: StringName) -> StringName:
+	return ItemCatalog.ITEMS[id]["rarity"] if has(id) else &""
+
+
+static func item_name(id: StringName) -> String:
+	return String(ItemCatalog.ITEMS[id]["name"]) if has(id) else ""
+
+
+static func weapon_type(id: StringName) -> StringName:
+	return ItemCatalog.ITEMS[id].get("weapon_type", &"") if has(id) else &""
+
+
+static func backpack_slots(id: StringName) -> int:
+	return int(ItemCatalog.ITEMS[id].get("slots", 0)) if has(id) else 0
+
+
+## Materials stack up to 10 in one backpack slot; everything else is 1.
+static func stack_max(id: StringName) -> int:
+	return MATERIAL_STACK if kind(id) == &"material" else 1
+
+
+## Materials of a tower floor (1..3); floor 0 is the boss material.
+static func materials_of_floor(floor_num: int) -> Array[StringName]:
+	var out: Array[StringName] = []
+	for k: StringName in ids(&"material"):
+		if int(ItemCatalog.ITEMS[k]["floor"]) == floor_num:
+			out.append(k)
+	return out
+
+
+## Base price x rarity multiplier (before the market's supply and demand).
+static func price(id: StringName) -> int:
+	if not has(id):
+		return 0
+	return roundi(int(ItemCatalog.ITEMS[id]["base_price"]) * RARITY_MULT[rarity(id)])
+
+
+static func icon_path(id: StringName) -> String:
+	return "%s%s.png" % [ICON_DIR, id]
+
+
+## Sprite sheet shown on the character: the weapon layer for weapons, the
+## `layer` (hair or outfit) for outfits, "" for anything else.
+static func sprite_path(id: StringName, layer: StringName = &"outfit") -> String:
+	match kind(id):
+		&"weapon":
+			return "%s%s.png" % [WEAPON_SPRITE_DIR, weapon_type(id)]
+		&"outfit":
+			return "%s%s/%s.png" % [OUTFIT_SPRITE_DIR, String(id).trim_prefix("outfit_"), layer]
+	return ""

@@ -46,12 +46,11 @@ func open() -> void:
 	opened.emit(id)
 
 
-## Random item, preferring ones the player does not carry yet.
+## Random gear or relic from the loot table (rarity by floor and clock).
 func roll_item() -> StringName:
-	var pool := ItemDB.ids().filter(func(id: StringName) -> bool: return not Game.run.items.has(id))
-	if pool.is_empty():
-		pool = ItemDB.ids()
-	return pool[_rng.randi_range(0, pool.size() - 1)]
+	var dungeon := get_tree().current_scene as Dungeon
+	var floor_num := dungeon.current_floor if dungeon != null else 1
+	return LootTable.roll_chest(floor_num, Game.run.clock.level(), _rng, Game.run.unlocked_outfits)
 
 
 func _drop(id: StringName, offset: Vector2) -> void:

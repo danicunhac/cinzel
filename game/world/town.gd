@@ -4,8 +4,8 @@ extends Node2D
 ## (shopkeeper), the forge (blacksmith) and the teleport crystal; E near one
 ## opens its panel. Near a spot with an action, a gold ring pings on the ground
 ## and the building glows; the NPC speaks a short line in a bubble.
-## The run clock stays stopped here. The shop restocks every time the town
-## loads, which is every return from the tower.
+## The run clock stays stopped here. Every town load starts a market visit
+## (Market.begin_visit: prices recover, new stock and wanted items).
 ## Debug: `--gold=N`, `--items=fang,spark` and `--floors=N` change the run,
 ## `--panel=shop|smith|teleport` opens a panel, `--player=x,y` moves the player.
 
@@ -119,7 +119,7 @@ const WALKS: Array = [
 	[Vector2(372, 222), Vector2(316, 222), Vector2(316, 160), Vector2(372, 160)],
 ]
 
-var shop := Shop.new()
+var shop: Market
 var near: StringName = &""
 var _rng := RandomNumberGenerator.new()
 var _panel: UiPanel = null
@@ -138,7 +138,8 @@ func _ready() -> void:
 	Game.run.clock.running = false
 	Game.in_boss_room = false
 	_rng.randomize()
-	shop.restock(_rng)
+	shop = Game.run.market
+	shop.begin_visit(_rng)
 	_build_ground()
 	_build_bounds()
 	_build_pieces()
@@ -196,9 +197,7 @@ func open_panel(id: StringName) -> UiPanel:
 			s.shop = shop
 			_panel = s
 		&"smith":
-			var m := SmithPanelScene.instantiate() as SmithPanel
-			m.shop = shop
-			_panel = m
+			_panel = SmithPanelScene.instantiate() as SmithPanel
 		&"teleport":
 			_panel = TeleportPanelScene.instantiate() as TeleportPanel
 		_:

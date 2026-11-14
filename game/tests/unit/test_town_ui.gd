@@ -37,10 +37,13 @@ func test_teleport_lists_unlocked_floors() -> void:
 	_game().new_run()
 
 
-func test_shop_restocks_on_each_town_load() -> void:
+func test_shop_starts_a_market_visit_on_each_town_load() -> void:
 	_game().new_run()
 	var town := await _spawn("res://world/town.tscn")
-	T.eq(town.shop.stock.size(), Shop.STOCK_SIZE)
+	T.eq(town.shop, _game().run.market, "town uses the run's market")
+	T.eq(town.shop.stock.size(), Market.STOCK_SIZE)
+	T.eq(town.shop.wanted.size(), Market.WANTED_COUNT)
+	T.eq(town.shop.visits, 1)
 	town.free()
 	_game().new_run()
 
@@ -50,36 +53,38 @@ func test_shop_panel_buy_and_sell() -> void:
 	_game().run.add_gold(500)
 	var town := await _spawn("res://world/town.tscn")
 	var first: StringName = town.shop.stock[0]
-	var price: int = ItemDB.get_def(first)["buy"]
+	var price: int = town.shop.buy_price(first)
 	var p := town.open_panel(&"shop") as ShopPanel
 	p._buy(0)
-	T.eq(_game().run.items, [first] as Array[StringName], "bought")
+	T.eq(_game().run.inventory.count(first), 1, "bought into the backpack")
 	T.eq(_game().run.gold, 500 - price)
+	var sell: int = town.shop.sell_price(first)
 	p._sell(0)
-	T.eq(_game().run.items.size(), 1, "first press only asks")
+	T.eq(_game().run.inventory.count(first), 1, "first press only asks")
 	p._sell(0)
-	T.eq(_game().run.items.size(), 0, "sold")
-	T.eq(_game().run.gold, 500 - price + int(ItemDB.get_def(first)["sell"]))
+	T.eq(_game().run.inventory.count(first), 0, "sold")
+	T.eq(_game().run.gold, 500 - price + sell)
 	p.close()
 	town.free()
 	_game().new_run()
 
 
-func test_smith_trade_button_needs_two_items() -> void:
+func test_smith_forges_unlocked_recipe() -> void:
 	_game().new_run()
-	_game().run.add_item(&"fang")
 	var town := await _spawn("res://world/town.tscn")
 	var p := town.open_panel(&"smith") as SmithPanel
-	T.eq(p.trade_button.disabled, true, "one item: no trade")
+	T.eq(p.recipe_buttons.size(), Forge.unlocked(0).size(), "start recipes listed")
+	var idx := Forge.unlocked(0).find(&"helm_iron")
+	T.eq(p.recipe_buttons[idx].disabled, true, "no materials: disabled")
 	p.close()
-	_game().run.add_item(&"spark")
+	_game().run.inventory.add(&"mat_stone_shard", 4)
+	_game().run.add_gold(35)
 	p = town.open_panel(&"smith") as SmithPanel
-	p._toggle(true, 0)
-	p._toggle(true, 1)
-	T.eq(p.trade_button.disabled, false, "two picked: trade")
-	p._trade()
-	T.eq(_game().run.items.size(), 1, "2 for 1")
-	T.ok(_game().run.items[0] != &"fang" and _game().run.items[0] != &"spark", "new item differs")
+	T.eq(p.recipe_buttons[idx].disabled, false, "materials and gold: enabled")
+	p.recipe_buttons[idx].pressed.emit()
+	T.eq(_game().run.inventory.count(&"helm_iron"), 1, "forged")
+	T.eq(_game().run.inventory.count(&"mat_stone_shard"), 0)
+	T.eq(_game().run.gold, 0)
 	p.close()
 	town.free()
 	_game().new_run()

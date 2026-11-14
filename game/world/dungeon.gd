@@ -157,7 +157,7 @@ func _on_room_cleared() -> void:
 	if not room.is_boss:
 		return
 	Game.in_boss_room = false
-	Game.run.unlock_floor(current_floor + 1)
+	Game.run.beat_floor(current_floor)
 	if current_floor >= RunState.MAX_FLOOR:
 		_win()
 		return

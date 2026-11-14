@@ -1,8 +1,9 @@
 class_name ShopPanel
 extends UiPanel
-## Town shop: buy from the 3-item stock, sell inventory items.
+## Town market: buy from the 3-item stock, sell backpack items (one unit per
+## sale, price from Market supply and demand; wanted items marked with "!").
 
-var shop: Shop
+var shop: Market
 var _desc: Label
 var _msg: String = ""
 var _msg_color: Color = UiKit.COLOR_MUTED
@@ -31,18 +32,22 @@ func _build(box: VBoxContainer) -> void:
 		buy_col.add_child(UiKit.label("Esgotado", UiKit.COLOR_MUTED))
 	for i in shop.stock.size():
 		var id: StringName = shop.stock[i]
-		var price: int = ItemDB.get_def(id)["buy"]
+		var price := shop.buy_price(id)
 		var b := _item_button(id, "%d" % price)
 		if price > run.gold:
 			(b.get_meta(&"price_label") as Label).add_theme_color_override("font_color", UiKit.COLOR_DANGER)
 		b.pressed.connect(_buy.bind(i))
 		buy_col.add_child(b)
 	var sell_col := _column(cols, "Vender")
-	if run.items.is_empty():
+	if run.inventory.is_empty():
 		sell_col.add_child(UiKit.label("Nada para vender", UiKit.COLOR_MUTED))
-	for slot in run.items.size():
-		var id: StringName = run.items[slot]
-		var b := _item_button(id, "+%d" % int(ItemDB.get_def(id)["sell"]))
+	for slot in run.inventory.capacity:
+		var id := run.inventory.id_at(slot)
+		if id == &"":
+			continue
+		var qty := run.inventory.qty_at(slot)
+		var tag := ("%s%d" % ["!" if shop.is_wanted(id) else "+", shop.sell_price(id)])
+		var b := _item_button(id, tag, qty)
 		b.pressed.connect(_sell.bind(slot))
 		sell_col.add_child(b)
 
@@ -64,8 +69,8 @@ func _column(parent: HBoxContainer, title: String) -> VBoxContainer:
 
 
 ## Icon + name on the left, price on the right.
-func _item_button(id: StringName, price: String) -> Button:
-	var b := UiKit.button(UiKit.item_name(id), UiKit.item_icon(id))
+func _item_button(id: StringName, price: String, qty: int = 1) -> Button:
+	var b := UiKit.button(UiKit.item_name(id) + (" x%d" % qty if qty > 1 else ""), UiKit.item_icon(id))
 	b.custom_minimum_size = Vector2(159, 20)
 	b.clip_text = true
 	b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -96,9 +101,9 @@ func _buy(index: int) -> void:
 	_pending_sell = -1
 	var run := Game.run
 	var id: StringName = shop.stock[index]
-	var price: int = ItemDB.get_def(id)["buy"]
-	if not run.can_take_item():
-		_set_msg("Inventário cheio: venda um item antes.", UiKit.COLOR_DANGER)
+	var price := shop.buy_price(id)
+	if run.inventory.free_slots() <= 0:
+		_set_msg("Mochila cheia: venda um item antes.", UiKit.COLOR_DANGER)
 	elif price > run.gold:
 		_set_msg("Ouro insuficiente.", UiKit.COLOR_DANGER)
 	elif shop.buy(run, index):
@@ -108,16 +113,19 @@ func _buy(index: int) -> void:
 
 func _sell(slot: int) -> void:
 	var run := Game.run
-	var id: StringName = run.items[slot]
-	var price := int(ItemDB.get_def(id)["sell"])
+	var id := run.inventory.id_at(slot)
+	if id == &"":
+		return
+	var price := shop.sell_price(id)
 	if _pending_sell != slot:
 		_pending_sell = slot
 		_set_msg("Aperte de novo para vender %s por %d." % [UiKit.item_name(id), price], UiKit.COLOR_TITLE)
 		refresh()
 		return
 	_pending_sell = -1
-	if shop.sell(run, slot):
-		_set_msg("Vendeu %s por %d." % [UiKit.item_name(id), int(ItemDB.get_def(id)["sell"])], UiKit.COLOR_GOLD)
+	var got := shop.sell(run, slot)
+	if got > 0:
+		_set_msg("Vendeu %s por %d." % [UiKit.item_name(id), got], UiKit.COLOR_GOLD)
 	refresh()
 
 
