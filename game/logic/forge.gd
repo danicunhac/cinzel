@@ -91,7 +91,7 @@ static func _fits_after_paying(run: RunState, r: Dictionary) -> bool:
 ## Whether any unlocked recipe can be forged right now (smith call to action).
 static func any_craftable(run: RunState) -> bool:
 	for id: StringName in RECIPES:
-		if can_craft(run, id):
+		if is_unlocked(id, run.floors_beaten) and block_reason(run, id) == "":
 			return true
 	return false
 

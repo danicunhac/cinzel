@@ -264,6 +264,23 @@ func test_tab_gate() -> void:
 	await _cleanup_dungeon(d)
 
 
+func test_drop_without_a_player_keeps_the_stack() -> void:
+	_game().new_run()
+	var run: RunState = _game().run
+	run.inventory.add(&"mat_slime_gel", 6)
+	var holder := Node.new()
+	_tree().root.add_child(holder)
+	var inv := _open_inventory(holder, false)
+	inv.select_bag(0)
+	T.eq(_tree().get_nodes_in_group(&"player").size(), 0, "no player in the tree")
+	T.eq(inv.drop(), false, "nothing to drop at")
+	T.eq(run.inventory.count(&"mat_slime_gel"), 6, "stack not lost")
+	T.eq(run.inventory.id_at(0), &"mat_slime_gel", "same slot")
+	inv.close()
+	holder.free()
+	_game().new_run()
+
+
 # --- full backpack, toasts ---------------------------------------------------
 
 func test_full_backpack_swap_drops_the_chosen_stack() -> void:
@@ -382,7 +399,10 @@ func test_forge_craft_consumes_and_adds() -> void:
 	var p := town.open_panel(&"smith") as SmithPanel
 	p.select(Forge.unlocked(0).find(&"armor_leather"))
 	T.eq(p.reason, "")
-	T.ok(p.craft_selected())
+	T.eq(p.press_craft(), false, "first press only arms")
+	T.eq(run.inventory.count(&"armor_leather"), 0)
+	T.eq(p.craft_button.text, "Confirmar")
+	T.ok(p.press_craft(), "second press forges")
 	T.eq(run.inventory.count(&"armor_leather"), 1)
 	T.eq(run.inventory.count(&"mat_slime_gel"), 0)
 	T.eq(run.inventory.count(&"mat_slime_core"), 0)

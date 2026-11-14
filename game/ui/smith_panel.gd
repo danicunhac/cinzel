@@ -16,6 +16,8 @@ var recipe_buttons: Array[ItemCell] = []
 var selected: int = 0
 var craft_button: Button
 var reason: String = ""
+## First press on "Forjar" arms it; the second forges.
+var armed: bool = false
 
 var _recipes: Array[StringName] = []
 var _msg: String = ""
@@ -90,11 +92,11 @@ func _build(box: VBoxContainer) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	right.add_child(row)
-	craft_button = UiKit.button("Forjar")
+	craft_button = UiKit.button("Confirmar" if armed else "Forjar")
 	craft_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	craft_button.custom_minimum_size = Vector2(60, 0)
 	craft_button.disabled = reason != ""
-	craft_button.pressed.connect(craft_selected)
+	craft_button.pressed.connect(press_craft)
 	row.add_child(craft_button)
 	if reason != "":
 		var why := UiKit.label(reason, UiKit.COLOR_DANGER)
@@ -158,6 +160,7 @@ func select(i: int) -> void:
 	if i == selected:
 		return
 	selected = i
+	armed = false
 	_msg = ""
 	refresh()
 
@@ -166,7 +169,21 @@ func _on_activated(i: int) -> void:
 	if i != selected:
 		select(i)
 	elif craft_button != null and not craft_button.disabled:
-		craft_selected()
+		press_craft()
+
+
+## Two-step forge: the first press arms ("Confirmar"), the second forges.
+func press_craft() -> bool:
+	if _recipes.is_empty() or Forge.block_reason(Game.run, _recipes[selected]) != "":
+		armed = false
+		return craft_selected()
+	if not armed:
+		armed = true
+		_msg = "Aperte de novo para forjar."
+		_msg_color = UiKit.COLOR_TITLE
+		refresh()
+		return false
+	return craft_selected()
 
 
 ## Forges the selected recipe into the backpack.
@@ -176,6 +193,7 @@ func craft_selected() -> bool:
 	var id := _recipes[selected]
 	var result: StringName = Forge.RECIPES[id]["result"]
 	var why := Forge.block_reason(Game.run, id)
+	armed = false
 	var ok := why == "" and Forge.craft(Game.run, id)
 	if ok:
 		_msg = "Forjou: %s" % UiKit.item_name(result)

@@ -92,3 +92,11 @@ func test_craft_refused_when_result_does_not_fit() -> void:
 	T.eq(Forge.craft(run3, &"spear_hunter"), false)
 	T.eq(run3.inventory.count(&"mat_slime_gel"), 10, "rolled back")
 	T.eq(run3.inventory.count(&"mat_stone_shard"), 10, "rolled back")
+	T.eq(Forge.any_craftable(run3), false, "no recipe when the result cannot fit")
+	T.eq(Forge.any_craftable(run2), false, "spent: nothing left to forge")
+
+
+func test_any_craftable_true_when_it_fits() -> void:
+	var run := RunState.new()
+	_fill(run, &"helm_iron")
+	T.ok(Forge.any_craftable(run))

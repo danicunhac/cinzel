@@ -334,8 +334,12 @@ func drop() -> bool:
 		refresh()
 		return false
 	var taken := Game.run.inventory.take_slot(sel_slot)
+	if _spawn_drop(taken["id"], int(taken["qty"])) == null:
+		Game.run.inventory.slots[sel_slot] = taken
+		_set_msg("Nada para largar aqui.", UiKit.COLOR_DANGER)
+		refresh()
+		return false
 	Game.run.changed.emit()
-	_spawn_drop(taken["id"], int(taken["qty"]))
 	_set_msg("Largou %s." % UiKit.item_name(taken["id"]), UiKit.COLOR_MUTED)
 	refresh()
 	return true
@@ -429,8 +433,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		primary()
 		return
-	var key := event as InputEventKey
-	if key != null and key.pressed and not key.echo and key.physical_keycode == KEY_X:
+	if event.is_action_pressed(&"drop", false, true):
 		get_viewport().set_input_as_handled()
 		drop()
 		return

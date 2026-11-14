@@ -17,6 +17,8 @@ var toasts: Array[Dictionary] = []
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# The HUD above is ALWAYS; toasts must not expire behind a panel.
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 
 
 func push(id: StringName, qty: int) -> void:

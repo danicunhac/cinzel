@@ -153,7 +153,9 @@ func _build_sell(left: VBoxContainer, right: VBoxContainer) -> void:
 		var a := TrendArrow.make(trend > 0)
 		a.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		price_row.add_child(a)
-		var pct := 50 if trend > 0 else roundi((1.0 - shop.factor(id)) * 100.0)
+		var base := ItemDB.price(id)
+		var pct := roundi((float(shop.sell_price(id)) / base - 1.0) * 100.0) if trend > 0 and base > 0 \
+				else roundi((1.0 - shop.factor(id)) * 100.0)
 		price_row.add_child(UiKit.label("+%d%%" % pct if trend > 0 else "-%d%%" % pct,
 				UiKit.COLOR_GOOD if trend > 0 else UiKit.COLOR_DANGER))
 	var have := inv.qty_at(sel_slot)

@@ -65,8 +65,11 @@ func test_tutorial_rooms_get_no_extra_enemies() -> void:
 
 func test_heal_room_opens_when_hp_is_full() -> void:
 	_game().new_run()
+	T.eq(_tree().paused, false, "tree not paused at start")
+	T.eq(_tree().get_nodes_in_group(&"player").size(), 0, "no leaked player before the test adds one")
 	var player := (load("res://actors/player/player.tscn") as PackedScene).instantiate() as Player
 	_tree().root.add_child(player)
+	T.eq(_tree().get_nodes_in_group(&"player").size(), 1, "exactly one player")
 	var room := await _room("res://world/rooms/tutorial/t3_heal.tscn")
 	room.start(0, false, RandomNumberGenerator.new())
 	T.eq(player.health.hp, 50, "starts at 50%")

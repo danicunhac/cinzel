@@ -87,7 +87,7 @@ func set_selected(on: bool) -> void:
 
 ## Greys the icon (locked outfit, recipe that cannot be made, too expensive).
 func set_dim(on: bool) -> void:
-	var c := Color(0.6, 0.56, 0.56) if on else Color.WHITE
+	var c := Color(0.55, 0.55, 0.55) if on else Color.WHITE
 	_frame.modulate = c
 	if item_id != &"":
 		_icon.modulate = c

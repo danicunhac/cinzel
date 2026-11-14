@@ -89,6 +89,8 @@ func test_smith_forges_unlocked_recipe() -> void:
 	p.select(idx)
 	T.eq(p.craft_button.disabled, false, "materials and gold: enabled")
 	p.craft_button.pressed.emit()
+	T.eq(_game().run.inventory.count(&"helm_iron"), 0, "first press only arms")
+	p.craft_button.pressed.emit()
 	T.eq(_game().run.inventory.count(&"helm_iron"), 1, "forged")
 	T.eq(_game().run.inventory.count(&"mat_stone_shard"), 0)
 	T.eq(_game().run.gold, 0)
