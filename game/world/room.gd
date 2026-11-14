@@ -5,10 +5,14 @@ extends Node2D
 ## boss_big marker names its look in meta `base` = crawler | charger), plus
 ## `extra` copies on random markers away from the entry. The Exit door stays
 ## locked until every enemy is dead, or, with heal_to_clear, until the
-## player's HP is full.
+## player's HP is full. The Back door (the entry) leads to the previous room:
+## shut in a floor's first room, otherwise locked and open like the exit.
+## A RoomSave (FloorState) brings back a room the player already visited:
+## cleared rooms spawn nobody, opened chests stay open, items stay put.
 
 signal cleared
 signal exit_reached
+signal back_reached
 
 const ENEMY_SCENES: Dictionary[String, PackedScene] = {
 	"crawler": preload("res://actors/enemies/crawler.tscn"),
@@ -18,6 +22,7 @@ const ENEMY_SCENES: Dictionary[String, PackedScene] = {
 	"boss_final": preload("res://actors/bosses/boss_final.tscn"),
 }
 const ChestScene := preload("res://world/chest.tscn")
+const PickupScene := preload("res://world/pickup_item.tscn")
 ## Enemies fade in and stay still this long, so a room never opens with a hit.
 const SPAWN_GRACE := 0.6
 const EXTRA_MIN_DIST := 144.0
@@ -31,27 +36,48 @@ const EXTRA_MIN_DIST := 144.0
 var is_cleared: bool = false
 var enemies: Array[EnemyBase] = []
 var chest: Chest = null
+## True when start() restored a room that was already cleared.
+var restored: bool = false
 
 var _alive: int = 0
 var _has_chest: bool = false
 var _started: bool = false
+var _has_back: bool = false
 
 @onready var walls: TileMapLayer = $Walls
 @onready var entry: Marker2D = $Entry
 @onready var exit_door: RoomDoor = get_node_or_null(^"Exit") as RoomDoor
+@onready var back_door: RoomDoor = get_node_or_null(^"Back") as RoomDoor
 @onready var spawns: Node2D = $Spawns
 
 
 func _ready() -> void:
 	if exit_door != null:
 		exit_door.entered.connect(func() -> void: exit_reached.emit())
+	if back_door != null:
+		back_door.entered.connect(func() -> void: back_reached.emit())
 
 
-func start(extra: int, has_chest: bool, rng: RandomNumberGenerator) -> void:
+## `save`: this room's state from an earlier visit (null on the first one).
+## `has_back`: the entry door leads to a previous room.
+func start(extra: int, has_chest: bool, rng: RandomNumberGenerator,
+		save: FloorState.RoomSave = null, has_back: bool = false) -> void:
 	if _started:
 		return
 	_started = true
 	_has_chest = has_chest and has_node(^"ChestSpot")
+	_has_back = has_back and back_door != null
+	if _has_back:
+		back_door.set_open(false)
+	if save != null:
+		for it in save.floor_items:
+			_drop_item(it)
+	if save != null and save.cleared:
+		restored = true
+		_clear()
+		if chest != null and save.chests_opened.has(0):
+			_show_chest_open(chest)
+		return
 	if start_hp_ratio < 1.0:
 		_lower_player_hp()
 	var markers: Array[Marker2D] = []
@@ -111,11 +137,42 @@ func _clear() -> void:
 	is_cleared = true
 	if exit_door != null:
 		exit_door.set_open(true)
+	if _has_back:
+		back_door.set_open(true)
 	if _has_chest:
 		chest = ChestScene.instantiate() as Chest
 		chest.position = ($ChestSpot as Marker2D).position
 		add_child(chest)
 	cleared.emit()
+
+
+## Writes what must survive a later visit into `save`.
+func snapshot(save: FloorState.RoomSave) -> void:
+	save.cleared = is_cleared
+	save.chests_opened.clear()
+	if chest != null and is_instance_valid(chest) and chest.is_open:
+		save.chests_opened.append(0)
+	save.floor_items.clear()
+	for n in get_children():
+		if n is PickupItem and not n.is_queued_for_deletion():
+			var p := n as PickupItem
+			var qty: int = int(p.get(&"qty")) if &"qty" in p else 1
+			save.floor_items.append({"id": p.item_id, "qty": qty, "pos": p.position})
+
+
+func _drop_item(it: Dictionary) -> void:
+	var p := PickupScene.instantiate() as PickupItem
+	p.item_id = it["id"]
+	if &"qty" in p:
+		p.set(&"qty", it["qty"])
+	p.position = it["pos"]
+	add_child(p)
+
+
+## An already looted chest: open lid, nothing more to give.
+func _show_chest_open(c: Chest) -> void:
+	c.is_open = true
+	c.sprite.region_rect = RoomTiles.region(RoomTiles.CHEST_OPEN)
 
 
 func _lower_player_hp() -> void:

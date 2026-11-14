@@ -6,7 +6,13 @@ extends Node2D
 ## Debug: `--room=res://...tscn` loads only that room, `--chest` gives it a
 ## chest, `--cleared` kills its enemies at once, `--floor=N` picks the floor,
 ## `--player=x,y` moves the player after the room loads, `--boss-hp=N` drops
-## the boss to N% of its HP.
+## the boss to N% of its HP, `--revisit` (with --room) shows the room as on a
+## walk back: already cleared, chest opened, back door open.
+##
+## Walking back: a FloorState keeps each floor's plan and room saves for this
+## tower visit (a new Dungeon, from town, starts fresh; death forgets it). The
+## entry door leads to the previous room, the first room of each floor has
+## stairs down to the previous floor's beaten boss room (to town from floor 1).
 
 const SCENE := "res://world/dungeon.tscn"
 const TOWN_SCENE := "res://world/town.tscn"
@@ -15,15 +21,24 @@ const VICTORY_SCENE := "res://ui/victory.tscn"
 const FADE_TIME := 0.2
 const DEATH_DELAY := 1.0
 const PortalScript := preload("res://world/portal.gd")
+const StairsScene := preload("res://world/stairs.tscn")
+
+## Where the player stands in the new room.
+enum Arrival { ENTRY, EXIT }
 
 ## Floor the next Dungeon instance enters (the town sets it before goto).
 static var requested_floor: int = 1
 
 var current_floor: int = 1
+## The current floor's plan and chest rooms (shared with its FloorRecord).
 var plan: Array[String] = []
 var chest_rooms: Array[int] = []
 var room_index: int = -1
 var room: Room = null
+var state := FloorState.new()
+
+## Floor of the loaded room (current_floor changes before the swap).
+var _room_floor: int = 1
 
 var _rng := RandomNumberGenerator.new()
 var _busy: bool = false
@@ -53,17 +68,57 @@ func _process(delta: float) -> void:
 	Game.run.clock.tick(delta)
 
 
+## Starts `floor_num` at its first room (from town or a boss portal). A floor
+## already visited in this tower visit keeps its plan and rooms.
 func enter_floor(floor_num: int) -> void:
 	current_floor = floor_num
 	Game.run.clock.running = true
-	var with_tutorial := floor_num == 1 and not Game.run.tutorial_done
-	plan = FloorPlan.build(floor_num, templates_for(floor_num), _rng, with_tutorial)
-	var tutorial_count := FloorPlan.TUTORIAL_ROOMS.size() if with_tutorial else 0
-	var random_count := plan.size() - tutorial_count - 1
-	chest_rooms.clear()
-	for i in FloorPlan.chest_rooms(random_count, _rng):
-		chest_rooms.append(i + tutorial_count)
+	var rec := state.get_floor(floor_num)
+	if rec == null:
+		rec = _build_floor(floor_num)
+	_use_floor(rec)
 	_go_to_room(0, room != null)
+
+
+func _build_floor(floor_num: int) -> FloorState.FloorRecord:
+	var with_tutorial := floor_num == 1 and not Game.run.tutorial_done
+	var p := FloorPlan.build(floor_num, templates_for(floor_num), _rng, with_tutorial)
+	var tutorial_count := FloorPlan.TUTORIAL_ROOMS.size() if with_tutorial else 0
+	var random_count := p.size() - tutorial_count - 1
+	var chests: Array[int] = []
+	for i in FloorPlan.chest_rooms(random_count, _rng):
+		chests.append(i + tutorial_count)
+	return state.start_floor(floor_num, p, chests)
+
+
+func _use_floor(rec: FloorState.FloorRecord) -> void:
+	plan = rec.plan
+	chest_rooms = rec.chest_rooms
+
+
+## Stairs of a floor's first room: to town from floor 1, otherwise to the
+## previous floor's boss room (beaten; built fresh if this visit skipped it).
+func _on_stairs_used() -> void:
+	if _busy or _leaving:
+		return
+	if current_floor <= 1:
+		leave_to_town()
+		return
+	var below := current_floor - 1
+	var rec := state.get_floor(below)
+	if rec == null:
+		rec = _build_floor(below)
+	# Standing on floor N means floor N-1's boss is beaten.
+	rec.rooms[-1].cleared = true
+	current_floor = below
+	_use_floor(rec)
+	_go_to_room(rec.plan.size() - 1, true)
+
+
+func _on_back_reached() -> void:
+	if _busy or _leaving or room_index <= 0:
+		return
+	_go_to_room(room_index - 1, true, Arrival.EXIT)
 
 
 func leave_to_town() -> void:
@@ -88,33 +143,50 @@ static func templates_for(floor_num: int) -> Array[String]:
 
 
 func _enter_single(path: String) -> void:
-	plan.assign([path])
-	chest_rooms.clear()
+	current_floor = int(_args.get("floor", "1"))
+	var p: Array[String] = [path]
+	var chests: Array[int] = []
 	if _args.has("chest"):
-		chest_rooms.append(0)
+		chests.append(0)
+	var rec := state.start_floor(current_floor, p, chests)
+	if _args.has("revisit"):
+		rec.rooms[0].cleared = true
+		rec.rooms[0].chests_opened.append(0)
+	_use_floor(rec)
 	_go_to_room(0, false)
 
 
-func _go_to_room(index: int, with_fade: bool) -> void:
+func _go_to_room(index: int, with_fade: bool, arrival: Arrival = Arrival.ENTRY) -> void:
 	_busy = true
 	player.set_physics_process(false)
 	if with_fade:
 		await _fade_to(1.0)
 	if room != null:
 		_collect_leftover_gold(room)
+		var old := state.room(_room_floor, room_index)
+		if old != null:
+			room.snapshot(old)
 		rooms.remove_child(room)
 		room.queue_free()
 	room_index = index
+	_room_floor = current_floor
+	state.get_floor(current_floor).index = index
 	room = (load(plan[index]) as PackedScene).instantiate() as Room
 	rooms.add_child(room)
 	player.global_position = room.entry.global_position
+	if arrival == Arrival.EXIT and room.exit_door != null:
+		player.global_position = room.exit_door.arrival()
 	player.velocity = Vector2.ZERO
 	player.reset_room_blocks()
-	Game.in_boss_room = room.is_boss
 	room.exit_reached.connect(_on_exit_reached)
+	room.back_reached.connect(_on_back_reached)
 	room.cleared.connect(_on_room_cleared)
+	if index == 0:
+		_add_stairs()
 	var extra := Difficulty.extra_enemies(Game.run.clock.level())
-	room.start(extra, index in chest_rooms, _rng)
+	var has_back := index > 0 or _args.has("revisit")
+	room.start(extra, index in chest_rooms, _rng, state.room(current_floor, index), has_back)
+	Game.in_boss_room = room.is_boss and not room.is_cleared
 	if _args.has("cleared"):
 		for e in room.enemies:
 			e.health.damage(1 << 20, e.global_position)
@@ -153,13 +225,31 @@ func _on_exit_reached() -> void:
 	_go_to_room(room_index + 1, true)
 
 
+## First room of a floor: stairs down on the StairsSpot marker.
+func _add_stairs() -> void:
+	var spot := room.get_node_or_null(^"StairsSpot") as Marker2D
+	if spot == null:
+		return
+	var st := StairsScene.instantiate() as Stairs
+	st.position = spot.position
+	st.label = "E: voltar à cidade" if current_floor <= 1 else "E: descer ao andar %d" % (current_floor - 1)
+	st.used.connect(_on_stairs_used)
+	room.add_child(st)
+
+
 func _on_room_cleared() -> void:
+	var save := state.room(current_floor, room_index)
+	if save != null:
+		save.cleared = true
 	if not room.is_boss:
 		return
 	Game.in_boss_room = false
-	Game.run.beat_floor(current_floor)
+	# A boss room revisited on a walk back: boss already beaten, portals only.
+	if not room.restored:
+		Game.run.beat_floor(current_floor)
 	if current_floor >= RunState.MAX_FLOOR:
-		_win()
+		if not room.restored:
+			_win()
 		return
 	# Low in the room, away from where the boss (and its gold) usually falls.
 	var base := Vector2(240, 208)
@@ -178,7 +268,7 @@ func _add_portal(pos: Vector2, label: String, color: Color, on_used: Callable) -
 
 func _next_floor() -> void:
 	var next := current_floor + 1
-	if templates_for(next).is_empty():
+	if not state.has_floor(next) and templates_for(next).is_empty():
 		_show_notice("O andar %d ainda não foi construído." % next)
 		return
 	enter_floor(next)
@@ -196,6 +286,7 @@ func _on_player_died() -> void:
 		return
 	_leaving = true
 	Game.run.clock.running = false
+	state.reset()
 	await get_tree().create_timer(DEATH_DELAY).timeout
 	_snapshot_run()
 	Game.run.die()

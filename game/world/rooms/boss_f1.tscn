@@ -1,113 +1,119 @@
 [gd_scene format=4]
 
-[ext_resource type="Script" path="res://world/room.gd" id="1_104al"]
-[ext_resource type="Texture2D" path="res://assets/rooms/boss_f1.png" id="2_ocxoa"]
-[ext_resource type="TileSet" path="res://world/tiles_floor1.tres" id="3_rnedu"]
-[ext_resource type="Texture2D" path="res://assets/rooms/doors.png" id="4_kpmnc"]
+[ext_resource type="Script" path="res://world/room.gd" id="1_ocxoa"]
+[ext_resource type="Texture2D" path="res://assets/rooms/boss_f1.png" id="2_rnedu"]
+[ext_resource type="TileSet" path="res://world/tiles_floor1.tres" id="3_kpmnc"]
+[ext_resource type="Script" path="res://world/room_door.gd" id="4_hkdl5"]
+[ext_resource type="Texture2D" path="res://assets/rooms/doors.png" id="5_j5lpi"]
 
-[sub_resource type="Gradient" id="Gradient_hkdl5"]
+[sub_resource type="Gradient" id="Gradient_ikr4h"]
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
 
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_j5lpi"]
-gradient = SubResource("Gradient_hkdl5")
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_dtys8"]
+gradient = SubResource("Gradient_ikr4h")
 width = 128
 height = 128
 fill = 1
 fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ikr4h"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ajqh7"]
 size = Vector2(448, 16)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_dtys8"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_b50qx"]
 size = Vector2(4, 80)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ajqh7"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_b5kfe"]
 size = Vector2(4, 96)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_b50qx"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_qvgkc"]
 size = Vector2(4, 224)
 
-[node name="BossF1" type="Node2D" unique_id=21773562]
+[node name="BossF1" type="Node2D" unique_id=2073293839]
 y_sort_enabled = true
-script = ExtResource("1_104al")
+script = ExtResource("1_ocxoa")
 is_boss = true
 
-[node name="Background" type="Sprite2D" parent="." unique_id=53323480]
+[node name="Background" type="Sprite2D" parent="." unique_id=956341680]
 z_index = -5
-texture = ExtResource("2_ocxoa")
+texture = ExtResource("2_rnedu")
 centered = false
 
-[node name="Ambient" type="CanvasModulate" parent="." unique_id=1097985393]
+[node name="Ambient" type="CanvasModulate" parent="." unique_id=751856537]
 color = Color(0.8, 0.76, 0.74, 1)
 
-[node name="Torches" type="Node2D" parent="." unique_id=1373912878]
+[node name="Torches" type="Node2D" parent="." unique_id=88998828]
 
-[node name="Torch1" type="PointLight2D" parent="Torches" unique_id=323198976]
+[node name="Torch1" type="PointLight2D" parent="Torches" unique_id=428508203]
 position = Vector2(120, 8)
 color = Color(1, 0.72, 0.42, 1)
 energy = 0.18
-texture = SubResource("GradientTexture2D_j5lpi")
+texture = SubResource("GradientTexture2D_dtys8")
 texture_scale = 1.2
 
-[node name="Torch2" type="PointLight2D" parent="Torches" unique_id=1857082517]
+[node name="Torch2" type="PointLight2D" parent="Torches" unique_id=429555286]
 position = Vector2(360, 8)
 color = Color(1, 0.72, 0.42, 1)
 energy = 0.18
-texture = SubResource("GradientTexture2D_j5lpi")
+texture = SubResource("GradientTexture2D_dtys8")
 texture_scale = 1.2
 
-[node name="Torch3" type="PointLight2D" parent="Torches" unique_id=38971952]
+[node name="Torch3" type="PointLight2D" parent="Torches" unique_id=1967158690]
 position = Vector2(120, 248)
 color = Color(1, 0.72, 0.42, 1)
 energy = 0.18
-texture = SubResource("GradientTexture2D_j5lpi")
+texture = SubResource("GradientTexture2D_dtys8")
 texture_scale = 1.2
 
-[node name="Torch4" type="PointLight2D" parent="Torches" unique_id=24944933]
+[node name="Torch4" type="PointLight2D" parent="Torches" unique_id=1109453185]
 position = Vector2(360, 248)
 color = Color(1, 0.72, 0.42, 1)
 energy = 0.18
-texture = SubResource("GradientTexture2D_j5lpi")
+texture = SubResource("GradientTexture2D_dtys8")
 texture_scale = 1.2
 
-[node name="Walls" type="TileMapLayer" parent="." unique_id=1145505331]
+[node name="Walls" type="TileMapLayer" parent="." unique_id=1638372181]
 visible = false
 tile_map_data = PackedByteArray("AAAAAAAAAAAFAAAAAAABAAAAAAAEAAAAAAACAAAAAAAEAAAAAAADAAAAAAAEAAAAAAAEAAAAAAAEAAAAAAAFAAAAAAAEAAAAAAAGAAAAAAAEAAAAAAAHAAAAAAAFAAEAAAAIAAAAAAAEAAAAAAAJAAAAAAAEAAAAAAAKAAAAAAAEAAAAAAALAAAAAAAEAAAAAAAMAAAAAAAEAAAAAAANAAAAAAAEAAAAAAAOAAAAAAAEAAAAAAAPAAAAAAAEAAAAAAAQAAAAAAAEAAAAAAARAAAAAAAEAAAAAAASAAAAAAAEAAAAAAATAAAAAAAEAAAAAAAUAAAAAAAEAAAAAAAVAAAAAAAEAAAAAAAWAAAAAAAFAAEAAAAXAAAAAAAEAAAAAAAYAAAAAAAEAAAAAAAZAAAAAAAEAAAAAAAaAAAAAAAEAAAAAAAbAAAAAAAEAAAAAAAcAAAAAAAEAAAAAAAdAAAAAAAFAAAAAAAAAAEAAAAFAAAAAAAdAAEAAAAFAAAAAAAAAAIAAAAFAAAAAAAdAAIAAAAFAAAAAAAAAAMAAAAFAAAAAAAFAAMAAAAGAAAAAAAYAAMAAAAGAAAAAAAdAAMAAAAFAAAAAAAAAAQAAAAFAAAAAAAdAAQAAAAFAAAAAAAAAAUAAAAFAAAAAAAdAAUAAAAFAAAAAAAAAAYAAAAFAAAAAAAdAAYAAAAFAAAAAAAAAAcAAAACAAEAAEAdAAcAAAAFAAAAAAAAAAgAAAAFAAAAAAAdAAgAAAAFAAAAAAAAAAkAAAAFAAAAAAAdAAkAAAAFAAAAAAAAAAoAAAAFAAAAAAAdAAoAAAAFAAAAAAAAAAsAAAAFAAAAAAAdAAsAAAAFAAAAAAAAAAwAAAAFAAAAAAAFAAwAAAAGAAAAAAAYAAwAAAAGAAAAAAAdAAwAAAAFAAAAAAAAAA0AAAAFAAAAAAAdAA0AAAAFAAAAAAAAAA4AAAAFAAAAAAAdAA4AAAAFAAAAAAAAAA8AAAAFAAAAAAABAA8AAAAFAAAAAAACAA8AAAAFAAAAAAADAA8AAAAFAAAAAAAEAA8AAAAFAAAAAAAFAA8AAAAFAAAAAAAGAA8AAAAFAAAAAAAHAA8AAAAFAAAAAAAIAA8AAAAFAAAAAAAJAA8AAAAFAAAAAAAKAA8AAAAFAAAAAAALAA8AAAAFAAAAAAAMAA8AAAAFAAAAAAANAA8AAAAFAAAAAAAOAA8AAAAFAAAAAAAPAA8AAAAFAAAAAAAQAA8AAAAFAAAAAAARAA8AAAAFAAAAAAASAA8AAAAFAAAAAAATAA8AAAAFAAAAAAAUAA8AAAAFAAAAAAAVAA8AAAAFAAAAAAAWAA8AAAAFAAAAAAAXAA8AAAAFAAAAAAAYAA8AAAAFAAAAAAAZAA8AAAAFAAAAAAAaAA8AAAAFAAAAAAAbAA8AAAAFAAAAAAAcAA8AAAAFAAAAAAAdAA8AAAAFAAAAAAA=")
-tile_set = ExtResource("3_rnedu")
+tile_set = ExtResource("3_kpmnc")
 
-[node name="Spawns" type="Node2D" parent="." unique_id=1446019287]
+[node name="Spawns" type="Node2D" parent="." unique_id=718347444]
 
-[node name="Boss Big1" type="Marker2D" parent="Spawns" unique_id=2087475416]
+[node name="Boss Big1" type="Marker2D" parent="Spawns" unique_id=467209348]
 position = Vector2(328, 120)
 metadata/enemy = "boss_big"
 metadata/base = "crawler"
 
-[node name="WallFaceBlockers" type="StaticBody2D" parent="." unique_id=196356449]
+[node name="WallFaceBlockers" type="StaticBody2D" parent="." unique_id=1961818483]
 
-[node name="@CollisionShape2D@48" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=368446535]
+[node name="@CollisionShape2D@54" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=1221520256]
 position = Vector2(240, 24)
-shape = SubResource("RectangleShape2D_ikr4h")
-
-[node name="@CollisionShape2D@49" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=402555725]
-position = Vector2(18, 56)
-shape = SubResource("RectangleShape2D_dtys8")
-
-[node name="@CollisionShape2D@50" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=1097434521]
-position = Vector2(18, 192)
 shape = SubResource("RectangleShape2D_ajqh7")
 
-[node name="@CollisionShape2D@51" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=204625917]
-position = Vector2(462, 128)
+[node name="@CollisionShape2D@55" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=1427614097]
+position = Vector2(18, 56)
 shape = SubResource("RectangleShape2D_b50qx")
 
-[node name="Entry" type="Marker2D" parent="." unique_id=1433331354]
+[node name="@CollisionShape2D@56" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=749759567]
+position = Vector2(18, 192)
+shape = SubResource("RectangleShape2D_b5kfe")
+
+[node name="@CollisionShape2D@57" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=362368793]
+position = Vector2(462, 128)
+shape = SubResource("RectangleShape2D_qvgkc")
+
+[node name="Entry" type="Marker2D" parent="." unique_id=1960942364]
 position = Vector2(24, 120)
 
-[node name="EntryDoor" type="Sprite2D" parent="." unique_id=304268299]
+[node name="Back" type="Node2D" parent="." unique_id=587204964]
+position = Vector2(8, 120)
+script = ExtResource("4_hkdl5")
+starts_shut = true
+
+[node name="Sprite" type="Sprite2D" parent="Back" unique_id=762443350]
 z_index = -4
-position = Vector2(4, 120)
-texture = ExtResource("4_kpmnc")
+position = Vector2(-4, 0)
+texture = ExtResource("5_j5lpi")
 offset = Vector2(0, -8)
 hframes = 3
 vframes = 2

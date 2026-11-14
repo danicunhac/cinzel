@@ -6,7 +6,7 @@ To change a room, edit its layout in `tools/build_rooms.gd` and rerun:
 
     godot --headless --path game -s res://tools/build_rooms.gd
 
-The script checks every layout before writing anything: all floor reachable from the entry, exit reachable, no spawn within 144 px of the entry, one chest spot per random template.
+The script checks every layout before writing anything: all floor reachable from the entry, exit reachable, no spawn within 144 px of the entry, one chest spot per random template, and (non-boss rooms) a 2x2 floor block near the entry for the `StairsSpot` marker, where a floor's first room shows its stairs down. The entry door is a `Back` RoomDoor: shut in a floor's first room, otherwise it leads back to the previous room.
 
 ## Painted rooms
 
