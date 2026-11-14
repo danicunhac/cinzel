@@ -43,6 +43,8 @@ var _alive: int = 0
 var _has_chest: bool = false
 var _started: bool = false
 var _has_back: bool = false
+## Restored room whose chest was opened on an earlier visit.
+var _chest_looted: bool = false
 
 @onready var walls: TileMapLayer = $Walls
 @onready var entry: Marker2D = $Entry
@@ -74,9 +76,8 @@ func start(extra: int, has_chest: bool, rng: RandomNumberGenerator,
 			_drop_item(it)
 	if save != null and save.cleared:
 		restored = true
+		_chest_looted = save.chests_opened.has(0)
 		_clear()
-		if chest != null and save.chests_opened.has(0):
-			_show_chest_open(chest)
 		return
 	if start_hp_ratio < 1.0:
 		_lower_player_hp()
@@ -145,12 +146,21 @@ func _clear() -> void:
 	if _has_back:
 		back_door.set_open(true)
 	if _has_chest:
-		chest = ChestScene.instantiate() as Chest
-		chest.position = ($ChestSpot as Marker2D).position
 		# Deferred: the last kill lands inside a physics callback, where a
-		# new body cannot join the space.
-		add_child.call_deferred(chest)
+		# new body cannot join the space. The chest is made in the deferred
+		# call too, so a room freed before it runs leaves no orphan behind.
+		_add_chest.call_deferred()
 	cleared.emit()
+
+
+func _add_chest() -> void:
+	if chest != null or not is_inside_tree():
+		return
+	chest = ChestScene.instantiate() as Chest
+	chest.position = ($ChestSpot as Marker2D).position
+	add_child(chest)
+	if _chest_looted:
+		_show_chest_open(chest)
 
 
 ## Writes what must survive a later visit into `save`.

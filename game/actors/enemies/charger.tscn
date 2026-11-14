@@ -18,8 +18,8 @@ radius = 12.0
 [node name="Charger" type="CharacterBody2D" groups=["enemy"]]
 motion_mode = 1
 script = ExtResource("1")
-base_hp = 40
-base_damage = 15
+base_hp = 60
+base_damage = 19
 gold_drop = 10
 
 [node name="Sprite" type="Sprite2D" parent="."]

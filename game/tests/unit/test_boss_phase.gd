@@ -84,19 +84,28 @@ func test_final_boss_fires_a_fan() -> void:
 	holder.free()
 
 
-func test_big_boss_scales_base_hp_by_8_and_level() -> void:
+## Base hp and damage of an enemy scene (tuned in docs/balance.md).
+func _base(path: String) -> Vector2i:
+	var e := (load(path) as PackedScene).instantiate() as EnemyBase
+	var out := Vector2i(e.base_hp, e.base_damage)
+	e.free()
+	return out
+
+
+func test_big_boss_scales_base_hp_by_hp_mult_and_level() -> void:
 	_game().new_run()
 	_game().run.clock.seconds = 180.0
+	var crawler := _base("res://actors/enemies/crawler.tscn")
 	var crawler_boss := await _big("res://actors/enemies/crawler.tscn")
-	T.eq(crawler_boss.health.max_hp, roundi(30 * 8 * Difficulty.enemy_hp_mult(3)), "crawler x8 at level 3")
+	T.eq(crawler_boss.health.max_hp, roundi(crawler.x * BossBig.HP_MULT * Difficulty.enemy_hp_mult(3)), "crawler x HP_MULT at level 3")
 	T.eq(crawler_boss.health.hp, crawler_boss.health.max_hp)
-	T.eq(crawler_boss.hitbox.damage, roundi(10 * Difficulty.enemy_dmg_mult(3)))
+	T.eq(crawler_boss.hitbox.damage, roundi(crawler.y * Difficulty.enemy_dmg_mult(3)))
 	T.eq(crawler_boss.dashes, false)
 	T.eq(crawler_boss.sprite.scale, Vector2(2, 2), "drawn at x2")
 	crawler_boss.free()
 	_game().new_run()
 	var charger_boss := await _big("res://actors/enemies/charger.tscn")
-	T.eq(charger_boss.health.max_hp, 40 * 8, "charger x8 at level 0")
+	T.eq(charger_boss.health.max_hp, _base("res://actors/enemies/charger.tscn").x * BossBig.HP_MULT, "charger x HP_MULT at level 0")
 	T.eq(charger_boss.dashes, true)
 	T.ok(charger_boss.is_in_group(&"boss"), "in group boss")
 	charger_boss.free()
@@ -144,7 +153,8 @@ func test_boss_hp_signal_on_spawn_and_damage() -> void:
 	big.boss_hp.connect(func(hp: int, _max_hp: int) -> void: big_got.append(hp))
 	await _add(big)
 	big.health.damage(5, Vector2.ZERO)
-	T.eq(big_got, [240, 235] as Array[int])
+	var full := _base("res://actors/enemies/crawler.tscn").x * BossBig.HP_MULT
+	T.eq(big_got, [full, full - 5] as Array[int])
 	big.free()
 
 

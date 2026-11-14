@@ -18,8 +18,8 @@ radius = 6.0
 [node name="Shooter" type="CharacterBody2D" groups=["enemy"]]
 motion_mode = 1
 script = ExtResource("1")
-base_hp = 20
-base_damage = 8
+base_hp = 30
+base_damage = 11
 gold_drop = 6
 
 [node name="Sprite" type="Sprite2D" parent="."]

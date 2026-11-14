@@ -461,3 +461,19 @@ func test_shop_gear_sells_on_second_press_only() -> void:
 	p.close()
 	town.free()
 	_game().new_run()
+
+
+func test_debug_give_takes_any_catalog_item() -> void:
+	_game().new_run()
+	var run: RunState = _game().run
+	T.eq(_game().give_debug("mat_slime_gel:14"), 14, "materials past one stack")
+	T.eq(run.inventory.count(&"mat_slime_gel"), 14)
+	T.eq(_game().give_debug("mat_tower_crystal"), 1, "qty defaults to 1")
+	T.eq(_game().give_debug("helm_iron:1"), 1, "gear")
+	T.eq(run.inventory.count(&"helm_iron"), 1)
+	T.eq(_game().give_debug("gold:250"), 250, "gold")
+	T.eq(run.gold, 250)
+	T.eq(_game().give_debug("outfit_manto_mago"), 1, "outfit unlocks")
+	T.ok(run.unlocked_outfits.has(&"outfit_manto_mago"))
+	T.eq(_game().give_debug("nope:3"), 0, "unknown id gives nothing")
+	_game().new_run()

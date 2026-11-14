@@ -38,4 +38,4 @@ func _capture(scene_path: String, out_path: String, frames: int) -> void:
 	var err := img.save_png(out_path)
 	if err != OK:
 		push_error("screenshot: save failed %d" % err)
-	get_tree().quit(0 if err == OK else 1)
+	Sfx.quit_clean(0 if err == OK else 1)

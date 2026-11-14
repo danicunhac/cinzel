@@ -181,7 +181,7 @@ func _on_title() -> void:
 
 func _on_quit() -> void:
 	if _confirm(quit_button):
-		get_tree().quit()
+		Sfx.quit_clean()
 
 
 func _debug_inventory(slot: int) -> void:

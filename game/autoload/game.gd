@@ -25,7 +25,6 @@ var _fade_tween: Tween
 func _ready() -> void:
 	if run == null:
 		new_run()
-	apply_debug_loadout()
 
 
 func toast(text: String) -> void:
@@ -36,6 +35,8 @@ func new_run() -> void:
 	run = RunState.new()
 	run.looted.connect(func(id: StringName, qty: int) -> void: loot_taken.emit(id, qty))
 	in_boss_room = false
+	# Every new run (also "Novo jogo" on the title) gets the debug kit.
+	apply_debug_loadout()
 
 
 ## Every scene change uses the same transition: the screen cuts to black and
@@ -114,23 +115,41 @@ func swap_for(id: StringName, slot: int) -> Dictionary:
 	return out
 
 
-## Debug for screenshots, read once at start:
-## `--give=<id>:<qty>,...` puts items in the backpack (outfits unlock),
-## `--equip=<id>,...` gives and equips them.
+## Debug for demos and screenshots, applied to every new run:
+## `--give=<id>:<qty>,...` puts any catalog item in the backpack (materials
+## stack, outfits unlock; `gold:<n>` adds gold), `--equip=<id>,...` gives and
+## equips them. An unknown id, or what does not fit, only warns.
 func apply_debug_loadout() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--give="):
 			for part in a.substr(7).split(",", false):
-				var kv := part.split(":")
-				var id := StringName(kv[0])
-				if ItemDB.has(id):
-					if ItemDB.kind(id) == &"outfit":
-						run.unlock_outfit(id)
-					else:
-						run.inventory.add(id, int(kv[1]) if kv.size() > 1 else 1)
+				give_debug(part)
 		elif a.begins_with("--equip="):
 			for part in a.substr(8).split(",", false):
 				var id := StringName(part)
 				if ItemDB.has(id):
 					run.inventory.add(id)
 					run.equip(id)
+				else:
+					push_warning("--equip: unknown item '%s'" % part)
+
+
+## One `<id>:<qty>` of --give (qty defaults to 1). Returns what was given.
+func give_debug(part: String) -> int:
+	var kv := part.strip_edges().split(":")
+	var id := StringName(kv[0])
+	var qty := maxi(int(kv[1]), 1) if kv.size() > 1 and kv[1].is_valid_int() else 1
+	if id == &"gold":
+		run.add_gold(qty)
+		return qty
+	if not ItemDB.has(id):
+		push_warning("--give: unknown item '%s'" % kv[0])
+		return 0
+	if ItemDB.kind(id) == &"outfit":
+		run.unlock_outfit(id)
+		return 1
+	var left := run.inventory.add(id, qty)
+	if left > 0:
+		push_warning("--give: backpack full, %d x %s left out" % [left, id])
+	run.changed.emit()
+	return qty - left

@@ -1,8 +1,9 @@
 extends Node
 ## Autoload. Sound effects from a pool of players on the "SFX" bus, music
 ## with a short crossfade on the "Music" bus, and the volume of both
-## (saved in user://settings.cfg). The game must read without sound
-## (docs/gdd.md, audio), so a missing or unknown id only warns.
+## (saved in user://settings.cfg once a slider settles). The game must read
+## without sound (docs/gdd.md, audio), so a missing or unknown
+## id only warns.
 ## UI sounds are wired here too, without touching the panels: the tree pausing
 ## (a panel or the pause menu opens) plays ui_open, unpausing ui_close; focus
 ## moving between buttons plays ui_move; any button press ui_confirm; and gold
@@ -19,6 +20,8 @@ const CROSSFADE := 0.5
 const REPEAT_MS := 35
 const DEFAULT_VOLUME: Dictionary[StringName, float] = {MUSIC_BUS: 0.55, SFX_BUS: 0.8}
 const SILENT_DB := -60.0
+## settings.cfg is written this long after the last volume change.
+const SAVE_DELAY := 0.4
 
 const IDS: Array[StringName] = [
 	&"swing_light", &"swing_heavy", &"bow_shot", &"hit", &"crit", &"player_hurt",
@@ -46,6 +49,8 @@ var _music_on: int = 0
 var _music_id: StringName = &""
 var _music_tween: Tween
 var _volume: Dictionary[StringName, float] = {}
+## Seconds until the pending settings write (0 = none pending).
+var _save_left: float = 0.0
 # UI watcher.
 var _was_paused: bool = false
 var _gold_seen: int = -1
@@ -74,6 +79,47 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_watch_ui()
+	if _save_left > 0.0:
+		_save_left -= _delta / maxf(Engine.time_scale, 0.0001)
+		if _save_left <= 0.0:
+			_save_settings()
+
+
+## At exit: stop every player and drop the cached streams, so nothing is
+## still referenced when the engine counts leaks.
+func _exit_tree() -> void:
+	shutdown()
+
+
+## Stops all sound, drops the cached streams and writes a pending settings
+## change. The audio server lets go of a stopped sound a frame or two later,
+## so a quit that wants no leak warning calls this and waits (quit_clean).
+func shutdown() -> void:
+	if _save_left > 0.0:
+		_save_left = 0.0
+		_save_settings()
+	if _music_tween != null and _music_tween.is_valid():
+		_music_tween.kill()
+	_music_tween = null
+	for p in _pool + _music:
+		p.stop()
+		p.stream = null
+	for id: StringName in _loops.keys():
+		stop_loop(id)
+	_streams.clear()
+	_music_id = &""
+
+
+## Quits after letting the audio server release every sound (no "leaked at
+## exit" warnings). Tools and the "Fechar o jogo" button use it.
+func quit_clean(code: int = 0) -> void:
+	shutdown()
+	# The mixer runs on its own thread in real time (a --fixed-fps run can be
+	# far ahead of it): give it a moment, then a few frames to clean up.
+	for i in 4:
+		OS.delay_msec(30)
+		await get_tree().process_frame
+	get_tree().quit(code)
 
 
 # --- effects ---
@@ -210,7 +256,8 @@ func set_volume(bus: StringName, v: float, save: bool = true) -> void:
 		AudioServer.set_bus_volume_db(i, linear_to_db(maxf(v, 0.0001)))
 		AudioServer.set_bus_mute(i, v <= 0.001)
 	if save:
-		_save_settings()
+		# A slider fires on every step while dragged: write once it settles.
+		_save_left = SAVE_DELAY
 
 
 ## A labelled slider row bound to `bus`, for menus (the pause menu uses it).

@@ -29,9 +29,9 @@ Vitória: vencer o chefe do andar 3.
 
 ## 4. Regras que já existem no jogo
 
-- **Relógio:** só corre dentro da torre. Na cidade e nos menus ele pausa e não zera. Só zera na morte. Sobe 1 nível a cada 60 s; cada nível dá +10% de vida e +8% de dano aos inimigos, e a partir do nível 5 aparece +1 inimigo por sala.
+- **Relógio:** só corre dentro da torre. Na cidade e nos menus ele pausa e não zera. Só zera na morte. Sobe 1 nível a cada 60 s; cada nível dá +10% de vida e +8% de dano aos inimigos, e a partir do nível 5 aparece +1 inimigo por sala (regra mantida no balanço de 14/11).
 - **Combate:** combo de 3 golpes, rolamento com 0,3 s de invencibilidade, vida inicial 100.
-- **Cura:** depois de 1,5 s parado, recupera 8 de vida por segundo, com aura amarela.
+- **Cura:** depois de 1,5 s parado, recupera 6 de vida por segundo (era 8; ver `docs/balance.md`), com aura amarela.
 - **Saída:** segurar Q por 2 s. Não funciona na sala do chefe e é cancelada se o jogador levar dano.
 - **Morte:** perde tudo e volta ao andar 1 com o relógio zerado.
 - **Andares:** 3 andares. Cada um tem um tutorial (só no andar 1), de 4 a 5 salas sorteadas e um chefe. Vencer o chefe libera o próximo andar no teleporte.

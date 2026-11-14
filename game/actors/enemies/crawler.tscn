@@ -18,8 +18,8 @@ radius = 9.0
 [node name="Crawler" type="CharacterBody2D" groups=["enemy"]]
 motion_mode = 1
 script = ExtResource("1")
-base_hp = 30
-base_damage = 10
+base_hp = 45
+base_damage = 13
 gold_drop = 4
 
 [node name="Sprite" type="Sprite2D" parent="."]
