@@ -29,9 +29,10 @@ static func format_time(seconds: float) -> String:
 
 
 static func item_icon(id: StringName) -> Texture2D:
-	if not ItemDB.has(id):
+	# New items have no icon until the art lands (E3).
+	if not ItemDB.has(id) or not ResourceLoader.exists(ItemDB.icon_path(id)):
 		return null
-	return load(String(ItemDB.get_def(id)["icon"])) as Texture2D
+	return load(ItemDB.icon_path(id)) as Texture2D
 
 
 static func item_name(id: StringName) -> String:

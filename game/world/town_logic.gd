@@ -20,20 +20,21 @@ static func nearest_spot(pos: Vector2, spots: Dictionary[StringName, Vector2], r
 
 
 ## Whether the spot has something to do right now. The shop always can (buy
-## or sell), the smith needs two items to trade, the crystal always works.
-static func can_act(id: StringName, item_count: int) -> bool:
+## or sell), the smith when a recipe can be forged (Forge.any_craftable), the
+## crystal always works. `item_count` is the backpack's used slots.
+static func can_act(id: StringName, _item_count: int, can_forge: bool = false) -> bool:
 	match id:
 		&"shop", &"teleport":
 			return true
 		&"smith":
-			return item_count >= 2
+			return can_forge
 	return false
 
 
 ## The ring and glow show only on the spot the player is at, and only when
 ## there is an action to take there.
-static func cta_visible(id: StringName, near: StringName, item_count: int) -> bool:
-	return id != &"" and id == near and can_act(id, item_count)
+static func cta_visible(id: StringName, near: StringName, item_count: int, can_forge: bool = false) -> bool:
+	return id != &"" and id == near and can_act(id, item_count, can_forge)
 
 
 static func word_count(text: String) -> int:
