@@ -1,0 +1,350 @@
+{
+ "boss_f1": {
+  "after": 0.156,
+  "applied_shift": [
+   0,
+   -4
+  ],
+  "best": 0.1664,
+  "colors": 48,
+  "drift": 8,
+  "edges": [
+   24,
+   244,
+   16,
+   463
+  ],
+  "edges_after": [
+   3,
+   241,
+   16,
+   463
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.1912,
+  "obstacles": 0.286,
+  "shift": [
+   0,
+   -7
+  ]
+ },
+ "boss_f2": {
+  "after": 0.1272,
+  "applied_shift": [
+   0,
+   3
+  ],
+  "best": 0.127,
+  "colors": 48,
+  "drift": 15,
+  "edges": [
+   11,
+   237,
+   31,
+   457
+  ],
+  "edges_after": [
+   14,
+   240,
+   31,
+   457
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.1277,
+  "obstacles": 0.159,
+  "shift": [
+   0,
+   2
+  ]
+ },
+ "boss_f3": {
+  "after": 0.3071,
+  "best": 0.2846,
+  "colors": 48,
+  "drift": 12,
+  "edges": [
+   4,
+   242,
+   12,
+   469
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.311,
+  "obstacles": 0.177,
+  "shift": [
+   -8,
+   -8
+  ]
+ },
+ "f1_anel": {
+  "after": 0.1612,
+  "best": 0.1483,
+  "colors": 48,
+  "drift": 9,
+  "edges": [
+   25,
+   235,
+   12,
+   468
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.1616,
+  "obstacles": 0.861,
+  "shift": [
+   -8,
+   -3
+  ]
+ },
+ "f1_antessala": {
+  "after": 0.1269,
+  "applied_shift": [
+   0,
+   -1
+  ],
+  "best": 0.1186,
+  "colors": 48,
+  "drift": 15,
+  "edges": [
+   31,
+   241,
+   19,
+   459
+  ],
+  "edges_after": [
+   30,
+   240,
+   19,
+   459
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.1326,
+  "obstacles": 0.782,
+  "shift": [
+   -1,
+   -6
+  ]
+ },
+ "f1_arena": {
+  "after": 0.279,
+  "best": 0.251,
+  "colors": 48,
+  "drift": 35,
+  "edges": [
+   0,
+   246,
+   41,
+   429
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.2803,
+  "obstacles": 0.466,
+  "shift": [
+   -5,
+   -7
+  ]
+ },
+ "f1_colunas": {
+  "after": 0.1709,
+  "applied_shift": [
+   0,
+   -3
+  ],
+  "best": 0.1677,
+  "colors": 48,
+  "drift": 12,
+  "edges": [
+   28,
+   243,
+   11,
+   469
+  ],
+  "edges_after": [
+   25,
+   240,
+   11,
+   469
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.2023,
+  "obstacles": 0.449,
+  "shift": [
+   -5,
+   -8
+  ]
+ },
+ "f1_cruz": {
+  "after": 0.1484,
+  "best": 0.1446,
+  "colors": 48,
+  "drift": 15,
+  "edges": [
+   17,
+   239,
+   31,
+   451
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.1497,
+  "obstacles": 0.996,
+  "shift": [
+   -1,
+   -3
+  ]
+ },
+ "f1_galeria": {
+  "after": 0.2623,
+  "best": 0.2214,
+  "colors": 48,
+  "drift": 7,
+  "edges": [
+   23,
+   239,
+   15,
+   465
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.2633,
+  "obstacles": 0.439,
+  "shift": [
+   -8,
+   -7
+  ]
+ },
+ "t1_move_attack": {
+  "after": 0.1147,
+  "best": 0.1053,
+  "colors": 48,
+  "drift": 6,
+  "edges": [
+   66,
+   234,
+   19,
+   463
+  ],
+  "edges_want": [
+   64,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.1153,
+  "obstacles": 0.732,
+  "shift": [
+   -1,
+   6
+  ]
+ },
+ "t2_dodge": {
+  "after": 0.1028,
+  "applied_shift": [
+   0,
+   3
+  ],
+  "best": 0.1046,
+  "colors": 48,
+  "drift": 4,
+  "edges": [
+   61,
+   236,
+   16,
+   462
+  ],
+  "edges_after": [
+   64,
+   239,
+   16,
+   462
+  ],
+  "edges_want": [
+   64,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.1101,
+  "obstacles": 0.778,
+  "shift": [
+   0,
+   3
+  ]
+ },
+ "t3_heal": {
+  "after": 0.0877,
+  "applied_shift": [
+   0,
+   2
+  ],
+  "best": 0.0873,
+  "colors": 48,
+  "drift": 6,
+  "edges": [
+   62,
+   234,
+   19,
+   461
+  ],
+  "edges_after": [
+   64,
+   236,
+   19,
+   461
+  ],
+  "edges_want": [
+   64,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.0965,
+  "obstacles": 0.759,
+  "shift": [
+   -1,
+   3
+  ]
+ }
+}
