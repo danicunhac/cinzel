@@ -41,9 +41,25 @@ ATTACK_ROWS = ["attack_down", "attack_up", "attack_side"]
 TYPES = ["sword", "longsword", "axe", "spear", "dagger", "bow"]
 DIRS = ["down", "up", "side"]
 
-# type -> dir -> (strip file in art-src/gen/r2, x shift of the anchor per
-# frame (positive moves the figure left), source boxes to erase first)
+# type -> dir -> (strip file in art-src/gen/r2, x shift of the anchor, one
+# value or one per frame (negative moves the figure left, so a weapon
+# reaching right fits the cell), source boxes to erase first)
 OVERRIDES = {
+    "axe": {
+        "down": ("climber32-attack-axe-down-1.png", 0, ()),
+        "up": ("climber32-attack-axe-up-1.png", 0, ()),
+        "side": ("climber32-attack-axe-side-1.png", -2, ()),
+    },
+    "spear": {
+        "down": ("climber32-attack-spear-down-1.png", 0, ()),
+        "up": ("climber32-attack-spear-up-2.png", 0, ()),
+        "side": ("climber32-attack-spear-side-2.png", (-4, -4, -6, -7, -4, -4), ()),
+    },
+    "dagger": {
+        "down": ("climber32-attack-dagger-down-1.png", 0, ()),
+        "up": ("climber32-attack-dagger-up-1.png", 0, ()),
+        "side": ("climber32-attack-dagger-side-1.png", (0, -3, 0, -3, 0, 0), ()),
+    },
     "longsword": {
         "down": ("climber32-attack-longsword-down-1.png", 0, ()),
         "up": ("climber32-attack-longsword-up-2.png", 0, ()),
@@ -296,19 +312,58 @@ def split_body(img, n):
     return boxes
 
 
+def coloured(c):
+    """A body pixel with colour: not steel, not the slash arc, not outline."""
+    return bc.solid(c) and not bc.is_arc(c) and not bc.is_outline(c)
+
+
+def sole(img, box):
+    """Boot sole: lowest coloured row (at least 8 source pixels), extended
+    down through the outline under the boots. A spear head, axe sparks or a
+    slash arc below the feet are steel, cream or outline, so they are not
+    taken for feet."""
+    x0, y0, x1, y1 = box
+    px = img.load()
+    for y in range(y1 - 1, y0 - 1, -1):
+        xs = [x for x in range(x0, x1) if coloured(px[x, y])]
+        if len(xs) >= 8:
+            lo, hi = min(xs), max(xs) + 1
+            for _ in range(6):  # the outline is about 4 source rows thick
+                if y + 1 >= y1 or sum(1 for x in range(lo, hi) if bc.solid(px[x, y + 1])) < 3:
+                    break
+                y += 1
+            return y + 1
+    return y1
+
+
+def feet_cx(img, box):
+    """Centre of the solid pixels in the 12 rows above the sole, ignoring
+    thin runs (a weapon shaft next to the legs)."""
+    x0, y0, x1, y1 = box
+    px = img.load()
+    s = sole(img, box)
+    cols = [x for x in range(x0, x1) if sum(1 for y in range(s - 12, s) if bc.solid(px[x, y])) >= 4]
+    if not cols:
+        return bc.feet_cx(img, box)
+    return (min(cols) + max(cols) + 1) / 2
+
+
 def override_frames(root, fn, shift, erase):
     img = key(Image.open(os.path.join(root, "art-src/gen/r2", fn)))
     for box in erase:
         img.paste((0, 0, 0, 0), box)
     boxes = split_body(img, 6)
-    hgt = statistics.median(bc.sole(img, boxes[i]) - bc.hood_top(img, boxes[i]) for i in (0, 5))
+    hgt = statistics.median(sole(img, boxes[i]) - bc.hood_top(img, boxes[i]) for i in (0, 5))
     s = bc.FIG_H / hgt
+    # the prompt asks for one ground line: the median sole is that line, and
+    # it holds even where a slash arc hides the boots of one pose
+    ground = statistics.median(sole(img, b) for b in boxes)
     out, lost = [], []
     for i, b in enumerate(boxes):
         small = shrink(img.crop(b), s, bc.is_arc)
-        ax = bc.feet_cx(img, b) - b[0]
+        ax = feet_cx(img, b) - b[0]
         dx = shift[i] if isinstance(shift, tuple) else shift
-        c = bc.place(small, ax * s - dx, (bc.sole(img, b) - b[1]) * s)
+        c = bc.place(small, ax * s - dx, (ground - b[1]) * s)
         # nothing below the ground row (a blade tip or a boot heel)
         c.paste((0, 0, 0, 0), (0, bc.BASE + 1, F, F))
         lost.append(sum(1 for p in small.get_flattened_data() if p[3]) - sum(1 for p in c.get_flattened_data() if p[3]))
