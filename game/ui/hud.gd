@@ -99,6 +99,8 @@ var boss_plaque: NinePatchRect
 var special_icon: SpecialIcon
 var toast_box: NinePatchRect
 var toast_label: Label
+## "+2 Gosma de Slime" stack under the life and gold (Game.loot_taken).
+var loot_toasts: LootToasts
 
 ## Gold shown by the counter (counts toward Game.run.gold).
 var gold_shown: float = 0.0
@@ -137,6 +139,7 @@ func _ready() -> void:
 	UiKit.slide_in(_top_right, Vector2(0, -32), 0.05)
 	UiKit.slide_in(_slot_row, Vector2(0, 32), 0.1)
 	Game.toast_requested.connect(show_toast)
+	Game.loot_taken.connect(loot_toasts.push)
 
 
 func _process(delta: float) -> void:
@@ -430,6 +433,10 @@ func _build() -> void:
 	coin = _sheet_icon(_top_left, COIN_TEX, COIN_FRAME, COIN_HOME)
 	gold_label = _label(_top_left, Vector2(16, 16), Vector2(80, 10))
 	gold_label.add_theme_color_override("font_color", UiKit.COLOR_GOLD)
+
+	loot_toasts = LootToasts.new()
+	loot_toasts.position = Vector2(4, 30)
+	root.add_child(loot_toasts)
 
 	# Top right: floor, then the small clock block (time and level).
 	_top_right = _group(root, Vector2(w - 84, 2))

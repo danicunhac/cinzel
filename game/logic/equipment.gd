@@ -28,6 +28,18 @@ static func starter() -> Equipment:
 	return e
 
 
+## Independent copy (for "what if I equip this" comparisons).
+func copy() -> Equipment:
+	var e := Equipment.new()
+	e.weapon = weapon
+	e.armor = armor
+	e.helm = helm
+	e.backpack = backpack
+	e.outfit = outfit
+	e.relics = relics.duplicate()
+	return e
+
+
 ## Backpack slots given by the equipped backpack.
 func capacity() -> int:
 	return ItemDB.backpack_slots(backpack)

@@ -143,9 +143,26 @@ func test_full_backpack_keeps_gear_on_floor() -> void:
 	for i in run.inventory.capacity:
 		run.inventory.add(&"mat_stone_shard", 10)
 	var p := _pickup(&"sword_knight", 1)
+	var toasts: Array[String] = []
+	var on_toast := func(t: String) -> void: toasts.append(t)
+	_game().toast_requested.connect(on_toast)
+	var panels: Array[SwapItemPanel] = []
+	var on_added := func(n: Node) -> void:
+		if n is SwapItemPanel:
+			panels.append(n)
+	_tree().node_added.connect(on_added)
+	var leave_later := func() -> void:
+		await _tree().process_frame
+		panels[0].leave_item()
+	leave_later.call()
 	var left: int = await p.take()
+	_tree().node_added.disconnect(on_added)
+	_game().toast_requested.disconnect(on_toast)
+	T.eq(panels.size(), 1, "full backpack: the choice panel opened")
 	T.eq(left, 1)
-	T.ok(not p.is_queued_for_deletion(), "gear stays")
+	T.ok(not p.is_queued_for_deletion(), "left: gear stays")
+	T.eq(toasts.size(), 0, "the panel said it, no toast")
+	T.eq(_tree().paused, false, "unpaused")
 	p.free()
 
 

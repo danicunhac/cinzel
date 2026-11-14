@@ -49,8 +49,9 @@ func test_title_town_tower_and_back() -> void:
 	T.eq(_game().run.clock.running, false)
 	var axe_price: int = _game().run.market.sell_price(&"axe_war")
 	var shop := town.call("open_panel", &"shop") as ShopPanel
-	shop.call("_sell", 0)
-	shop.call("_sell", 0)
+	shop.select_tab(&"sell")
+	shop.select_sell(0)
+	shop.sell_selected()
 	T.eq(_game().run.inventory.count(&"axe_war"), 0, "sold in town")
 	T.eq(_game().run.gold, 10 + axe_price)
 	shop.close()

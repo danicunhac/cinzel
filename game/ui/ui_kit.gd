@@ -20,6 +20,26 @@ const COLOR_ITEM := Color(1.0, 0.88, 0.3)
 const COLOR_GOLD := Color(1.0, 0.8, 0.3)
 const COLOR_DANGER := Color(1.0, 0.38, 0.32)
 const COLOR_MUTED := Color(0.7, 0.64, 0.6)
+## Better / worse stat, the shop's rising price.
+const COLOR_GOOD := Color(0.5, 0.92, 0.42)
+
+## GDD: common white, rare blue, epic purple (same hues as items/frames).
+const RARITY_COLOR: Dictionary[StringName, Color] = {
+	&"common": Color(0.93, 0.91, 0.86),
+	&"rare": Color(0.45, 0.68, 1.0),
+	&"epic": Color(0.78, 0.52, 1.0),
+}
+const RARITY_NAME: Dictionary[StringName, String] = {
+	&"common": "Comum", &"rare": "Rara", &"epic": "Épica",
+}
+const KIND_NAME: Dictionary[StringName, String] = {
+	&"weapon": "Arma", &"armor": "Armadura", &"helm": "Elmo", &"backpack": "Mochila",
+	&"relic": "Relíquia", &"material": "Material", &"outfit": "Roupa",
+}
+const WEAPON_TYPE_NAME: Dictionary[StringName, String] = {
+	&"sword": "Espada", &"longsword": "Espada longa", &"axe": "Machado",
+	&"spear": "Lança", &"dagger": "Adaga", &"bow": "Arco",
+}
 
 
 ## "mm:ss" for the run clock.
@@ -37,6 +57,17 @@ static func item_icon(id: StringName) -> Texture2D:
 
 static func item_name(id: StringName) -> String:
 	return String(ItemDB.get_def(id)["name"]) if ItemDB.has(id) else ""
+
+
+static func rarity_color(id: StringName) -> Color:
+	return RARITY_COLOR.get(ItemDB.rarity(id), COLOR_TEXT)
+
+
+## "Espada - Rara", "Material - Comum".
+static func kind_line(id: StringName) -> String:
+	var k := ItemDB.kind(id)
+	var kind_text: String = WEAPON_TYPE_NAME.get(ItemDB.weapon_type(id), "Arma") if k == &"weapon" else KIND_NAME.get(k, "")
+	return "%s - %s" % [kind_text, RARITY_NAME.get(ItemDB.rarity(id), "")]
 
 
 ## Bronze-and-iron window frame (9-slice of hud/panel.png) of the given size.

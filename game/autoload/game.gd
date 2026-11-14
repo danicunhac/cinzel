@@ -3,6 +3,9 @@ extends Node
 
 ## A short message for the HUD (e.g. "Mochila cheia").
 signal toast_requested(text: String)
+## Loot that went into the run (RunState.looted of the current run): the HUD
+## stacks a "+2 Gosma de Slime" toast for it.
+signal loot_taken(id: StringName, qty: int)
 
 const SwapItemPanelScene := preload("res://ui/swap_item_panel.tscn")
 ## Scene-change fade-in (see goto).
@@ -22,6 +25,7 @@ var _fade_tween: Tween
 func _ready() -> void:
 	if run == null:
 		new_run()
+	apply_debug_loadout()
 
 
 func toast(text: String) -> void:
@@ -30,6 +34,7 @@ func toast(text: String) -> void:
 
 func new_run() -> void:
 	run = RunState.new()
+	run.looted.connect(func(id: StringName, qty: int) -> void: loot_taken.emit(id, qty))
 	in_boss_room = false
 
 
@@ -64,27 +69,67 @@ var _swap_open: bool = false
 
 
 ## Takes the item as loot (RunState.take_loot: free slot, else backpack;
-## outfits unlock). When the backpack is full a relic opens the swap panel
-## over the relic slots; anything else stays on the floor.
-## Returns {"taken": bool, "swapped_out": StringName, "busy": bool}. "busy" is
-## true when the swap panel is already open (nothing was tried). "taken" is true when the
-## new item is now carried; "swapped_out" is the replaced item id
-## (&"" when nothing was replaced). The caller must drop swapped_out as a pickup.
-## Unknown ids, or a call while a panel is already open, return taken = false.
+## outfits unlock). When the backpack is full, gear and relics open the
+## full-backpack choice ("trocar por..."): the player picks a backpack slot
+## to drop for it, or leaves it. Materials just stay on the floor.
+## Returns {"taken": bool, "swapped_out": StringName, "swapped_qty": int,
+## "busy": bool, "chose": bool}. "busy": the choice panel was already open
+## (nothing was tried). "chose": the panel was shown (no "Mochila cheia"
+## toast needed). "swapped_out" is the dropped backpack stack (&"" when none);
+## the caller must drop it as a pickup.
 func offer_item(id: StringName) -> Dictionary:
-	var none := {"taken": false, "swapped_out": &"", "busy": false}
 	if _swap_open:
-		return {"taken": false, "swapped_out": &"", "busy": true}
+		return {"taken": false, "swapped_out": &"", "swapped_qty": 0, "busy": true, "chose": false}
+	var none := {"taken": false, "swapped_out": &"", "swapped_qty": 0, "busy": false, "chose": false}
 	if not ItemDB.has(id):
 		return none
 	if run.take_loot(id) == 0:
-		return {"taken": true, "swapped_out": &"", "busy": false}
-	if ItemDB.kind(id) != &"relic":
+		none["taken"] = true
+		return none
+	if ItemDB.kind(id) == &"material":
 		return none
 	_swap_open = true
 	var panel := SwapItemPanelScene.instantiate() as SwapItemPanel
-	get_tree().current_scene.add_child(panel)
-	panel.open(id)
-	var old: StringName = await panel.closed
+	var host: Node = get_tree().current_scene if get_tree().current_scene != null else get_tree().root
+	host.add_child(panel)
+	panel.open_for(id)
+	var slot: int = await panel.picked
 	_swap_open = false
-	return {"taken": old != &"", "swapped_out": old, "busy": false}
+	return swap_for(id, slot)
+
+
+## Drops backpack `slot` and takes `id` in its place (slot < 0: leaves `id`).
+func swap_for(id: StringName, slot: int) -> Dictionary:
+	var out := {"taken": false, "swapped_out": &"", "swapped_qty": 0, "busy": false, "chose": true}
+	if slot < 0 or run.inventory.id_at(slot) == &"":
+		return out
+	var dropped := run.inventory.take_slot(slot)
+	if run.take_loot(id) > 0:
+		run.inventory.add(dropped["id"], int(dropped["qty"]))
+		return out
+	out["taken"] = true
+	out["swapped_out"] = dropped["id"]
+	out["swapped_qty"] = int(dropped["qty"])
+	return out
+
+
+## Debug for screenshots, read once at start:
+## `--give=<id>:<qty>,...` puts items in the backpack (outfits unlock),
+## `--equip=<id>,...` gives and equips them.
+func apply_debug_loadout() -> void:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--give="):
+			for part in a.substr(7).split(",", false):
+				var kv := part.split(":")
+				var id := StringName(kv[0])
+				if ItemDB.has(id):
+					if ItemDB.kind(id) == &"outfit":
+						run.unlock_outfit(id)
+					else:
+						run.inventory.add(id, int(kv[1]) if kv.size() > 1 else 1)
+		elif a.begins_with("--equip="):
+			for part in a.substr(8).split(",", false):
+				var id := StringName(part)
+				if ItemDB.has(id):
+					run.inventory.add(id)
+					run.equip(id)

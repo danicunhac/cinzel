@@ -4,6 +4,8 @@ extends RefCounted
 ## all (equipment, backpack, gold, floors) except the unlocked outfits.
 
 signal changed
+## Loot that went into the run (take_loot): `qty` units of `id` (HUD toasts).
+signal looted(id: StringName, qty: int)
 
 ## Relic slots (the HUD row and the swap panel).
 const SLOTS := Equipment.RELIC_SLOTS
@@ -83,6 +85,7 @@ func take_loot(id: StringName, qty: int = 1) -> int:
 	var kind := ItemDB.kind(id)
 	if kind == &"outfit":
 		unlock_outfit(id)
+		looted.emit(id, 1)
 		return 0
 	var left := qty
 	while left > 0 and _slot_free_for(kind):
@@ -97,6 +100,8 @@ func take_loot(id: StringName, qty: int = 1) -> int:
 	left = inventory.add(id, left)
 	clamp_hp()
 	changed.emit()
+	if left < qty:
+		looted.emit(id, qty - left)
 	return left
 
 
