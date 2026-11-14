@@ -17,6 +17,7 @@ var quit_button: Button
 var _root: Control
 var _continue: Button
 var _armed: Button = null
+var _frame: Control
 
 
 func _ready() -> void:
@@ -35,6 +36,7 @@ func open() -> void:
 		return
 	UiKit.ensure_wasd_ui()
 	_root.visible = true
+	UiKit.slide_in(_frame, UiKit.SLIDE_PANEL)
 	get_tree().paused = true
 	_continue.grab_focus.call_deferred()
 
@@ -72,8 +74,8 @@ func _build() -> void:
 	dim.color = Color(0.03, 0.02, 0.04, 0.7)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(dim)
-	var box := UiKit.centred_frame(_root, Vector2(200, 148))
-	box.add_child(UiKit.label("Pausa", UiKit.COLOR_TITLE, HORIZONTAL_ALIGNMENT_CENTER))
+	var box := UiKit.centred_frame(_root, Vector2(200, 0), "Pausa")
+	_frame = box.get_parent().get_parent() as Control
 	_continue = _add_button(box, "Continuar")
 	_continue.pressed.connect(close)
 	title_button = _add_button(box, TITLE_TEXT)

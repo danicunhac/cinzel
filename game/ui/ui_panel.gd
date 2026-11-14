@@ -12,6 +12,8 @@ static var open_count: int = 0
 static var last_closed_frame: int = -1
 
 var panel_size: Vector2 = Vector2(240, 140)
+## Shown on a plaque across the top edge of the frame.
+var panel_title: String = ""
 var _root: Control
 var _body: VBoxContainer
 var _open: bool = false
@@ -37,7 +39,7 @@ func open() -> void:
 	dim.color = Color(0.03, 0.02, 0.04, 0.65)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(dim)
-	_body = UiKit.centred_frame(_root, panel_size)
+	_body = UiKit.centred_frame(_root, panel_size, panel_title)
 	refresh()
 
 

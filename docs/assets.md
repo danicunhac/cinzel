@@ -11,6 +11,7 @@ Os scripts em `art-src/` transformam esses originais nas folhas do jogo. Rode co
 - `build_boss.py`: chefe final (quadros de 32x32, mesma receita dos inimigos).
 - `build_tiles.py`: tilesets.
 - `build_ui.py`: ícones dos itens, NPCs da cidade, molduras e ícones da UI, fundo do título. `preview_ui.py` monta uma folha ampliada para revisar.
+- `build_hud.py`: kit do HUD e dos painéis (molduras 9-slice, botões com estados, coração e moeda animados, ampulheta, anel, barras).
 - `check_art.py`: confere tamanho, transparência e no máximo 32 cores.
 
 Nenhum desses scripts sobrescreve um arquivo que já existe, porque ele pode ter sido redesenhado à mão. Para gerar de novo por cima, passe `--force`. `make_placeholders.py` segue a mesma regra.
@@ -40,6 +41,17 @@ Nenhum desses scripts sobrescreve um arquivo que já existe, porque ele pode ter
 | `game/assets/ui/heart.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Coração de `cinzel-ui-kit-sheet` | 2026-11-14 |
 | `game/assets/ui/coin.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Moeda de `cinzel-ui-kit-sheet`, recolorida para dourado (saiu salmão) | 2026-11-14 |
 | `game/assets/ui/title_bg.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | `cinzel-title-bg` reduzido para 320x180, 32 cores | 2026-11-14 |
+| `game/assets/ui/hud/hp_frame.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Moldura da barra de vida de `cinzel-hud-frames-sheet` por `build_hud.py`: metade esquerda reduzida e espelhada, 48x12, 9-slice 5/3/5/3 | 2026-11-14 |
+| `game/assets/ui/hud/boss_frame.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Moldura com chifres da barra do chefe de `cinzel-hud-frames-sheet`, mesma receita, 64x16, 9-slice 14/5/14/3 (a placa de nome é `plaque.png`) | 2026-11-14 |
+| `game/assets/ui/hud/slot.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Espaço de item de `cinzel-hud-frames-sheet-b`, 22x22, simetrizado | 2026-11-14 |
+| `game/assets/ui/hud/plaque.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Placa de ferro de `cinzel-hud-frames-sheet-b`, 9-slice margem 4: bloco do relógio, nome do chefe, títulos dos painéis | 2026-11-14 |
+| `game/assets/ui/hud/button.png, button_hot.png, button_down.png, button_off.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Botão de `cinzel-hud-frames-sheet-b`, 9-slice margem 6; estados ativo (bronze clareado + brilho âmbar de 1 px), pressionado e desligado feitos por script | 2026-11-14 |
+| `game/assets/ui/hud/panel.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Moldura de janela de `cinzel-hud-frames-sheet-b`, 72x70, 9-slice margem 18, miolo escurecido para o texto ler | 2026-11-14 |
+| `game/assets/ui/hud/heart.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Coração de `cinzel-hud-icons-sheet`, 4 quadros de 13x12 (repouso, cresce, pico, volta) por redução em tamanhos diferentes | 2026-11-14 |
+| `game/assets/ui/hud/coin.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Moeda de `cinzel-hud-icons-sheet`, 6 quadros de 9x9 (giro por achatamento; o verso é a face espelhada e mais escura; aro de 2 px) | 2026-11-14 |
+| `game/assets/ui/hud/hourglass.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Ampulheta de `cinzel-hud-icons-sheet`, 6x9 | 2026-11-14 |
+| `game/assets/ui/hud/ring.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Anel de luz de `cinzel-hud-icons-sheet`, 24x24, 8 cores | 2026-11-14 |
+| `game/assets/ui/hud/fill_hp.png`, `fill_boss.png`, `fill_exit.png`, `fill_tip.png` | Autoral (script) | Rampas de 4 tons das barras e o pulso de luz da ponta, desenhados por `build_hud.py` | 2026-11-14 |
 | `game/assets/fonts/Silkscreen-Regular.ttf` | Terceiros: fonte Silkscreen, licença SIL OFL 1.1 | Fonte Silkscreen (Jason Kottke), SIL OFL 1.1, de google/fonts; licença em `Silkscreen-OFL.txt` | 2026-11-14 |
 
 Quando o Daniel redesenhar um arquivo à mão, troque a autoria dessa linha para "Autoral (Daniel)".
@@ -107,3 +119,6 @@ Todos os tilesets têm 8 colunas x 2 linhas de tiles 16x16. As coordenadas são 
 | (5, 1) | `banner` | estandarte azul (fundo transparente) |
 | (6, 1) | `wall_top` | topo do muro, visto de cima |
 | (7, 1) | `water` | água rasa |
+| `art-src/gen/hud-frames-sheet.png` | `cinzel-hud-frames-sheet-218b52ab9951` | `fal-ai/nano-banana-2/edit` (via `generate_styled_image`), preset `cinzel-pixel`, papel `uiElements`, 2K, 16:9 | Kit de HUD sobre magenta: barra de vida de ferro com cantos de bronze, barra do chefe com pontas de chifre e placa no meio, espaço de item, placa, botão, janela. Só as duas barras saíram limpas: o resto veio misturado com a arte de referência da cidade | 2026-11-14 |
+| `art-src/gen/hud-frames-sheet-b.png` | `cinzel-hud-frames-sheet-b-0c785c1847fa` | idem, 2K, 1:1 | Espaço de item de ferro rebitado com cantos de bronze, placa de ferro com friso de bronze, botão marrom com borda de bronze chanfrada, janela de bronze e ferro com cantos ornamentados, sobre magenta | 2026-11-14 |
+| `art-src/gen/hud-icons-sheet.png` | `cinzel-hud-icons-sheet-da5da5001b42` | idem, 1K, 4:1 | Coração vermelho, moeda dourada com torre em relevo, ampulheta de bronze com areia âmbar, anel de luz âmbar, sobre magenta | 2026-11-14 |

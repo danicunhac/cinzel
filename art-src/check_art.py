@@ -35,6 +35,23 @@ SHEETS = {
     "game/assets/ui/heart.png": (9, 8, 1),
     "game/assets/ui/coin.png": (8, 8, 8),
     "game/assets/ui/title_bg.png": (320, 180, 20),
+    "game/assets/ui/hud/hp_frame.png": (48, 12, 12),
+    "game/assets/ui/hud/boss_frame.png": (64, 16, 16),
+    "game/assets/ui/hud/slot.png": (22, 22, 22),
+    "game/assets/ui/hud/plaque.png": (30, 16, 2),
+    "game/assets/ui/hud/button.png": (42, 24, 6),
+    "game/assets/ui/hud/button_hot.png": (42, 24, 6),
+    "game/assets/ui/hud/button_down.png": (42, 24, 6),
+    "game/assets/ui/hud/button_off.png": (42, 24, 6),
+    "game/assets/ui/hud/panel.png": (72, 70, 2),
+    "game/assets/ui/hud/heart.png": (52, 12, 1),
+    "game/assets/ui/hud/coin.png": (54, 9, 9),
+    "game/assets/ui/hud/hourglass.png": (6, 9, 1),
+    "game/assets/ui/hud/ring.png": (24, 24, 24),
+    "game/assets/ui/hud/fill_hp.png": (1, 6, 1),
+    "game/assets/ui/hud/fill_boss.png": (1, 8, 1),
+    "game/assets/ui/hud/fill_exit.png": (1, 6, 1),
+    "game/assets/ui/hud/fill_tip.png": (3, 8, 1),
 }
 # Cells that must stay empty in the climber sheets (frame counts per row).
 CLIMBER_COUNTS = [2, 2, 2, 4, 4, 4, 3, 3, 3, 4, 4, 4, 4]
