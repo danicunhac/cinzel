@@ -18,6 +18,7 @@ Os scripts em `art-src/` transformam esses originais nas folhas do jogo. Rode co
 - `build_weapons.py`: camada de arma de cada tipo e as poses de ataque próprias (Task E3).
 - `build_outfits.py`: as roupas visuais (camadas `hair` e `outfit`), repintando a roupa inicial pixel a pixel (Task E3).
 - `build_items.py`: ícones 16x16 de armas, armaduras, capuzes, mochilas, materiais e roupas, e as molduras de raridade (Task E3). `preview_items.py` monta a folha de conferência.
+- `build_gear.py`: camadas de armadura e elmo (`climber/gear/`), tiradas quadro a quadro das camadas do escalador.
 - `preview_gear.py`: prévias 4x e GIFs do escalador com cada arma e cada roupa, empilhando as camadas como o jogo.
 - `build_logo.py`: logo CINZEL (240, 120 e 80 px de largura, brilho de brasa do logo grande), emblema quadrado (16, 32, 64, 256), `icon.ico` do Windows e imagem do boot splash.
 - `build_title.py`: camadas da tela de título desenhadas por script (parapeito, faixa de névoa, luz quente).
@@ -90,6 +91,8 @@ Nenhum desses scripts sobrescreve um arquivo que já existe, porque ele pode ter
 | `game/assets/characters/climber/outfits/cavaleiro_leve/*` | Gerado por IA + ajuste por script | Idem: coifa de malha de aço, peitoral branco-prateado, gola e calça carmim fosco, aba curta sobre as coxas | 2026-11-14 |
 | `game/assets/characters/climber/outfits/tunica_ferreiro/*` | Gerado por IA + ajuste por script | Idem: bandana vermelho-ferrugem, túnica de linho, avental de couro na frente (linhas de frente), cinto e calça marrom-escuros | 2026-11-14 |
 | `game/assets/characters/climber/outfits/manto_mago/*` | Gerado por IA + ajuste por script | Idem: capuz e manto violeta até as botas (o vão entre as pernas vira pano), gola e fivelas verde-água claro | 2026-11-14 |
+| `game/assets/characters/climber/gear/armor_<id>.png` (`armor_cloth`, `armor_leather`, `armor_chain`, `armor_scale`, `armor_plate`, `armor_shadow`) e `gear/attacks/<tipo>_armor_<id>.png` | Feito por script sobre as camadas do escalador | `build_gear.py`: os pixels do tronco de `climber/outfit.png` (jaqueta, luvas, mochila, cachecol e cinto, nunca a calça) de cada quadro, repintados por brilho: pano acolchoado bege com costuras, couro marrom-escuro com correia clara e fivela, malha cinza pontilhada, escamas verde-bronze, placas de aço claro com ombreiras de 1 px para fora, pano de sombra roxo-escuro | 2026-11-14 |
+| `game/assets/characters/climber/gear/helm_<id>.png` (`helm_hood`, `helm_iron`, `helm_horned`, `helm_circlet`) e `gear/attacks/<tipo>_helm_<id>.png` | Feito por script sobre as camadas do escalador | `build_gear.py`: os pixels visíveis do capuz e do cabelo de `climber/hair.png` de cada quadro, repintados: capuz de viajante cinza-marrom, elmo de ferro com aba clara e protetor de nariz, o mesmo elmo com dois chifres de osso, e o diadema (só uma faixa dourada com pedra azul sobre o capuz) | 2026-11-14 |
 | `game/assets/items/<id>.png` (armas, armaduras, capuzes, mochilas, materiais; 35 ícones 16x16) | Gerado por IA (gpt-image-2.5 flare, preset `cinzel-pixel`) + ajuste por script | Folhas `art-src/gen/icons-*.png` por `build_items.py` (lista de ids abaixo) | 2026-11-14 |
 | `game/assets/items/outfit_<id>.png` (5 ícones 16x16) | Feito por script sobre a arte gerada | Busto (cabeça e ombros) do quadro parado de frente de cada roupa, 1:1, por `build_items.py` | 2026-11-14 |
 | `game/assets/items/frames/common.png`, `rare.png`, `epic.png` (18x18) | Autoral (script) | Anel de 2 px desenhado por `build_items.py`: branco, azul e roxo | 2026-11-14 |
@@ -262,6 +265,15 @@ Tipos com pose de ataque própria trazem também `game/assets/characters/climber
 
 A roupa não muda o corpo nem a arma, então qualquer roupa combina com qualquer arma em todo quadro.
 
+### Armaduras e elmos
+
+`game/assets/characters/climber/gear/<id>.png` (8x13 cheio), um por item `armor_*` e `helm_*` do catálogo. Para cada tipo com pose de ataque própria há também `gear/attacks/<tipo>_<id>.png` (8x3, mesmas linhas). O jogo desenha `body`, `hair`, `outfit`, `armor`, `helm`, `weapon`; `armor` e `helm` só aparecem com "Mostrar armadura" ligado no guarda-roupa.
+
+`build_gear.py` tira cada quadro das camadas da roupa inicial no mesmo quadro (as outras roupas são repinturas dela, com os mesmos pixels), então armadura e elmo encaixam em qualquer roupa e arma:
+
+- armadura: os pixels do tronco de `outfit.png` (o cinto acima da calça entra, a calça e as abas de roupa não), repintados na rampa da armadura com um desenho próprio. O contorno escuro continua o da roupa por baixo; só as ombreiras das placas ganham contorno novo;
+- elmo: os pixels do capuz e do cabelo visíveis em `hair.png` (onde `outfit.png` não cobre), repintados, então o cabelo não aparece por baixo. Chifres e a faixa do diadema são desenhados por cima. O diadema deixa o capuz e o cabelo à vista.
+
 ### Ícones e molduras de raridade
 
 Ícones de 16x16 em `game/assets/items/<id>.png`, fundo transparente. As molduras de raridade são arquivos separados, não embutidos no ícone: `game/assets/items/frames/common.png` (branca), `rare.png` (azul) e `epic.png` (roxa), 18x18, centro transparente. Desenhe a moldura e o ícone por cima com 1 px de recuo (ícone em (1, 1) da moldura).
@@ -276,7 +288,7 @@ Ids (o catálogo da Task E1 usa os mesmos):
 - Roupas: `outfit_starter`, `outfit_casaco_longo`, `outfit_cavaleiro_leve`, `outfit_tunica_ferreiro`, `outfit_manto_mago`
 - Relíquias (já existiam): `heavy_blade`, `light_boots`, `stone_heart`, `fang`, `wind_cape`, `cracked_hourglass`, `spark`, `glass_shield`
 
-Para refazer tudo: `build_weapons.py`, depois `build_outfits.py`, depois `build_items.py` (os ícones das roupas saem das folhas das roupas), todos com `--force` só quando for para sobrescrever.
+Para refazer tudo: `build_weapons.py`, depois `build_outfits.py`, depois `build_gear.py`, depois `build_items.py` (os ícones das roupas saem das folhas das roupas), todos com `--force` só quando for para sobrescrever.
 | `game/assets/rooms/decor.png` | Gerado por IA (gpt-image-2.5 flare, preset `cinzel-pixel`, papel `gameplayProps`) + ajuste por script | `art-src/gen/decor-sheet.png` (`cinzel-decor-sheet`, 4x3 objetos no magenta) por `build_decor.py`: chave magenta, redução por área, até 32 cores, alfa binário | 2026-11-14 |
 | `game/assets/audio/sfx/<id>.ogg` (28 efeitos: `swing_light`, `swing_heavy`, `bow_shot`, `hit`, `crit`, `player_hurt`, `enemy_die`, `boss_roar`, `coin`, `item_pickup`, `ui_open`, `ui_close`, `ui_move`, `ui_confirm`, `step`, `roll`, `door_open`, `door_locked`, `chest_open`, `heal_loop`, `buy`, `sell`, `forge`, `teleport`, `stairs`, `special_charge`, `special_release`, `shockwave`) | Gerado por IA (ElevenLabs/MiniMax) | `generate_sfx` (ElevenLabs Sound Effects V2, projeto `asset-gen`, nomes `cinzel-sfx-<id>`), convertidos com ffmpeg: silêncio cortado nas pontas (-50 dB), pico normalizado em -3 dB, Ogg Vorbis. `heal_loop` em laço | 2026-11-14 |
 | `game/assets/audio/music/town.ogg`, `tower.ogg`, `boss.ogg` | Gerado por IA (ElevenLabs/MiniMax) | `generate_music` (MiniMax Music 2.6, instrumental, projeto `asset-gen`, nomes `cinzel-music-<id>`): cidade (alaúde, aconchegante), torre (cordas graves e percussão, tensa), chefe (intensa). Cortadas em 88 s com fade de 2 s no fim, loudness ~-15 LUFS (loudnorm), Ogg Vorbis em laço | 2026-11-14 |

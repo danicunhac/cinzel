@@ -2,7 +2,7 @@
 cells empty, villager cells filled per row, no orphan pixels in the climber
 layers, nothing below the ground row the game expects (climber, NPCs and
 villagers 30, enemies 22, boss 44). Also checks every weapon, attack override,
-outfit, item icon and rarity frame on disk.
+outfit, armor and helm layer, item icon and rarity frame on disk.
 
 python3 -I art-src/check_art.py <repo_root>
 """
@@ -69,7 +69,7 @@ ATTACK_COUNTS = [6, 6, 6]
 
 
 def extra_sheets(root):
-    """Weapon, attack override, outfit and item files found on disk (Task E3)."""
+    """Weapon, attack override, outfit, armor/helm and item files found on disk."""
     out = {}
     climber = "game/assets/characters/climber"
     for sub in ("weapons", "attacks"):
@@ -77,6 +77,13 @@ def extra_sheets(root):
         for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:
             if f.endswith(".png"):
                 out["%s/%s/%s" % (climber, sub, f)] = (256, 416 if sub == "weapons" else 96, 32)
+    gd = os.path.join(root, climber, "gear")
+    for f in sorted(os.listdir(gd)) if os.path.isdir(gd) else []:
+        if f.endswith(".png"):
+            out["%s/gear/%s" % (climber, f)] = (256, 416, 32)
+    for f in sorted(os.listdir(os.path.join(gd, "attacks"))) if os.path.isdir(os.path.join(gd, "attacks")) else []:
+        if f.endswith(".png"):
+            out["%s/gear/attacks/%s" % (climber, f)] = (256, 96, 32)
     od = os.path.join(root, climber, "outfits")
     for oid in sorted(os.listdir(od)) if os.path.isdir(od) else []:
         for f in ("hair.png", "outfit.png"):

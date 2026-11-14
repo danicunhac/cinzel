@@ -23,11 +23,15 @@ const FPS: Dictionary[StringName, float] = {
 	&"idle": 6.0, &"walk": 12.0, &"attack": 22.0, &"roll": 15.0, &"death": 9.0,
 }
 const LOOPING: Array[StringName] = [&"idle", &"walk"]
-const LAYERS: Array[StringName] = [&"body", &"hair", &"outfit", &"weapon"]
+## Draw order. Armor goes over the outfit's torso and the helm over the
+## hood and hair (it covers every visible hair pixel except the circlet).
+const LAYERS: Array[StringName] = [&"body", &"hair", &"outfit", &"armor", &"helm", &"weapon"]
+## Layers drawn from the equipped armor and helm (gear/<item id>.png).
+const GEAR_LAYERS: Array[StringName] = [&"armor", &"helm"]
 const CLIMBER_DIR := "res://assets/characters/climber/"
 ## Layers whose attack rows a weapon type can replace (attacks/<type>_<layer>.png,
 ## 8x3 frames: attack_down, attack_up, attack_side).
-const ATTACK_LAYERS: Array[StringName] = [&"body", &"hair", &"outfit"]
+const ATTACK_LAYERS: Array[StringName] = [&"body", &"hair", &"outfit", &"armor", &"helm"]
 const ATTACK_ROW := 6
 
 var speed_scale: float = 1.0
@@ -39,6 +43,11 @@ var _sprites: Dictionary = {}
 var _sheets: Dictionary[StringName, Texture2D] = {}
 var _attack_strips: Dictionary[StringName, Texture2D] = {}
 var weapon_type: StringName = &""
+## Equipped armor and helm item ids (&"" = none) and whether they show
+## (the wardrobe's "Mostrar armadura"; off = only the outfit).
+var armor_id: StringName = &""
+var helm_id: StringName = &""
+var show_armor: bool = true
 var _row: int = 0
 var _frame: int = 0
 var _time: float = 0.0
@@ -53,10 +62,7 @@ func _ready() -> void:
 		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		add_child(s)
 		_sprites[layer] = s
-		var path := "%s%s.png" % [CLIMBER_DIR, layer]
-		if ResourceLoader.exists(path):
-			s.texture = load(path) as Texture2D
-			_sheets[layer] = s.texture
+	_reload()
 	play(&"idle", Vector2.DOWN)
 
 
@@ -65,6 +71,8 @@ func _ready() -> void:
 ## the default sheets). The weapon type's own attack rows (8x3 strips) come
 ## from outfits/<id>/attacks/<type>_<layer>.png for hair and outfit, else
 ## attacks/<type>_<layer>.png; the sword has none and keeps rows 6-8.
+## Armor and helm come from gear/<item id>.png, their attack rows from
+## gear/attacks/<type>_<item id>.png (art-src/build_gear.py).
 static func weapon_sheet_path(type: StringName) -> String:
 	var path := "%sweapons/%s.png" % [CLIMBER_DIR, type]
 	return path if ResourceLoader.exists(path) else "%sweapon.png" % CLIMBER_DIR
@@ -76,6 +84,21 @@ static func layer_sheet_path(layer: StringName, outfit_dir: String) -> String:
 		if ResourceLoader.exists(path):
 			return path
 	return "%s%s.png" % [CLIMBER_DIR, layer]
+
+
+## Sheet of an armor or helm item, or "" when it has none.
+static func gear_sheet_path(id: StringName) -> String:
+	if id == &"":
+		return ""
+	var path := "%sgear/%s.png" % [CLIMBER_DIR, id]
+	return path if ResourceLoader.exists(path) else ""
+
+
+static func gear_attack_path(type: StringName, id: StringName) -> String:
+	if id == &"" or type == &"":
+		return ""
+	var path := "%sgear/attacks/%s_%s.png" % [CLIMBER_DIR, type, id]
+	return path if ResourceLoader.exists(path) else ""
 
 
 static func attack_strip_path(type: StringName, layer: StringName, outfit_dir: String = "") -> String:
@@ -101,15 +124,55 @@ func set_outfit(id: StringName) -> void:
 	_reload()
 
 
+## Armor and helm item ids (&"" = none) and whether they show. Reloads
+## only when something changed.
+func set_gear(armor: StringName, helm: StringName, show: bool = true) -> void:
+	if armor == armor_id and helm == helm_id and show == show_armor:
+		return
+	armor_id = armor
+	helm_id = helm
+	show_armor = show
+	_reload()
+
+
+## Dresses the sprite as `e` is worn: weapon type, outfit, armor and helm.
+func dress(e: Equipment) -> void:
+	weapon_type = ItemDB.weapon_type(e.weapon)
+	outfit_dir = String(e.outfit).trim_prefix("outfit_")
+	armor_id = e.armor
+	helm_id = e.helm
+	show_armor = e.show_armor
+	_reload()
+
+
+## Item id drawn on a gear layer now (&"" when empty or hidden).
+func shown_gear(layer: StringName) -> StringName:
+	if not show_armor:
+		return &""
+	return armor_id if layer == &"armor" else helm_id if layer == &"helm" else &""
+
+
 func _reload() -> void:
 	for layer in LAYERS:
-		var path := weapon_sheet_path(weapon_type) if layer == &"weapon" else layer_sheet_path(layer, outfit_dir)
-		if ResourceLoader.exists(path):
+		var path := ""
+		if layer == &"weapon":
+			path = weapon_sheet_path(weapon_type)
+		elif layer in GEAR_LAYERS:
+			path = gear_sheet_path(shown_gear(layer))
+		else:
+			path = layer_sheet_path(layer, outfit_dir)
+		if path != "" and ResourceLoader.exists(path):
 			_sheets[layer] = load(path) as Texture2D
+		else:
+			_sheets.erase(layer)
 	_attack_strips.clear()
 	if weapon_type != &"":
 		for layer in ATTACK_LAYERS:
-			var p := attack_strip_path(weapon_type, layer, outfit_dir)
+			var p := ""
+			if layer in GEAR_LAYERS:
+				p = gear_attack_path(weapon_type, shown_gear(layer))
+			else:
+				p = attack_strip_path(weapon_type, layer, outfit_dir)
 			if p != "":
 				_attack_strips[layer] = load(p) as Texture2D
 	if not _sprites.is_empty():
@@ -183,7 +246,11 @@ func _apply() -> void:
 			s.frame_coords = Vector2i(_frame, strip_row)
 		else:
 			var sheet: Texture2D = _sheets.get(layer)
-			if sheet != null and s.texture != sheet:
+			if sheet == null:
+				# an empty or hidden gear layer
+				s.texture = null
+				continue
+			if s.texture != sheet:
 				s.frame = 0
 				s.texture = sheet
 				s.vframes = VFRAMES

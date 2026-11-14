@@ -4,6 +4,9 @@ extends UiPanel
 ## cursor previews one on the hero (idle facing down, with the weapon worn
 ## now); "Vestir" wears it. Locked outfits show greyed, with where to get
 ## them. The worn outfit survives death (RunState.die keeps it).
+## "Mostrar armadura" (on by default) draws the equipped armor and helm over
+## the outfit; off shows the outfit alone. The preview follows it, and the
+## choice survives death like the outfit.
 
 const GRID_COLS := 5
 const INFO_W := 150.0
@@ -16,6 +19,7 @@ const UNLOCK_TEXT: Dictionary[StringName, String] = {
 
 var outfit_cells: Array[ItemCell] = []
 var wear_button: Button
+var armor_toggle: CheckBox
 ## Outfit under the cursor (shown on the preview).
 var preview_id: StringName = &""
 var hero: LayeredSprite
@@ -38,10 +42,13 @@ func _build(box: VBoxContainer) -> void:
 	cols.add_theme_constant_override("separation", 10)
 	box.add_child(cols)
 
-	# Preview: the hero at 3x on a plaque.
+	# Preview: the hero at 3x on a plaque, the armor toggle under it.
+	var left := VBoxContainer.new()
+	left.add_theme_constant_override("separation", 4)
+	cols.add_child(left)
 	var stage := Control.new()
 	stage.custom_minimum_size = Vector2(112, 124)
-	cols.add_child(stage)
+	left.add_child(stage)
 	var plate := UiKit.plaque(Vector2(112, 124))
 	stage.add_child(plate)
 	var holder := Node2D.new()
@@ -51,9 +58,15 @@ func _build(box: VBoxContainer) -> void:
 	holder.add_child(GroundShadow.make(Vector2i(16, 6), Vector2(0, 14)))
 	hero = LayeredSprite.new()
 	holder.add_child(hero)
-	hero.set_weapon(ItemDB.weapon_type(run.equipment.weapon))
+	hero.dress(run.equipment)
 	hero.set_outfit(preview_id)
 	hero.play(&"idle", Vector2.DOWN)
+	armor_toggle = CheckBox.new()
+	armor_toggle.text = "Mostrar armadura"
+	armor_toggle.focus_mode = Control.FOCUS_ALL
+	armor_toggle.set_pressed_no_signal(run.equipment.show_armor)
+	armor_toggle.toggled.connect(set_show_armor)
+	left.add_child(armor_toggle)
 
 	var right := VBoxContainer.new()
 	right.custom_minimum_size = Vector2(INFO_W, 0)
@@ -125,6 +138,17 @@ func _on_activated(id: StringName) -> void:
 		preview(id)
 	else:
 		wear(id)
+
+
+## Armor and helm over the outfit (on) or the outfit alone (off), on the
+## run and on the preview.
+func set_show_armor(on: bool) -> void:
+	Game.run.set_show_armor(on)
+	if armor_toggle != null:
+		armor_toggle.set_pressed_no_signal(on)
+	if hero != null:
+		var e := Game.run.equipment
+		hero.set_gear(e.armor, e.helm, on)
 
 
 ## Wears an unlocked outfit (cosmetic). Returns false when it is locked.
