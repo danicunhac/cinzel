@@ -19,6 +19,21 @@ SHEETS = {
     "game/assets/tiles/floor2.png": (128, 32, 16),
     "game/assets/tiles/floor3.png": (128, 32, 16),
     "game/assets/tiles/town.png": (128, 32, 16),
+    "game/assets/characters/npc_shopkeeper.png": (48, 24, 24),
+    "game/assets/characters/npc_blacksmith.png": (48, 24, 24),
+    "game/assets/items/heavy_blade.png": (16, 16, 16),
+    "game/assets/items/light_boots.png": (16, 16, 16),
+    "game/assets/items/stone_heart.png": (16, 16, 16),
+    "game/assets/items/fang.png": (16, 16, 16),
+    "game/assets/items/wind_cape.png": (16, 16, 16),
+    "game/assets/items/cracked_hourglass.png": (16, 16, 16),
+    "game/assets/items/spark.png": (16, 16, 16),
+    "game/assets/items/glass_shield.png": (16, 16, 16),
+    "game/assets/ui/panel.png": (64, 40, 8),
+    "game/assets/ui/slot.png": (20, 20, 4),
+    "game/assets/ui/heart.png": (9, 8, 1),
+    "game/assets/ui/coin.png": (8, 8, 8),
+    "game/assets/ui/title_bg.png": (320, 180, 20),
 }
 # Cells that must stay empty in the climber sheets (frame counts per row).
 CLIMBER_COUNTS = [2, 2, 2, 4, 4, 4, 3, 3, 3, 4, 4, 4, 4]
@@ -43,7 +58,7 @@ def main():
         if "characters" in rel or "enemies" in rel:
             if img.getpixel((0, 0))[3]:
                 problems.append("corner not transparent")
-        if "characters" in rel:
+        if "climber" in rel:
             for r, n in enumerate(CLIMBER_COUNTS):
                 for c in range(n, 4):
                     box = (c * 24, r * 24, c * 24 + 24, r * 24 + 24)

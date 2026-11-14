@@ -74,7 +74,7 @@ func test_floor_one_from_tutorial_to_boss() -> void:
 	_game().new_run()
 
 
-func test_death_resets_run_and_goes_to_town() -> void:
+func test_death_resets_run_and_goes_to_game_over() -> void:
 	_game().new_run()
 	_game().run.add_gold(30)
 	_game().run.clock.seconds = 75.0
@@ -96,7 +96,7 @@ func test_death_resets_run_and_goes_to_town() -> void:
 	await _tree().process_frame
 	await _tree().process_frame
 	var cur := _tree().current_scene
-	T.ok(cur != null and cur.scene_file_path == Dungeon.TOWN_SCENE, "went to town")
+	T.ok(cur != null and cur.scene_file_path == Dungeon.GAME_OVER_SCENE, "went to game over")
 	if cur != null:
 		cur.free()
 	_game().new_run()

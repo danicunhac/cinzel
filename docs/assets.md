@@ -7,6 +7,7 @@ Toda geração usou o gerador de IA (ambiente QA, projeto `asset-gen`) com o pre
 - `build_climber.py`: escalador em camadas.
 - `build_enemies.py`: inimigos.
 - `build_tiles.py`: tilesets.
+- `build_ui.py`: ícones dos itens, NPCs da cidade, molduras e ícones da UI, fundo do título. `preview_ui.py` monta uma folha ampliada para revisar.
 - `check_art.py`: confere tamanho, transparência e no máximo 32 cores.
 
 `make_placeholders.py` continua gerando os placeholders antigos, mas não sobrescreve arquivo existente sem `--force`.
@@ -27,6 +28,15 @@ Toda geração usou o gerador de IA (ambiente QA, projeto `asset-gen`) com o pre
 | `game/assets/tiles/floor2.png` | `floor1.png` com a pedra em azul frio (`build_tiles.py`) | 2026-11-14 |
 | `game/assets/tiles/floor3.png` | `floor1.png` com a pedra em vermelho escuro de brasa (`build_tiles.py`) | 2026-11-14 |
 | `game/assets/tiles/town.png` | `cinzel-tiles-town-sheet` por `build_tiles.py` | 2026-11-14 |
+| `game/assets/items/<id>.png` (8 ícones 16x16) | `cinzel-item-icons-sheet` por `build_ui.py` | 2026-11-14 |
+| `game/assets/characters/npc_shopkeeper.png` | Lojista de `cinzel-npcs-sheet` por `build_ui.py`; 2º quadro do idle = tronco 1 px abaixo | 2026-11-14 |
+| `game/assets/characters/npc_blacksmith.png` | Ferreiro de `cinzel-npcs-sheet` por `build_ui.py`, mesmo idle | 2026-11-14 |
+| `game/assets/ui/panel.png` | Moldura de `cinzel-ui-kit-sheet` por `build_ui.py` (9-slice, margem 4) | 2026-11-14 |
+| `game/assets/ui/slot.png` | Espaço de item de `cinzel-ui-kit-sheet` (9-slice, margem 3) | 2026-11-14 |
+| `game/assets/ui/heart.png` | Coração de `cinzel-ui-kit-sheet` | 2026-11-14 |
+| `game/assets/ui/coin.png` | Moeda de `cinzel-ui-kit-sheet`, recolorida para dourado (saiu salmão) | 2026-11-14 |
+| `game/assets/ui/title_bg.png` | `cinzel-title-bg` reduzido para 320x180, 32 cores | 2026-11-14 |
+| `game/assets/fonts/Silkscreen-Regular.ttf` | Fonte Silkscreen (Jason Kottke), SIL OFL 1.1, de google/fonts; licença em `Silkscreen-OFL.txt` | 2026-11-14 |
 
 ## Gerações no gerador de IA
 
@@ -44,6 +54,10 @@ Toda geração usou o gerador de IA (ambiente QA, projeto `asset-gen`) com o pre
 | `cinzel-enemy-charger-v2-958fd2b4b941` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `characters` | Besouro-javali com casco liso azul-aço, faixa vermelha, chifres de osso, olhos vermelhos, silhueta simples | 2026-11-14 |
 | `cinzel-tiles-floor1-sheet-a22089b881f0` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 de tiles da torre: lajes (lisa, clara, rachada, com musgo), parede, topo de parede, pilar, caixote, portas (trancada, aberta, fechada), baús, parede com tocha | 2026-11-14 |
 | `cinzel-tiles-props-sheet-6f9f6685ebad` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayProps` | Pilar, caixote, baú fechado, baú aberto com ouro, tocha de parede, sobre magenta | 2026-11-14 |
+| `cinzel-item-icons-sheet-6a10443e5bc9` | `fal-ai/nano-banana-2/edit`, preset `cinzel-pixel`, papel `gameplayProps`, 2K | Grade 4x2 dos 8 itens sobre magenta, cada um com brilho amarelo (veio um mini escalador perdido no meio, apagado no script) | 2026-11-14 |
+| `cinzel-npcs-sheet-73ad112ab455` | `fal-ai/nano-banana-2/edit`, preset `cinzel-pixel`, papel `characters`, 2K | Lojista (avental verde, boné, bolsa de moedas) e ferreiro (careca, barba, avental de couro, martelo), 2 quadros de idle cada, sobre magenta | 2026-11-14 |
+| `cinzel-ui-kit-sheet-7be22ce3bc8a` | `fal-ai/nano-banana-2/edit`, preset `cinzel-pixel`, papel `uiElements`, 2K | Moldura de painel bronze, espaço de item, coração, moeda, relógio, sobre magenta | 2026-11-14 |
+| `cinzel-title-bg-69c9e042aad3` | `fal-ai/nano-banana-2/edit`, preset `cinzel-pixel`, papel `backgrounds`, 1K, 16:9 | Torre de pedra com brasas sobre a cidade de telhados vermelhos ao anoitecer, céu livre para o título | 2026-11-14 |
 | `cinzel-tiles-town-sheet-07b9e1466613` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 da cidade: calçamento, grama, madeira, terra, telhado, muro, toldo listrado, casa enxaimel, porta, janela, estandarte, topo de muro, água | 2026-11-14 |
 
 ## Layout dos tilesets
