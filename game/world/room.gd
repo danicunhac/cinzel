@@ -1,7 +1,8 @@
 class_name Room
 extends Node2D
 ## One room of the tower. `start` spawns the enemies on the Spawns markers
-## (meta `enemy` = crawler | shooter | charger, optional meta `boss`), plus
+## (meta `enemy` = crawler | shooter | charger | boss_big | boss_final; a
+## boss_big marker names its look in meta `base` = crawler | charger), plus
 ## `extra` copies on random markers away from the entry. The Exit door stays
 ## locked until every enemy is dead, or, with heal_to_clear, until the
 ## player's HP is full.
@@ -13,13 +14,13 @@ const ENEMY_SCENES: Dictionary[String, PackedScene] = {
 	"crawler": preload("res://actors/enemies/crawler.tscn"),
 	"shooter": preload("res://actors/enemies/shooter.tscn"),
 	"charger": preload("res://actors/enemies/charger.tscn"),
+	"boss_big": preload("res://actors/bosses/boss_big.tscn"),
+	"boss_final": preload("res://actors/bosses/boss_final.tscn"),
 }
 const ChestScene := preload("res://world/chest.tscn")
 ## Enemies fade in and stay still this long, so a room never opens with a hit.
 const SPAWN_GRACE := 0.6
 const EXTRA_MIN_DIST := 96.0
-const BOSS_SCALE := 2.0
-const BOSS_HP_MULT := 5
 
 @export var is_boss: bool = false
 @export var is_tutorial: bool = false
@@ -58,13 +59,13 @@ func start(extra: int, has_chest: bool, rng: RandomNumberGenerator) -> void:
 		if n is Marker2D:
 			markers.append(n as Marker2D)
 	for m in markers:
-		_spawn(String(m.get_meta(&"enemy", "crawler")), m.position, bool(m.get_meta(&"boss", false)))
+		_spawn(String(m.get_meta(&"enemy", "crawler")), m.position, String(m.get_meta(&"base", "")))
 	var far := markers.filter(func(m: Marker2D) -> bool: return m.position.distance_to(entry.position) >= EXTRA_MIN_DIST)
 	if not is_tutorial and not is_boss and not far.is_empty():
 		for i in extra:
 			var m := far[rng.randi_range(0, far.size() - 1)] as Marker2D
 			var jitter := Vector2(rng.randf_range(-4.0, 4.0), rng.randf_range(-4.0, 4.0))
-			_spawn(String(m.get_meta(&"enemy", "crawler")), m.position + jitter, false)
+			_spawn(String(m.get_meta(&"enemy", "crawler")), m.position + jitter, String(m.get_meta(&"base", "")))
 	if _alive == 0 and not heal_to_clear:
 		_clear()
 
@@ -77,17 +78,15 @@ func _process(_delta: float) -> void:
 		_clear()
 
 
-func _spawn(kind: String, pos: Vector2, boss: bool) -> void:
+func _spawn(kind: String, pos: Vector2, base: String) -> void:
 	if not ENEMY_SCENES.has(kind):
 		push_error("Room: unknown enemy '%s'" % kind)
 		return
 	var e := ENEMY_SCENES[kind].instantiate() as EnemyBase
+	if e is BossBig and ENEMY_SCENES.has(base):
+		(e as BossBig).base = ENEMY_SCENES[base]
 	e.position = pos
 	add_child(e)
-	if boss:
-		e.scale = Vector2.ONE * BOSS_SCALE
-		e.health.max_hp *= BOSS_HP_MULT
-		e.health.hp = e.health.max_hp
 	e.killed.connect(_on_enemy_killed)
 	enemies.append(e)
 	_alive += 1

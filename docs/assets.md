@@ -6,6 +6,7 @@ Toda geração usou o gerador de IA (ambiente QA, projeto `asset-gen`) com o pre
 
 - `build_climber.py`: escalador em camadas.
 - `build_enemies.py`: inimigos.
+- `build_boss.py`: chefe final (quadros de 32x32, mesma receita dos inimigos).
 - `build_tiles.py`: tilesets.
 - `check_art.py`: confere tamanho, transparência e no máximo 32 cores.
 
@@ -23,6 +24,7 @@ Toda geração usou o gerador de IA (ambiente QA, projeto `asset-gen`) com o pre
 | `game/assets/enemies/crawler.png` | `cinzel-enemy-crawler` por `build_enemies.py` (animação por deformação da pose gerada) | 2026-11-14 |
 | `game/assets/enemies/shooter.png` | Conjurador de `cinzel-enemies-sheet` por `build_enemies.py` | 2026-11-14 |
 | `game/assets/enemies/charger.png` | `cinzel-enemy-charger-v2` por `build_enemies.py` | 2026-11-14 |
+| `game/assets/enemies/boss_final.png` | `cinzel-boss-final` por `build_boss.py` (folha 4x4 de 32x32: parado, andar, ataque, morte). Os chefes dos andares 1 e 2 reaproveitam `crawler.png` e `charger.png` em escala x2 | 2026-11-14 |
 | `game/assets/tiles/floor1.png` | `cinzel-tiles-floor1-sheet` e `cinzel-tiles-props-sheet` por `build_tiles.py` | 2026-11-14 |
 | `game/assets/tiles/floor2.png` | `floor1.png` com a pedra em azul frio (`build_tiles.py`) | 2026-11-14 |
 | `game/assets/tiles/floor3.png` | `floor1.png` com a pedra em vermelho escuro de brasa (`build_tiles.py`) | 2026-11-14 |
@@ -42,6 +44,7 @@ Toda geração usou o gerador de IA (ambiente QA, projeto `asset-gen`) com o pre
 | `cinzel-enemy-crawler-4688abb49eb4` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `characters` | Gosma vermelho-escura em cúpula, dois olhos vermelhos brilhando, brilho claro no topo | 2026-11-14 |
 | `cinzel-enemy-charger-fc1d186596d2` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `characters` | Besouro-javali de placas cinza-marrom (descartado: virava ruído em 16 px) | 2026-11-14 |
 | `cinzel-enemy-charger-v2-958fd2b4b941` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `characters` | Besouro-javali com casco liso azul-aço, faixa vermelha, chifres de osso, olhos vermelhos, silhueta simples | 2026-11-14 |
+| `cinzel-boss-final-15618594aab4` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `characters` | Chefe final: cavaleiro-espectro encapuzado de armadura negra rachada, olhos e fenda no peito em brasa vermelha, lâmina incandescente, sobre magenta | 2026-11-14 |
 | `cinzel-tiles-floor1-sheet-a22089b881f0` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 de tiles da torre: lajes (lisa, clara, rachada, com musgo), parede, topo de parede, pilar, caixote, portas (trancada, aberta, fechada), baús, parede com tocha | 2026-11-14 |
 | `cinzel-tiles-props-sheet-6f9f6685ebad` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayProps` | Pilar, caixote, baú fechado, baú aberto com ouro, tocha de parede, sobre magenta | 2026-11-14 |
 | `cinzel-tiles-town-sheet-07b9e1466613` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 da cidade: calçamento, grama, madeira, terra, telhado, muro, toldo listrado, casa enxaimel, porta, janela, estandarte, topo de muro, água | 2026-11-14 |
