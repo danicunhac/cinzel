@@ -75,7 +75,8 @@ func _build() -> void:
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(dim)
 	var box := UiKit.centred_frame(_root, Vector2(200, 0), "Pausa")
-	_frame = box.get_parent().get_parent() as Control
+	_frame = CinzelLogo.frame_of(box)
+	CinzelLogo.above_frame(_frame, CinzelLogo.MEDIUM)
 	_continue = _add_button(box, "Continuar")
 	_continue.pressed.connect(close)
 	title_button = _add_button(box, TITLE_TEXT)
