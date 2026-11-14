@@ -55,3 +55,17 @@ func test_no_heal_when_dead() -> void:
 	h.heal(20.0)
 	T.eq(h.hp, 0)
 	h.free()
+
+
+func test_hp_changed_emitted_on_every_change() -> void:
+	var h := _make()
+	var seen: Array[int] = []
+	h.hp_changed.connect(func(v: int) -> void: seen.append(v))
+	h.damage(10, Vector2.ZERO)
+	h.heal(5.0)
+	h.heal(100.0)
+	h.heal(1.0)
+	h.set_max_hp(50)
+	h.set_max_hp(60)
+	T.eq(seen, [90, 95, 100, 50] as Array[int])
+	h.free()

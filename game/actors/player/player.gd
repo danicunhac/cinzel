@@ -61,6 +61,7 @@ func _ready() -> void:
 	hurtbox.team = &"player"
 	hurtbox.hit.connect(_on_hurt)
 	health.damaged.connect(_on_damaged)
+	health.hp_changed.connect(_on_hp_changed)
 	health.died.connect(_on_died)
 
 
@@ -170,9 +171,7 @@ func _process_roll(delta: float) -> void:
 
 func _update_heal(delta: float, input_dir: Vector2) -> void:
 	var idle := state == State.FREE and input_dir == Vector2.ZERO
-	var before := health.hp
 	health.heal(_heal.update(delta, idle, _stats.heal_delay, _stats.heal_per_sec))
-	_sync_hp(before)
 
 
 func _update_exit(delta: float) -> void:
@@ -208,17 +207,16 @@ func _update_visuals(delta: float) -> void:
 	sprite.modulate = c
 
 
-## Writes Health.hp back to the run on change, never once the player is dead.
-func _sync_hp(before: int) -> void:
-	if state == State.DEAD or health.hp == before:
+## Writes Health.hp back to the run on every change, never once dead.
+func _on_hp_changed(hp: int) -> void:
+	if state == State.DEAD:
 		return
-	Game.run.hp = health.hp
+	Game.run.hp = hp
 
 
 func _refresh_stats() -> void:
 	_stats = Game.run.stats()
-	health.max_hp = _stats.max_hp
-	health.hp = mini(health.hp, health.max_hp)
+	health.set_max_hp(_stats.max_hp)
 
 
 func _build_arc() -> void:
@@ -242,7 +240,6 @@ func _on_hurt(from: Hitbox) -> void:
 
 
 func _on_damaged(_n: int) -> void:
-	_sync_hp(-1)
 	invincible_time = HURT_IFRAMES
 	_exit.interrupt()
 	exit_progress.emit(0.0)
