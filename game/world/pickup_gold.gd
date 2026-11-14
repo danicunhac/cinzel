@@ -22,7 +22,13 @@ func _physics_process(delta: float) -> void:
 
 
 func _on_body(body: Node2D) -> void:
-	if _collected or not body.is_in_group(&"player"):
+	if body.is_in_group(&"player"):
+		collect()
+
+
+## Adds the gold to the run once. Also used for coins left behind in a room.
+func collect() -> void:
+	if _collected:
 		return
 	_collected = true
 	Game.run.add_gold(amount)

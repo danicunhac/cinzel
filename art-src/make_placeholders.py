@@ -4,6 +4,9 @@ Usage: python3 -I make_placeholders.py <out_dir> [<enemies_dir>]
 Writes body.png, hair.png, outfit.png, weapon.png into <out_dir>.
 With <enemies_dir>, also writes crawler.png, shooter.png, charger.png
 (4 cols x 4 rows of 16x16 frames: idle, move, attack, death).
+
+python3 -I make_placeholders.py --tiles <out_png>
+Writes only the floor tileset: 8 cols x 2 rows of 16x16 tiles (see TILES).
 """
 import os
 import sys
@@ -318,7 +321,140 @@ def write_enemies(out):
         write_png(os.path.join(out, name + ".png"), E * 4, E * 4, pixels)
 
 
+T = 16
+# (col, row) -> name. Godot's tiles_floor1.tres uses the same coordinates.
+TILES = {
+    (0, 0): "floor_a", (1, 0): "floor_b", (2, 0): "floor_crack", (3, 0): "floor_moss",
+    (4, 0): "wall_face", (5, 0): "wall_top", (6, 0): "pillar", (7, 0): "crate",
+    (0, 1): "door_locked", (1, 1): "door_open", (2, 1): "door_shut", (3, 1): "chest_closed",
+    (4, 1): "chest_open", (5, 1): "wall_torch",
+}
+STONE = (66, 57, 60, 255)
+STONE_LIGHT = (71, 62, 64, 255)
+MORTAR = (52, 44, 48, 255)
+WALL = (112, 96, 96, 255)
+WALL_LIGHT = (138, 120, 112, 255)
+WALL_DARK = (70, 58, 62, 255)
+VOID = (24, 19, 26, 255)
+IRON = (88, 92, 104, 255)
+IRON_DARK = (46, 48, 58, 255)
+WOOD = (122, 78, 44, 255)
+WOOD_DARK = (78, 48, 28, 255)
+GOLD = (250, 214, 60, 255)
+FIRE = (255, 170, 60, 255)
+FIRE_HOT = (255, 236, 150, 255)
+
+
+def slab(d, base, light):
+    px(d, 0, 0, T, T, base)
+    px(d, 1, 1, 6, 6, light)
+    px(d, 9, 9, 6, 6, light)
+    px(d, 0, 7, T, 1, MORTAR)
+    px(d, 7, 0, 1, 7, MORTAR)
+    px(d, 12, 8, 1, 8, MORTAR)
+
+
+def wall_face(d):
+    px(d, 0, 0, T, T, WALL)
+    px(d, 0, 0, T, 3, WALL_LIGHT)  # cap seen from above
+    px(d, 0, 3, T, 1, WALL_DARK)
+    for y in (7, 11, 15):
+        px(d, 0, y, T, 1, WALL_DARK)
+    for y, xs in ((4, (5, 13)), (8, (1, 9)), (12, (5, 13))):
+        for x in xs:
+            px(d, x, y, 1, 3, WALL_DARK)
+    px(d, 0, 15, T, 1, (40, 32, 38, 255))  # contact shadow on the floor line
+
+
+def draw_tile(d, name):
+    if name == "floor_a":
+        slab(d, STONE, STONE_LIGHT)
+    elif name == "floor_b":
+        slab(d, STONE_LIGHT, STONE)
+    elif name == "floor_crack":
+        slab(d, STONE, STONE_LIGHT)
+        d.line([2, 12, 6, 9], fill=MORTAR)
+        d.line([6, 9, 9, 10], fill=MORTAR)
+        d.line([9, 10, 13, 4], fill=MORTAR)
+    elif name == "floor_moss":
+        slab(d, STONE, STONE_LIGHT)
+        for x, y in ((3, 10), (4, 11), (5, 10), (10, 3), (11, 4), (12, 3), (11, 2)):
+            px(d, x, y, 1, 1, (70, 96, 60, 255))
+    elif name == "wall_face":
+        wall_face(d)
+    elif name == "wall_torch":
+        wall_face(d)
+        px(d, 7, 9, 2, 5, WOOD_DARK)
+        px(d, 6, 5, 4, 4, FIRE)
+        px(d, 7, 6, 2, 2, FIRE_HOT)
+    elif name == "wall_top":
+        px(d, 0, 0, T, T, VOID)
+        px(d, 0, 0, T, 1, (52, 44, 52, 255))
+        px(d, 3, 5, 2, 1, (40, 34, 42, 255))
+        px(d, 10, 11, 3, 1, (40, 34, 42, 255))
+    elif name == "pillar":
+        slab(d, STONE, STONE_LIGHT)
+        d.ellipse([2, 4, 15, 15], fill=(30, 24, 30, 255))  # shadow
+        d.ellipse([1, 1, 14, 14], fill=WALL_DARK)
+        d.ellipse([2, 1, 13, 12], fill=WALL)
+        d.ellipse([3, 2, 10, 8], fill=WALL_LIGHT)
+        px(d, 5, 3, 2, 2, (176, 158, 146, 255))
+    elif name == "crate":
+        slab(d, STONE, STONE_LIGHT)
+        px(d, 2, 3, 13, 13, (30, 24, 30, 255))  # shadow
+        px(d, 1, 1, 13, 13, WOOD)
+        px(d, 1, 1, 13, 1, (156, 104, 62, 255))
+        px(d, 1, 13, 13, 1, WOOD_DARK)
+        px(d, 1, 5, 13, 1, WOOD_DARK)
+        px(d, 1, 9, 13, 1, WOOD_DARK)
+        px(d, 1, 1, 2, 13, IRON)
+        px(d, 12, 1, 2, 13, IRON)
+    elif name in ("door_locked", "door_shut"):
+        px(d, 0, 0, T, T, IRON_DARK)
+        px(d, 1, 1, 14, 15, IRON)
+        for x in (3, 7, 11):
+            px(d, x, 1, 2, 15, IRON_DARK)
+        px(d, 1, 7, 14, 2, IRON_DARK)
+        if name == "door_locked":
+            px(d, 6, 6, 4, 4, (230, 40, 40, 255))
+            px(d, 7, 7, 2, 2, (255, 140, 120, 255))
+    elif name == "door_open":
+        px(d, 0, 0, T, T, IRON_DARK)
+        px(d, 1, 0, 14, T, (12, 9, 14, 255))
+        px(d, 3, 12, 10, 4, (60, 44, 34, 255))  # warm light spilling in
+        px(d, 5, 13, 6, 3, (110, 80, 50, 255))
+    elif name in ("chest_closed", "chest_open"):
+        px(d, 2, 5, 13, 11, (30, 24, 30, 255))
+        px(d, 1, 4, 14, 10, WOOD)
+        px(d, 1, 13, 14, 1, WOOD_DARK)
+        px(d, 1, 4, 1, 10, IRON_DARK)
+        px(d, 14, 4, 1, 10, IRON_DARK)
+        if name == "chest_closed":
+            px(d, 1, 2, 14, 5, (150, 96, 54, 255))
+            px(d, 1, 7, 14, 1, IRON_DARK)
+            px(d, 7, 6, 2, 3, GOLD)
+        else:
+            px(d, 1, 0, 14, 4, WOOD_DARK)
+            px(d, 2, 5, 12, 3, (20, 14, 18, 255))
+            px(d, 5, 5, 6, 2, GOLD)
+
+
+def write_tiles(path):
+    cols, rows = 8, 2
+    pixels = {}
+    for (cx, cy), name in TILES.items():
+        cell = Cell(T)
+        draw_tile(cell, name)
+        for (x, y), c in cell.p.items():
+            pixels[(cx * T + x, cy * T + y)] = c
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    write_png(path, cols * T, rows * T, pixels)
+
+
 def main():
+    if len(sys.argv) > 2 and sys.argv[1] == "--tiles":
+        write_tiles(sys.argv[2])
+        return
     if len(sys.argv) > 2:
         write_enemies(sys.argv[2])
     out = sys.argv[1]
