@@ -32,7 +32,7 @@ const MAX_FLOOR := 14
 ## Top-wall columns free of the torches (7, 22) and of the banners most
 ## paintings already have (about 10 and 20).
 const WALL_COLS: Array[int] = [3, 4, 14, 15, 16, 25, 26]
-const WALKABLE := ".,~cshBHFC"
+const WALKABLE := ".,~cshBHFCiv"
 
 
 ## Spots for `rows` (the 30x16 layout). `keep_clear`: world points (door

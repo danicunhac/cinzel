@@ -12,6 +12,8 @@ extends SceneTree
 ##   c  crawler      s  shooter          h  charger
 ##   B  big crawler boss (floor 1)       H  big charger boss (floor 2)
 ##   F  final boss (floor 3)             C  chest spot
+##   i  ice patch (floor 2: walkable, slows the player, IcePatch)
+##   v  ember vent (floor 3: walkable, burns on a cycle, EmberVent)
 ## Every non-boss room also gets a StairsSpot marker (see _stairs_spot) and
 ## the entry door a "Back" RoomDoor, for walking back down the tower.
 ## A room's optional "floor" key (default 1) picks the tileset.
@@ -50,7 +52,14 @@ const TORCH_COLOR: Array[Color] = [
 	Color(1.0, 0.72, 0.42), Color(1.0, 0.8, 0.6), Color(1.0, 0.55, 0.32)]
 ## No enemy starts closer than this to the player's entry point.
 const MIN_SPAWN_DIST := 144.0
-const WALKABLE := ".,~cshBHFC"
+## No ember vent this close to the player's entry point.
+const MIN_VENT_DIST := 64.0
+const WALKABLE := ".,~cshBHFCiv"
+const ICE_SCRIPT := "res://world/ice_patch.gd"
+const VENT_SCRIPT := "res://world/ember_vent.gd"
+## Same as EmberVent.STAGGER / RADIUS (not named here: the tool runs without the Game autoload).
+const VENT_STAGGER := 0.9
+const VENT_RADIUS := 9.0
 const ENEMY_KINDS := {
 	"c": "crawler", "s": "shooter", "h": "charger",
 	"B": "boss_big", "H": "boss_big", "F": "boss_final",
@@ -264,6 +273,293 @@ var ROOMS: Array[Dictionary] = [
 		],
 	},
 	{
+		# Sentinel hall: offset pillar rows; three sentinels shoot across the
+		# ice patches, a slime holds the middle.
+		"path": "res://world/rooms/f2/f2_salao.tscn",
+		"floor": 2,
+		"rows": [
+			"######################X#######",
+			"#............................#",
+			"#............s...........s...#",
+			"#...o.....o.......o.....o....#",
+			"#............................#",
+			"#.........iii................#",
+			"#.........iii......c.........#",
+			"E............................#",
+			"#..................iii.......#",
+			"#..................iii.......#",
+			"#............................#",
+			"#.......o.....o.......o......#",
+			"#..........C.............s...#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Frozen lane: two long walls make three lanes; the middle one is ice,
+		# sentinels cover the side lanes, a beetle waits at the far end.
+		"path": "res://world/rooms/f2/f2_corredor.tscn",
+		"floor": 2,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#..........s.........s.......#",
+			"#............................#",
+			"#....##########..#########...#",
+			"#....##########..#########...#",
+			"#............................#",
+			"E.......iiiiiiiiiiii.....h...X",
+			"#............................#",
+			"#....#########..##########...#",
+			"#....#########..##########...#",
+			"#............................#",
+			"#........C....c......s.......#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Overlook: the way in is from below; sentinels shoot from behind a
+		# crate line at the top, ice on both flanks.
+		"path": "res://world/rooms/f2/f2_mirante.tscn",
+		"floor": 2,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#.....s........s.........s...#",
+			"#............................#",
+			"#....xxxx....xxxx....xxxx....#",
+			"#............................#",
+			"#...................c........#",
+			"#..ii...................ii...X",
+			"#..ii...................ii...#",
+			"#............................#",
+			"#.........o........o.........#",
+			"#............................#",
+			"#..C.........................#",
+			"#............................#",
+			"#............................#",
+			"##############E###############",
+		],
+	},
+	{
+		# Crypt: two inner walls cut the room in three, open in the middle;
+		# a sentinel guards each far chamber.
+		"path": "res://world/rooms/f2/f2_cripta.tscn",
+		"floor": 2,
+		"rows": [
+			"##############################",
+			"#.........#........#.........#",
+			"#.........#...s....#.....s...#",
+			"#.........#........#.........#",
+			"#....o....#........#....o....#",
+			"#............................#",
+			"#............................#",
+			"E.............iii.......h....#",
+			"#.............iii............#",
+			"#............................#",
+			"#....o....#........#....o....#",
+			"#.........#........#.........#",
+			"#..C......#....s...#.........#",
+			"#.........#........#.........X",
+			"#.........#........#.........#",
+			"##############################",
+		],
+	},
+	{
+		# Nave: a diagonal line of pillars to hide behind on the way down to
+		# the exit; sentinels on both sides of it.
+		"path": "res://world/rooms/f2/f2_nave.tscn",
+		"floor": 2,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#............................#",
+			"#...o...........s............#",
+			"#.......o...............s....#",
+			"#...........o................#",
+			"#...............o............#",
+			"E...................o........#",
+			"#.......................o....#",
+			"#............................#",
+			"#..........ii.....h......c...#",
+			"#..........ii................#",
+			"#...........s.............C..#",
+			"#............................#",
+			"#............................#",
+			"#######X######################",
+		],
+	},
+	{
+		# Frozen pond: a crate ring around an ice pond, open on the lane;
+		# sentinels at the top and bottom of the ring.
+		"path": "res://world/rooms/f2/f2_fosso.tscn",
+		"floor": 2,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#..........s.......s.........#",
+			"#............................#",
+			"#.......xxxx......xxxx.......#",
+			"#.......x............x.......#",
+			"#.......x..iiiiiiii..x.......#",
+			"E..........iiiiiiii......c...#",
+			"#.......x..iiiiiiii..x.......X",
+			"#.......x............x.......#",
+			"#.......xxxx......xxxx.......#",
+			"#............................#",
+			"#..C.......s.......c.........#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Chambers: two inner walls with two gaps each; ember vents near the
+		# gaps, enemies of every kind spread over the chambers.
+		"path": "res://world/rooms/f3/f3_camaras.tscn",
+		"floor": 3,
+		"rows": [
+			"##############################",
+			"#........#..........#........#",
+			"#........#...s......#........#",
+			"#........#..........#....s...#",
+			"#........#..........#........#",
+			"#.........................v..#",
+			"#............................#",
+			"E........#....c.....#........#",
+			"#........#..........#........#",
+			"#........#.....v....#........#",
+			"#........#..........#...h....#",
+			"#............................#",
+			"#............................#",
+			"#..C.....#....c.....#........#",
+			"#........#..........#........X",
+			"##############################",
+		],
+	},
+	{
+		# Serpent: two thick walls fold the room into an S-shaped corridor.
+		"path": "res://world/rooms/f3/f3_serpente.tscn",
+		"floor": 3,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#..........................s.#",
+			"#.....###################....#",
+			"#.....###################....#",
+			"#............................#",
+			"#............................#",
+			"E.........v.......c..........#",
+			"#............................#",
+			"#....###################.....#",
+			"#....###################.....#",
+			"#............................#",
+			"#...........h.......s.....C..#",
+			"#............................#",
+			"#......v.....................#",
+			"###############X##############",
+		],
+	},
+	{
+		# Forge: an open hall with a ring of ember vents; keep moving between
+		# the bursts.
+		"path": "res://world/rooms/f3/f3_forja.tscn",
+		"floor": 3,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#............................#",
+			"#....o.....v......v.....o....#",
+			"#............................#",
+			"#.........s.........s........#",
+			"#............................#",
+			"E.......v.....h......v.......X",
+			"#............................#",
+			"#.....................c......#",
+			"#............................#",
+			"#..........v......v..........#",
+			"#....o........C.........o....#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Crossroads: four wall blocks leave a cross of corridors; sentinels
+		# watch them from the far side.
+		"path": "res://world/rooms/f3/f3_ponte.tscn",
+		"floor": 3,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#............................#",
+			"#....#####........######.....#",
+			"#....#####...s....######..s..#",
+			"#....#####........######.....#",
+			"#............................#",
+			"E..........c......v..........#",
+			"#............................#",
+			"#....#####........######.....#",
+			"#....#####....h...######.....#",
+			"#....#####........######.....#",
+			"#..C.....................c...#",
+			"#..................v.........#",
+			"#............................#",
+			"##############X###############",
+		],
+	},
+	{
+		# Obsidian yard: crate pairs and pillars in staggered rows, vents in
+		# the lanes between them.
+		"path": "res://world/rooms/f3/f3_obsidiana.tscn",
+		"floor": 3,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#.......o.......o.......o....#",
+			"#............................#",
+			"#...xx.......xx.......xx.....#",
+			"#...xx.....s.xx...c...xx.....#",
+			"#............................#",
+			"E.......................h....#",
+			"#............................#",
+			"#........xx.......xx......s..#",
+			"#........xx...v...xx.........#",
+			"#............................#",
+			"#....o.......o.......o.....C.#",
+			"#...............c.....v......#",
+			"#............................#",
+			"###########X##################",
+		],
+	},
+	{
+		# Cloister: four L-shaped walls around a vent in the middle; the way
+		# through is the gaps.
+		"path": "res://world/rooms/f3/f3_claustro.tscn",
+		"floor": 3,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#............................#",
+			"#.......#####....#####.......#",
+			"#.......#............#...s...#",
+			"#.......#....s.......#.......#",
+			"#............................#",
+			"E.............v..............X",
+			"#............................#",
+			"#.......#.......c....#.......#",
+			"#.......#............#.......#",
+			"#.......#####....#####.......#",
+			"#..C.....................h...#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
 		# Floor 1 boss: the big crawler. Corner pillars only, room to dodge the ring.
 		"path": "res://world/rooms/boss_f1.tscn",
 		"boss": true,
@@ -443,6 +739,13 @@ func _validate(def: Dictionary) -> Array[String]:
 			var dist := _center(c).distance_to(_center(start))
 			if dist < MIN_SPAWN_DIST:
 				errs.append("%s: %s spawn %s only %.0f px from entry" % [path, k, c, dist])
+	for c in _find(rows, "v"):
+		var dist := _center(c).distance_to(_center(start))
+		if dist < MIN_VENT_DIST:
+			errs.append("%s: vent %s only %.0f px from entry" % [path, c, dist])
+		for x in exits:
+			if _center(c).distance_to(_center(x + _inward(x))) < MIN_VENT_DIST:
+				errs.append("%s: vent %s next to the exit" % [path, c])
 	if enemies == 0 and not def.get("heal", false):
 		errs.append("%s: no enemies" % path)
 	if _top_rows(rows) == 1:
@@ -482,7 +785,7 @@ func _stairs_spot(rows: Array[String]) -> Vector2:
 					var ch := _ch(rows, n)
 					if inner and not ".,~".contains(ch):
 						ok = false
-					elif not inner and not WALKABLE.contains(ch):
+					elif not inner and (not WALKABLE.contains(ch) or ch == "v"):
 						ok = false
 					if inner and top == 1 and n.y <= 1:
 						ok = false
@@ -693,6 +996,14 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 		stairs.position = _stairs_spot(rows)
 		_add(room, stairs)
 
+	var hazards := _make_hazards(rows)
+	if hazards.get_child_count() > 0:
+		_add(room, hazards)
+		for n in hazards.find_children("*", "", true, false):
+			n.owner = room
+	else:
+		hazards.free()
+
 	if painted and ResourceLoader.exists(DECOR_PATH):
 		var decor := _make_decor(rows, def)
 		_add(room, decor)
@@ -721,7 +1032,7 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 ## spot, the chest spots and the enemy spawns.
 func _keep_clear(rows: Array[String], def: Dictionary) -> Array[Vector2]:
 	var out: Array[Vector2] = []
-	for ch in ["E", "X", "C"]:
+	for ch in ["E", "X", "C", "v"]:
 		for c in _find(rows, ch):
 			out.append(_center(c))
 	var e := _find(rows, "E")[0]
@@ -775,6 +1086,52 @@ func _make_decor(rows: Array[String], def: Dictionary) -> Node2D:
 			shape.position = Vector2(0, -4)
 			body.add_child(shape)
 			s.add_child(body)
+	return root
+
+
+## Floor hazards: one IcePatch whose shapes are the horizontal runs of "i"
+## cells, and one EmberVent per "v" cell (bursts staggered by VENT_STAGGER).
+func _make_hazards(rows: Array[String]) -> Node2D:
+	var root := Node2D.new()
+	root.name = "Hazards"
+	var ice := Area2D.new()
+	ice.name = "Ice"
+	ice.set_script(load(ICE_SCRIPT))
+	var t := RoomTiles.SIZE
+	for y in H:
+		var x0 := -1
+		for x in W + 1:
+			var on := x < W and rows[y][x] == "i"
+			if on and x0 < 0:
+				x0 = x
+			elif not on and x0 >= 0:
+				var shape := CollisionShape2D.new()
+				shape.name = "Run%d" % (ice.get_child_count() + 1)
+				var rect := RectangleShape2D.new()
+				rect.size = Vector2((x - x0) * t, t)
+				shape.shape = rect
+				shape.position = Vector2(x0 * t + (x - x0) * t / 2.0, y * t + t / 2.0)
+				ice.add_child(shape)
+				x0 = -1
+	if ice.get_child_count() > 0:
+		root.add_child(ice)
+	else:
+		ice.free()
+	var vents := _find(rows, "v")
+	for i in vents.size():
+		var v := Area2D.new()
+		v.name = "Vent%d" % (i + 1)
+		v.set_script(load(VENT_SCRIPT))
+		v.position = _center(vents[i])
+		v.set("phase", float(i) * VENT_STAGGER)
+		var shape := CollisionShape2D.new()
+		shape.name = "Shape"
+		var circle := CircleShape2D.new()
+		circle.radius = VENT_RADIUS
+		shape.shape = circle
+		shape.disabled = true
+		v.add_child(shape)
+		root.add_child(v)
 	return root
 
 

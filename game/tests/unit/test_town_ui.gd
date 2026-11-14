@@ -27,6 +27,9 @@ func test_teleport_lists_unlocked_floors() -> void:
 	_game().run.unlock_floor(3)
 	p = town.open_panel(&"teleport") as TeleportPanel
 	T.eq(p.floor_buttons.size(), 3, "floors 1..3")
+	for i in 3:
+		T.eq(p.floor_buttons[i].disabled, false, "floor %d is built" % (i + 1))
+		T.eq(p.floor_buttons[i].text, "Andar %d" % (i + 1))
 	p.travel = false
 	var chosen: Array[int] = []
 	p.floor_chosen.connect(func(n: int) -> void: chosen.append(n))

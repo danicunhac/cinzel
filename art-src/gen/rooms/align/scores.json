@@ -255,6 +255,314 @@
    -7
   ]
  },
+ "f2_corredor": {
+  "after": 0.1757,
+  "best": 0.1508,
+  "colors": 48,
+  "drift": 20,
+  "edges": [
+   36,
+   236,
+   28,
+   452
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.1759,
+  "obstacles": 0.972,
+  "shift": [
+   3,
+   -3
+  ]
+ },
+ "f2_cripta": {
+  "after": 0.0854,
+  "applied_shift": [
+   0,
+   -1
+  ],
+  "best": 0.0834,
+  "colors": 48,
+  "drift": 12,
+  "edges": [
+   28,
+   241,
+   17,
+   463
+  ],
+  "edges_after": [
+   27,
+   240,
+   17,
+   463
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.0892,
+  "obstacles": 0.826,
+  "shift": [
+   0,
+   -8
+  ]
+ },
+ "f2_fosso": {
+  "after": 0.1635,
+  "best": 0.1447,
+  "colors": 48,
+  "drift": 12,
+  "edges": [
+   27,
+   232,
+   28,
+   452
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.16,
+  "obstacles": 0.72,
+  "shift": [
+   0,
+   -5
+  ]
+ },
+ "f2_mirante": {
+  "after": 0.1431,
+  "best": 0.1295,
+  "colors": 48,
+  "drift": 14,
+  "edges": [
+   30,
+   237,
+   21,
+   460
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.1412,
+  "obstacles": 0.549,
+  "shift": [
+   0,
+   -8
+  ]
+ },
+ "f2_nave": {
+  "after": 0.129,
+  "best": 0.1272,
+  "colors": 48,
+  "drift": 14,
+  "edges": [
+   16,
+   236,
+   29,
+   450
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.1294,
+  "obstacles": 0.097,
+  "shift": [
+   0,
+   3
+  ]
+ },
+ "f2_salao": {
+  "after": 0.1533,
+  "best": 0.1399,
+  "colors": 48,
+  "drift": 13,
+  "edges": [
+   9,
+   241,
+   29,
+   459
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.1531,
+  "obstacles": 0.004,
+  "shift": [
+   0,
+   -8
+  ]
+ },
+ "f3_camaras": {
+  "after": 0.2327,
+  "applied_shift": [
+   0,
+   1
+  ],
+  "best": 0.2012,
+  "colors": 48,
+  "drift": 16,
+  "edges": [
+   0,
+   239,
+   25,
+   458
+  ],
+  "edges_after": [
+   0,
+   240,
+   21,
+   460
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.2047,
+  "obstacles": 0.865,
+  "shift": [
+   -1,
+   -8
+  ]
+ },
+ "f3_claustro": {
+  "after": 0.2637,
+  "best": 0.2072,
+  "colors": 48,
+  "drift": 15,
+  "edges": [
+   1,
+   243,
+   12,
+   467
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.2698,
+  "obstacles": 0.619,
+  "shift": [
+   4,
+   -8
+  ]
+ },
+ "f3_forja": {
+  "after": 0.3336,
+  "best": 0.3089,
+  "colors": 48,
+  "drift": 14,
+  "edges": [
+   2,
+   241,
+   9,
+   470
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.3472,
+  "obstacles": 0.107,
+  "shift": [
+   -8,
+   -2
+  ]
+ },
+ "f3_obsidiana": {
+  "after": 0.21,
+  "best": 0.1882,
+  "colors": 48,
+  "drift": 16,
+  "edges": [
+   0,
+   256,
+   0,
+   480
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.1981,
+  "obstacles": 0.98,
+  "shift": [
+   0,
+   5
+  ]
+ },
+ "f3_ponte": {
+  "after": 0.2563,
+  "best": 0.2103,
+  "colors": 48,
+  "drift": 11,
+  "edges": [
+   5,
+   245,
+   13,
+   466
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.2624,
+  "obstacles": 0.732,
+  "shift": [
+   -2,
+   -6
+  ]
+ },
+ "f3_serpente": {
+  "after": 0.3472,
+  "best": 0.2879,
+  "colors": 48,
+  "drift": 12,
+  "edges": [
+   4,
+   245,
+   12,
+   468
+  ],
+  "edges_want": [
+   16,
+   240,
+   16,
+   464
+  ],
+  "mismatch": 0.3497,
+  "obstacles": 0.638,
+  "shift": [
+   8,
+   -8
+  ]
+ },
  "t1_move_attack": {
   "after": 0.1147,
   "best": 0.1053,

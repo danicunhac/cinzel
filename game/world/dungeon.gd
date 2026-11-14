@@ -50,7 +50,6 @@ var _args: Dictionary = {}
 @onready var rooms: Node2D = $Rooms
 @onready var player: Player = $Player
 @onready var fade: ColorRect = $Overlay/Fade
-@onready var notice: Label = $Overlay/Notice
 
 
 func _ready() -> void:
@@ -59,7 +58,6 @@ func _ready() -> void:
 	_args = _parse_args()
 	player.died.connect(_on_player_died)
 	player.exited.connect(leave_to_town)
-	notice.visible = false
 	if _args.has("room"):
 		_enter_single(String(_args["room"]))
 	else:
@@ -284,18 +282,16 @@ func _add_portal(pos: Vector2, label: String, color: Color, on_used: Callable) -
 
 
 func _next_floor() -> void:
-	var next := current_floor + 1
-	if not state.has_floor(next) and templates_for(next).is_empty():
-		_show_notice("O andar %d ainda não foi construído." % next)
-		return
-	enter_floor(next)
+	enter_floor(current_floor + 1)
 
 
 func _win() -> void:
 	_leaving = true
 	Game.run.clock.running = false
 	_snapshot_run()
-	Game.goto(VICTORY_SCENE if ResourceLoader.exists(VICTORY_SCENE) else TOWN_SCENE)
+	# Deferred: the last boss dies inside a physics callback, and its own
+	# death handling still runs after this.
+	Game.goto.call_deferred(VICTORY_SCENE if ResourceLoader.exists(VICTORY_SCENE) else TOWN_SCENE)
 
 
 func _on_player_died() -> void:
@@ -317,12 +313,6 @@ func _on_player_died() -> void:
 ## walked back down to.
 func _snapshot_run() -> void:
 	Game.last_run = {"floor": maxi(max_floor, current_floor), "seconds": Game.run.clock.seconds, "gold": Game.run.gold}
-
-
-func _show_notice(text: String) -> void:
-	notice.text = text
-	notice.visible = true
-	get_tree().create_timer(2.5).timeout.connect(func() -> void: notice.visible = false)
 
 
 func _parse_args() -> Dictionary:

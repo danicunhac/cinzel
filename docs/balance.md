@@ -91,3 +91,68 @@ Raras só aparecem na loja depois de abrir o andar 2 (vencer o primeiro chefe). 
 | Espada do Cavaleiro | 180 | 144 |
 
 Uma descida vitoriosa rende 87 a 116 de ouro no chão, mais a venda de materiais e do item do baú. Com isso a relíquia rara cabe depois da primeira descida e a primeira peça rara de equipamento depois da segunda. A venda não mudou (preço do item × fator de oferta e procura).
+
+# Balanço dos andares 2 e 3
+
+Data: 2026-11-14 (Task 13). Objetivo: com o equipamento que um jogador plausivelmente tem ao chegar (o kit inicial mais o que caiu e uma peça forjada entre os andares), o robô com `--skill=0.8` vence cada andar em pelo menos 3 de 5 descidas, com o relógio subindo de nível a cada andar.
+
+## Como medir
+
+O robô ganhou duas opções:
+
+- `--floors=3`: joga do andar 1 ao 3 sem parar. Depois de cada chefe (menos o último) pega o equipamento do chão, faz a parada na cidade de quem volta (forja a primeira receita que consegue pagar, veste a arma, armadura e elmo mais caros que carrega), cura parado e entra no portal "Andar N+1". O relógio fica igual ao de passar pela cidade, onde ele para.
+- `--start=2 --kit=f2` / `--start=3 --kit=f3`: começa direto no andar, com o relógio em 150 s / 330 s (o que o robô mostra ao chegar lá) e um kit plausível: armadura de couro e elmo de ferro no andar 2; espada do cavaleiro, couro e elmo de ferro no andar 3.
+
+Ele também anda em volta das grelhas de brasa, sai de cima de uma que acende, rola na investida do chefe final, larga o item novo quando a mochila cheia abre a troca e não pisa nos portais por acidente.
+
+```
+godot --headless --fixed-fps 60 --path game -s res://tools/run_node.gd -- --node=res://tools/qa_autopilot.gd --mode=win --floors=3 --skill=0.8
+godot --headless --fixed-fps 60 --path game -s res://tools/run_node.gd -- --node=res://tools/qa_autopilot.gd --mode=win --start=2 --kit=f2 --floors=2 --skill=0.8
+```
+
+A linha `FLOORS` diz, por andar, se venceu (relógio na entrada e na morte do chefe) ou em que sala morreu, o que forjou e o equipamento final.
+
+## Antes do ajuste
+
+Os inimigos não tinham multiplicador por andar: andar 2 e 3 usavam a vida e o dano das cenas, só com o relógio por cima. Com isso:
+
+| Robô | Andar 2 | Andar 3 |
+|---|---|---|
+| `--start` com o kit do andar | 1/8 | 0/8 (mortes nas salas 0 a 2) |
+| `--floors=3` | 4 de 9 que chegaram | 1 de 1 |
+
+Quem mata é a sentinela: 200 a 430 de dano por andar 2. O andar 2 tem mais sentinelas (todas as salas têm pelo menos uma, quase todas três), e no andar 3 o relógio já está no nível 5 (+50% de vida, +40% de dano e um inimigo a mais por sala).
+
+## O que mudou
+
+Multiplicador por andar em `game/logic/difficulty.gd` (`FLOOR_HP_MULT`, `FLOOR_DMG_MULT`), aplicado a todo inimigo e chefe por cima do relógio. As cenas dos inimigos não mudaram.
+
+| Andar | Vida antes → depois | Dano antes → depois |
+|---|---|---|
+| 1 | 1,0 → 1,0 | 1,0 → 1,0 |
+| 2 | 1,0 → 0,85 | 1,0 → 0,7 |
+| 3 | 1,0 → 0,85 | 1,0 → 0,7 |
+
+O multiplicador abaixo de 1 compensa o relógio, não o substitui: o robô chega ao andar 2 no nível 1 a 2 e ao chefe dele no nível 3 a 5; chega ao andar 3 no nível 3 a 6 e ao chefe final no nível 6 a 9. Na prática uma sentinela do andar 2 no nível 4 tira 11 × 1,32 × 0,7 ≈ 10 por tiro (no andar 1, nível 1: 12), e há mais delas. Valores intermediários testados: 0,85/0,8 (andar 2) e 0,75/0,7 (andar 3) deixaram o andar 2 em 3/8 e o chefe final caindo em 12 s; 0,95/0,8 no andar 3 deixou o andar 3 em 0/8 com o kit de início.
+
+Grelha de brasa: 10 de dano por queima, com o mesmo multiplicador do andar 3 e do relógio. Gelo: só deixa o andar 20% mais lento, sem dano.
+
+## Depois do ajuste
+
+`--floors=3`, `--skill=0.8`, 32 descidas:
+
+| Andar | Vitórias | Chefe aos | Nível no chefe |
+|---|---|---|---|
+| 1 | 31/32 | 63 a 121 s | 1 a 2 |
+| 2 | 24 de 29 que chegaram (83%) | 212 a 356 s | 3 a 5 |
+| 3 | 15 de 24 que chegaram (63%) | 366 a 539 s | 6 a 9 |
+
+Com o kit de início do andar: andar 2 8/12, andar 3 9/10. O andar 3 com a espada do cavaleiro é bem mais fácil que o andar 3 de quem chega com a espada de ferro (63%), então a forja entre os andares pesa.
+
+Mortes: no andar 2, a sentinela nas salas e a investida do chefe; no andar 3, os slimes invocados pelo chefe final e as sentinelas. As grelhas tiram 8 a 26 por andar 3, nunca decidiram uma descida.
+
+O chefe final cai em 11 a 25 s (o do andar 1 leva 23 a 26 s). Se parecer rápido demais com gente, a alavanca é a vida dele em `boss_final.tscn`, não o multiplicador do andar.
+
+## Materiais e forja
+
+Conferido nas descidas: os inimigos do andar 2 deixam carapaça, chifre e olho de sentinela, os do andar 3 pó de brasa, obsidiana e tecido espectral (`LootTable.ENEMY_MATERIALS`); o robô forjou couro, elmo de chifres, espada do cavaleiro e cota de malha entre os andares. As receitas abrem com os chefes como antes (`test_floors.gd`). Nada de receitas ou materiais mudou aqui.

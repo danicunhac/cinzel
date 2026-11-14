@@ -19,7 +19,8 @@ func _tree() -> SceneTree:
 func _all_rooms() -> Array[String]:
 	var out: Array[String] = []
 	out.assign(ROOMS)
-	out.append_array(Dungeon.templates_for(1))
+	for f in [1, 2, 3]:
+		out.append_array(Dungeon.templates_for(f))
 	return out
 
 
