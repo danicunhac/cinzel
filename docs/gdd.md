@@ -54,14 +54,17 @@ Vitória: vencer o chefe do andar 3.
 
 Pedido do Daniel: mais armas, armaduras, roupas e mochilas, mais perto de SAO.
 
-### Espaços do personagem
+### Espaços do personagem (decidido em 14/11)
 | Espaço | O que faz | Aparece no sprite |
 |---|---|---|
 | Arma | Define o estilo de ataque (alcance, velocidade, combo, golpe especial) | Sim (camada `weapon`) |
-| Armadura | Defesa e vida máxima; armaduras pesadas deixam o rolamento mais lento | Sim (camada `outfit`) |
-| Capuz/elmo | Bônus pequeno (crítico, luz, resistência) | Sim (camada `hair`) |
+| Armadura | Só atributos: defesa, vida máxima, peso (armadura pesada deixa o rolamento mais lento) | Não |
+| Capuz/elmo | Só atributos: bônus pequeno (crítico, resistência) | Não |
 | Mochila | Quantos espaços de saque cabem | Sim (parte de `outfit`) |
 | Relíquias (até 3) | Os 8 itens atuais, com efeitos passivos | Não |
+| **Roupa (visual)** | Só aparência, estilo SAO: escolhida livremente na cidade (guarda-roupa) e desbloqueada por compra, baú ou chefe. Não muda números. | Sim (camadas `hair` e `outfit`) |
+
+A aparência vem da roupa, e os números vêm do equipamento. Cada roupa precisa da sua folha de sprite completa (8×13 quadros de 32 px nas camadas `hair` e `outfit`).
 
 ### Tipos de arma (decidido pelo Daniel em 14/11)
 - **Espada:** equilibrada, combo de 3. Especial: estocada em linha.
@@ -74,13 +77,22 @@ Pedido do Daniel: mais armas, armaduras, roupas e mochilas, mais perto de SAO.
 O **golpe especial** imita as Sword Skills de SAO: segurar o ataque por 0,5 s carrega um golpe com rastro de luz, com uma recarga curta.
 
 ### Raridade
-Comum (branco), Rara (azul), Épica (roxo). A raridade aumenta os números e pode trazer um efeito extra. **[a decidir: quantas raridades]**
+Comum (branco), Rara (azul), Épica (roxo). A raridade aumenta os números, e as épicas trazem um efeito extra.
+
+### Quantidade de conteúdo (decidido em 14/11, opção B)
+- 12 armas (2 de cada tipo)
+- 6 armaduras
+- 4 capuzes/elmos
+- 3 mochilas: 8, 14 e 20 espaços
+- 8 relíquias (as atuais)
+- 5 roupas visuais (a inicial e mais 4)
+- 10 materiais (3 por andar, mais 1 raro de chefe)
 
 ## 6. Mochila, saque e loja (novo, proposta)
 
 - Inimigos derrubam **materiais**: gosma de slime, núcleo de pedra, carapaça, essência espectral. Baús e chefes derrubam **equipamentos** e **relíquias**.
 - O saque vai para a **mochila**, uma grade de espaços: a mochila inicial tem 8 e as melhores chegam a 20. Mochila cheia obriga a escolher o que largar.
-- **Loja:** vende materiais e equipamentos. Os preços variam com a raridade e o andar. **[a decidir: preço dinâmico estilo Moonlighter, em que a reação do cliente mostra se está caro, ou preço fixo]**
+- **Loja (decidido em 14/11):** preço base fixo por item, corrigido por oferta e procura. A loja paga mais pelo que está em falta e menos pelo que o jogador vendeu demais, e a tabela muda a cada volta da torre. O preço livre com clientes, estilo Moonlighter, fica como evolução depois da entrega.
 - **Ferreiro:** em vez de "2 itens por 1", forja armas e armaduras com materiais e ouro, por receitas que vão sendo liberadas por andar.
 - **Sem baú de casa (decidido em 14/11):** morrer perde TUDO (equipamento, mochila, ouro e andares liberados). O que protege o jogador é sair a tempo.
 
