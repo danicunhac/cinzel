@@ -1,4 +1,6 @@
 """Shared helpers for the art pipeline (Pillow). Run scripts with python3 -I."""
+import os
+
 from PIL import Image
 
 OUTLINE = (24, 16, 20, 255)
@@ -72,6 +74,24 @@ def is_steel(c):
     spread = max(r, g, b) - min(r, g, b)
     avg = (r + g + b) / 3
     return (spread < 28 and avg > 120) or (spread < 52 and avg > 175)
+
+
+def parse_args(argv):
+    """<repo_root> [--force] -> (root, force)."""
+    force = "--force" in argv
+    rest = [a for a in argv[1:] if a != "--force"]
+    return rest[0], force
+
+
+def save_guarded(img, path, force):
+    """Never replace an existing file (it may be hand-drawn art) without
+    --force."""
+    if os.path.exists(path) and not force:
+        print("skip %s (exists, may be hand-drawn; pass --force to overwrite)" % path)
+        return False
+    img.save(path)
+    print("wrote %s" % path)
+    return True
 
 
 def count_colors(img):

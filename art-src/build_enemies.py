@@ -1,6 +1,7 @@
 """Build the enemy sheets from the generated single sprites.
 
-python3 -I art-src/build_enemies.py <repo_root>
+python3 -I art-src/build_enemies.py <repo_root> [--force]
+Existing output files are kept unless --force is passed.
 
 Inputs (magenta background, AI generator, see docs/assets.md):
   art-src/gen/enemy-crawler.png  slime
@@ -21,7 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from PIL import Image, ImageEnhance  # noqa: E402
 
-from artlib import OUTLINE, frames, key_magenta  # noqa: E402
+from artlib import OUTLINE, frames, key_magenta, parse_args, save_guarded  # noqa: E402
 
 E = 16
 # Colours per sheet: the charger shell turns to noise with more.
@@ -172,7 +173,7 @@ def charger(src):
 
 
 def main():
-    root = sys.argv[1]
+    root, force = parse_args(sys.argv)
     jobs = {
         "crawler": (crawler, "gen/enemy-crawler.png"),
         "shooter": (shooter, "gen/enemies-sheet.png"),
@@ -184,7 +185,7 @@ def main():
         sheet = Image.new("RGBA", (E * 4, E * 4), (0, 0, 0, 0))
         for k, c in enumerate(cells):
             sheet.alpha_composite(c, ((k % 4) * E, (k // 4) * E))
-        sheet.save(os.path.join(root, "game/assets/enemies", name + ".png"))
+        save_guarded(sheet, os.path.join(root, "game/assets/enemies", name + ".png"), force)
 
 
 if __name__ == "__main__":

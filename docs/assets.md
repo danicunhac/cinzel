@@ -2,49 +2,55 @@
 
 Origem de cada arquivo de arte do jogo. Alimenta a ficha do jogo.
 
-Toda geração usou o gerador de IA (ambiente QA, projeto `asset-gen`) com o preset de estilo `cinzel-pixel`. Os originais baixados ficam em `art-src/gen/` e `art-src/keyart/`. Os scripts em `art-src/` (rodar com `python3 -I` de um Python que tenha o Pillow, por exemplo um venv) transformam esses originais nas folhas do jogo:
+Toda geração usou o gerador de IA (ambiente QA, projeto `asset-gen`) com o preset de estilo `cinzel-pixel` (papéis `backgrounds`, `characters`, `gameplayTiles`, `gameplayProps`, `uiElements`; referências: as duas artes-chave escolhidas). Os originais baixados ficam em `art-src/gen/` e `art-src/keyart/`.
 
-- `build_climber.py`: escalador em camadas.
+Os scripts em `art-src/` transformam esses originais nas folhas do jogo. Rode com `python3 -I` de um Python que tenha o Pillow, por exemplo um venv: `python3 -m venv /tmp/cinzel-venv && /tmp/cinzel-venv/bin/pip install pillow`, depois `/tmp/cinzel-venv/bin/python -I art-src/<script>.py .`.
+
+- `build_climber.py` (com `walk_cycle.py`): escalador em camadas.
 - `build_enemies.py`: inimigos.
 - `build_tiles.py`: tilesets.
 - `check_art.py`: confere tamanho, transparência e no máximo 32 cores.
 
-`make_placeholders.py` continua gerando os placeholders antigos, mas não sobrescreve arquivo existente sem `--force`.
+Nenhum desses scripts sobrescreve um arquivo que já existe, porque ele pode ter sido redesenhado à mão. Para gerar de novo por cima, passe `--force`. `make_placeholders.py` segue a mesma regra.
 
 ## Arquivos do jogo
 
-| Arquivo | Origem | Data |
-|---|---|---|
-| `game/assets/characters/climber/body.png` | Derivado das folhas geradas do escalador (abaixo) por `build_climber.py`: pele, mãos e botas | 2026-11-14 |
-| `game/assets/characters/climber/hair.png` | Idem: capuz e cabelo | 2026-11-14 |
-| `game/assets/characters/climber/outfit.png` | Idem: jaqueta, cachecol, calça e mochila | 2026-11-14 |
-| `game/assets/characters/climber/weapon.png` | Idem: espada e arco do golpe | 2026-11-14 |
-| `art-src/climber-reference.png` | Composição das 4 camadas, referência para redesenhar à mão | 2026-11-14 |
-| `game/assets/enemies/crawler.png` | `cinzel-enemy-crawler` por `build_enemies.py` (animação por deformação da pose gerada) | 2026-11-14 |
-| `game/assets/enemies/shooter.png` | Conjurador de `cinzel-enemies-sheet` por `build_enemies.py` | 2026-11-14 |
-| `game/assets/enemies/charger.png` | `cinzel-enemy-charger-v2` por `build_enemies.py` | 2026-11-14 |
-| `game/assets/tiles/floor1.png` | `cinzel-tiles-floor1-sheet` e `cinzel-tiles-props-sheet` por `build_tiles.py` | 2026-11-14 |
-| `game/assets/tiles/floor2.png` | `floor1.png` com a pedra em azul frio (`build_tiles.py`) | 2026-11-14 |
-| `game/assets/tiles/floor3.png` | `floor1.png` com a pedra em vermelho escuro de brasa (`build_tiles.py`) | 2026-11-14 |
-| `game/assets/tiles/town.png` | `cinzel-tiles-town-sheet` por `build_tiles.py` | 2026-11-14 |
+| Arquivo | Autoria | Origem | Data |
+|---|---|---|---|
+| `game/assets/characters/climber/body.png` | Gerado por IA (gpt-image-2.5 flare edit) + ajuste por script | Folhas do escalador (abaixo) por `build_climber.py`: pele, mãos e botas. Andar feito à mão por script (`walk_cycle.py`) a partir do quadro parado | 2026-11-14 |
+| `game/assets/characters/climber/hair.png` | Idem | Idem: capuz e cabelo | 2026-11-14 |
+| `game/assets/characters/climber/outfit.png` | Idem | Idem: jaqueta, cachecol, calça e mochila | 2026-11-14 |
+| `game/assets/characters/climber/weapon.png` | Idem | Idem: espada e arco do golpe | 2026-11-14 |
+| `art-src/climber-reference.png` | Idem | Composição das 4 camadas, guia para redesenhar à mão | 2026-11-14 |
+| `game/assets/enemies/crawler.png` | Gerado por IA (gpt-image-2.5 flare, preset `cinzel-pixel`) + ajuste por script | `art-src/gen/enemy-crawler.png` por `build_enemies.py` (animação por deformação da pose gerada) | 2026-11-14 |
+| `game/assets/enemies/shooter.png` | Idem | Conjurador de `art-src/gen/enemies-sheet.png` por `build_enemies.py` | 2026-11-14 |
+| `game/assets/enemies/charger.png` | Idem | `art-src/gen/enemy-charger-v2.png` por `build_enemies.py` | 2026-11-14 |
+| `game/assets/tiles/floor1.png` | Idem | `art-src/gen/tiles-floor1-sheet.png` e `art-src/gen/tiles-props-sheet.png` por `build_tiles.py` | 2026-11-14 |
+| `game/assets/tiles/floor2.png` | Idem | `floor1` com a pedra em azul frio | 2026-11-14 |
+| `game/assets/tiles/floor3.png` | Idem | `floor1` com a pedra em vermelho escuro de brasa | 2026-11-14 |
+| `game/assets/tiles/town.png` | Idem | `art-src/gen/tiles-town-sheet.png` por `build_tiles.py` | 2026-11-14 |
+
+Quando o Daniel redesenhar um arquivo à mão, troque a autoria dessa linha para "Autoral (Daniel)".
 
 ## Gerações no gerador de IA
 
-| Nome do asset | Modelo | Prompt (resumo) | Data |
-|---|---|---|---|
-| `cinzel-keyart-tower-1-6b2e37361861` | gpt-image-2.5 sunburst | Sala da torre, pixel art vista de cima (escolhida pelo Daniel) | 2026-11-14 |
-| `cinzel-keyart-town-1-3796c73abe79` | gpt-image-2.5 sunburst | Rua da cidade, pixel art vista de cima (escolhida pelo Daniel) | 2026-11-14 |
-| `cinzel-climber-turnaround-1-a9700b2c85f6` | template `styled-sprite-sheet`, papel `characters` | Escalador em pose neutra: frente, costas, lado (aprovado pelo Daniel) | 2026-11-14 |
-| `cinzel-climber-walk-sheet-20a83c957340` | `openai/gpt-image-2.5/flare/edit`, referência = turnaround | "Using this exact character (...) draw a pixel-art animation sprite sheet on a flat magenta #FF00FF background (...) row 1 walk cycle facing the viewer, row 2 from behind, row 3 facing right" | 2026-11-14 |
-| `cinzel-climber-attack-sheet-ed17687bcaf3` | `openai/gpt-image-2.5/flare/edit`, referência = turnaround | Mesmo pedido, ataque com espada em 3 linhas x 3 quadros: preparo, golpe com arco, acompanhamento | 2026-11-14 |
-| `cinzel-climber-roll-death-sheet-a999fe192f26` | `openai/gpt-image-2.5/flare/edit`, referência = turnaround | Rolamento para frente, para trás e para o lado (4 quadros) e morte de frente (4 quadros) | 2026-11-14 |
-| `cinzel-enemies-sheet-e3b89b5f3c48` | `style/gpt-image-2.5/flare`, preset `cinzel-pixel`, papel `characters` | Três inimigos; o preset devolveu só o conjurador encapuzado com cajado de orbe vermelho (usado como atirador) | 2026-11-14 |
-| `cinzel-enemy-crawler-4688abb49eb4` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `characters` | Gosma vermelho-escura em cúpula, dois olhos vermelhos brilhando, brilho claro no topo | 2026-11-14 |
-| `cinzel-enemy-charger-fc1d186596d2` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `characters` | Besouro-javali de placas cinza-marrom (descartado: virava ruído em 16 px) | 2026-11-14 |
-| `cinzel-enemy-charger-v2-958fd2b4b941` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `characters` | Besouro-javali com casco liso azul-aço, faixa vermelha, chifres de osso, olhos vermelhos, silhueta simples | 2026-11-14 |
-| `cinzel-tiles-floor1-sheet-a22089b881f0` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 de tiles da torre: lajes (lisa, clara, rachada, com musgo), parede, topo de parede, pilar, caixote, portas (trancada, aberta, fechada), baús, parede com tocha | 2026-11-14 |
-| `cinzel-tiles-props-sheet-6f9f6685ebad` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayProps` | Pilar, caixote, baú fechado, baú aberto com ouro, tocha de parede, sobre magenta | 2026-11-14 |
-| `cinzel-tiles-town-sheet-07b9e1466613` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 da cidade: calçamento, grama, madeira, terra, telhado, muro, toldo listrado, casa enxaimel, porta, janela, estandarte, topo de muro, água | 2026-11-14 |
+O nome no gerador de IA leva um hash de conteúdo. O arquivo no repositório é o original PNG baixado.
+
+| Arquivo no repo | Asset no gerador de IA | Modelo | Prompt (resumo) | Data |
+|---|---|---|---|---|
+| `art-src/keyart/keyart-tower-1-f637e9b7acec.png` | `cinzel-keyart-tower-1-6b2e37361861` | gpt-image-2.5 sunburst | Sala da torre, pixel art vista de cima (escolhida pelo Daniel) | 2026-11-14 |
+| `art-src/keyart/keyart-town-1-bd276bf242c4.png` | `cinzel-keyart-town-1-3796c73abe79` | gpt-image-2.5 sunburst | Rua da cidade, pixel art vista de cima (escolhida pelo Daniel) | 2026-11-14 |
+| `art-src/keyart/climber-turnaround-1.png` | `cinzel-climber-turnaround-1-a9700b2c85f6` | template `styled-sprite-sheet`, papel `characters` | Escalador em pose neutra: frente, costas, lado (aprovado pelo Daniel) | 2026-11-14 |
+| `art-src/gen/climber-walk-sheet.png` | `cinzel-climber-walk-sheet-20a83c957340` | `openai/gpt-image-2.5/flare/edit`, referência = turnaround | "Using this exact character (...) draw a pixel-art animation sprite sheet on a flat magenta #FF00FF background (...) row 1 walk cycle facing the viewer, row 2 from behind, row 3 facing right". Não é mais usado: a 24 px as pernas quase não mexiam | 2026-11-14 |
+| `art-src/gen/climber-attack-sheet.png` | `cinzel-climber-attack-sheet-ed17687bcaf3` | idem | Mesmo pedido, ataque com espada em 3 linhas x 3 quadros: preparo, golpe com arco, acompanhamento | 2026-11-14 |
+| `art-src/gen/climber-roll-death-sheet.png` | `cinzel-climber-roll-death-sheet-a999fe192f26` | idem | Rolamento para frente, para trás e para o lado (4 quadros) e morte de frente (4 quadros) | 2026-11-14 |
+| `art-src/gen/enemies-sheet.png` | `cinzel-enemies-sheet-e3b89b5f3c48` | `style/gpt-image-2.5/flare`, preset `cinzel-pixel`, papel `characters` | Três inimigos; o preset devolveu só o conjurador encapuzado com cajado de orbe vermelho (usado como atirador) | 2026-11-14 |
+| `art-src/gen/enemy-crawler.png` | `cinzel-enemy-crawler-4688abb49eb4` | idem | Gosma vermelho-escura em cúpula, dois olhos vermelhos brilhando, brilho claro no topo | 2026-11-14 |
+| `art-src/gen/enemy-charger.png` | `cinzel-enemy-charger-fc1d186596d2` | idem | Besouro-javali de placas cinza-marrom. Descartado: virava ruído em 16 px | 2026-11-14 |
+| `art-src/gen/enemy-charger-v2.png` | `cinzel-enemy-charger-v2-958fd2b4b941` | idem | Besouro-javali com casco liso azul-aço, faixa vermelha, chifres de osso, olhos vermelhos, silhueta simples | 2026-11-14 |
+| `art-src/gen/tiles-floor1-sheet.png` | `cinzel-tiles-floor1-sheet-a22089b881f0` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 de tiles da torre: lajes (lisa, clara, rachada, com musgo), parede, topo de parede, pilar, caixote, portas (trancada, aberta, fechada), baús, parede com tocha | 2026-11-14 |
+| `art-src/gen/tiles-props-sheet.png` | `cinzel-tiles-props-sheet-6f9f6685ebad` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayProps` | Pilar, caixote, baú fechado, baú aberto com ouro, tocha de parede, sobre magenta | 2026-11-14 |
+| `art-src/gen/tiles-town-sheet.png` | `cinzel-tiles-town-sheet-07b9e1466613` | `style/gpt-image-2.5/flare`, `cinzel-pixel`, `gameplayTiles` | Folha 4x4 da cidade: calçamento, grama, madeira, terra, telhado, muro, toldo listrado, casa enxaimel, porta, janela, estandarte, topo de muro, água | 2026-11-14 |
 
 ## Layout dos tilesets
 

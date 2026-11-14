@@ -1,6 +1,9 @@
 """Build the layered climber sheets from the generated sheets.
 
-python3 -I art-src/build_climber.py <repo_root>
+python3 -I art-src/build_climber.py <repo_root> [--force]
+
+Existing output files are kept unless --force is passed: the shipped sheets
+may be Daniel's hand-drawn layers (docs/personagem-guia.md).
 
 Inputs (magenta background, generated with AI generator, see docs/assets.md):
   art-src/keyart/climber-turnaround-1.png  idle (front, back, side)
@@ -23,7 +26,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from PIL import Image  # noqa: E402
 
-from artlib import OUTLINE, frames, is_green, is_steel, key_magenta  # noqa: E402
+import walk_cycle  # noqa: E402
+from artlib import OUTLINE, frames, is_green, is_steel, key_magenta, parse_args, save_guarded  # noqa: E402
 
 F = 24
 BASE = 22  # feet row
@@ -73,9 +77,21 @@ def shrink(img, box, s):
     return small, cx, fy
 
 
+def fit_shrink(img, box, s):
+    """shrink(), but frames wider or taller than the cell (long slash arc,
+    body lying down, the walk sheet's taller figure) are scaled down just
+    enough to fit instead of being clipped."""
+    small, cx, fy = shrink(img, box, s)
+    k = min(1.0, (F - 1) / small.width, BASE / fy)  # BASE: room for the walk bob
+    if k < 1.0:
+        small, cx, fy = shrink(img, box, s * k)
+    return small, cx, fy
+
+
 def place(small, cx, fy):
     cell = Image.new("RGBA", (F, F), (0, 0, 0, 0))
-    ox = round(F / 2 - cx)
+    # Hood centre on x=12, but slide the frame so nothing leaves the cell.
+    ox = min(max(round(F / 2 - cx), 0), F - small.width)
     oy = round(BASE + 1 - fy)
     cell.alpha_composite(small, (max(ox, 0), max(oy, 0)), (max(-ox, 0), max(-oy, 0)))
     return outline(cell)
@@ -145,23 +161,13 @@ def build_frames(root):
         s = sheet_scale(img, fr[ref[0]][ref[1]], ref_hood)
         for name, boxes, n in zip(names, fr, counts):
             assert len(boxes) == n, (rel, name, len(boxes))
-            rows[name] = [place(*shrink(img, b, s)) for b in boxes]
+            rows[name] = [place(*fit_shrink(img, b, s)) for b in boxes]
 
-    take("gen/climber-walk-sheet.png", ("walk_down", "walk_up", "walk_side"), (4, 4, 4))
     take("gen/climber-attack-sheet.png", ("attack_down", "attack_up", "attack_side"), (3, 3, 3), (0, 1))
     take("gen/climber-roll-death-sheet.png", ("roll_down", "roll_up", "roll_side", "death"), (4, 4, 4, 4))
-    # Walk: the generated legs barely move once downscaled, so add a 1 px bob
-    # on the passing frames.
-    for name in ("walk_down", "walk_up", "walk_side"):
-        rows[name] = [c if i % 2 == 0 else bob(c) for i, c in enumerate(rows[name])]
+    # Walk rows are hand-built from the idle frames after quantizing
+    # (walk_cycle.py); the generated walk sheet barely moved at 24 px.
     return rows
-
-
-def bob(cell):
-    out = Image.new("RGBA", (F, F), (0, 0, 0, 0))
-    out.alpha_composite(cell.crop((0, 0, F, BASE - 2)), (0, -1))
-    out.alpha_composite(cell.crop((0, BASE - 3, F, F)), (0, BASE - 3))
-    return out
 
 
 def palette_of(colors, n):
@@ -179,7 +185,7 @@ def nearest(palette, p):
 def quantize(rows):
     """One shared palette: STEEL_COLORS for the blade and slash arc, the rest
     for everything else, so the sword never merges with the khaki trousers."""
-    cells = [c for name in ROW_NAMES for c in rows[name]]
+    cells = [c for name in ROW_NAMES for c in rows.get(name, [])]
     steel, rest = [], []
     for c in cells:
         for p in c.get_flattened_data():
@@ -190,7 +196,7 @@ def quantize(rows):
     out = {}
     for name in ROW_NAMES:
         new = []
-        for c in rows[name]:
+        for c in rows.get(name, []):
             q = c.copy()
             px = q.load()
             for y in range(F):
@@ -279,25 +285,64 @@ def classify(cell, row):
             break
         lab.update(progress)
         pending = [p for p in pending if p not in lab]
-    return lab
+    return despeckle(lab)
+
+
+def despeckle(lab):
+    """A hair pixel with no 8-neighbour in hair is a stray speck from the
+    colour split (seen on the up rows): give it to its neighbours' layer
+    (never to the weapon)."""
+    out = dict(lab)
+    for (x, y), k in lab.items():
+        if k != "hair":
+            continue
+        votes = {}
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                if dx or dy:
+                    n = lab.get((x + dx, y + dy))
+                    if n:
+                        votes[n] = votes.get(n, 0) + 1
+        if "hair" not in votes:
+            votes.pop("weapon", None)
+            if votes:
+                out[(x, y)] = max(votes, key=votes.get)
+    return out
+
+
+def add_walk(rows, labels):
+    colors = {p[:3] for cells in rows.values() for c in cells for p in c.get_flattened_data() if p[3]}
+
+    def darker(c):
+        t = tuple(int(v * 0.7) for v in c[:3])
+        return nearest(list(colors), t) + (255,)
+
+    for d in ("down", "up", "side"):
+        idle = walk_cycle.frame_of(rows["idle_" + d][0], labels["idle_" + d][0])
+        frames_ = walk_cycle.side(idle, darker) if d == "side" else walk_cycle.front_back(idle)
+        cells, labs = zip(*(walk_cycle.to_cell(f, Image) for f in frames_))
+        rows["walk_" + d] = list(cells)
+        labels["walk_" + d] = list(labs)
 
 
 def main():
-    root = sys.argv[1]
+    root, force = parse_args(sys.argv)
     rows = quantize(build_frames(root))
+    labels = {name: [classify(c, name) for c in cells] for name, cells in rows.items()}
+    add_walk(rows, labels)
     layers = {k: Image.new("RGBA", (F * 4, F * len(ROW_NAMES)), (0, 0, 0, 0)) for k in ("body", "hair", "outfit", "weapon")}
     comp = Image.new("RGBA", (F * 4, F * len(ROW_NAMES)), (0, 0, 0, 0))
     for r, name in enumerate(ROW_NAMES):
         for i, cell in enumerate(rows[name]):
-            lab = classify(cell, name)
+            lab = labels[name][i]
             src = cell.load()
             for (x, y), layer in lab.items():
                 layers[layer].putpixel((i * F + x, r * F + y), src[x, y])
             comp.alpha_composite(cell, (i * F, r * F))
     out = os.path.join(root, "game/assets/characters/climber")
     for k, img in layers.items():
-        img.save(os.path.join(out, k + ".png"))
-    comp.save(os.path.join(root, "art-src/climber-reference.png"))
+        save_guarded(img, os.path.join(out, k + ".png"), force)
+    save_guarded(comp, os.path.join(root, "art-src/climber-reference.png"), force)
 
 
 if __name__ == "__main__":

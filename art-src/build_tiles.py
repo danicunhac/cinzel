@@ -1,6 +1,7 @@
 """Build the 16x16 tilesets from the generated tile sheets.
 
-python3 -I art-src/build_tiles.py <repo_root>
+python3 -I art-src/build_tiles.py <repo_root> [--force]
+Existing output files are kept unless --force is passed.
 
 Inputs (see docs/assets.md):
   art-src/gen/tiles-floor1-sheet.png  4x4 dungeon tiles on magenta
@@ -23,7 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from PIL import Image  # noqa: E402
 
-from artlib import frames, key_magenta  # noqa: E402
+from artlib import frames, key_magenta, parse_args, save_guarded  # noqa: E402
 
 T = 16
 COLORS = 32
@@ -249,13 +250,17 @@ def town_tiles(root):
 
 
 def main():
-    root = sys.argv[1]
+    root, force = parse_args(sys.argv)
     out_dir = os.path.join(root, "game/assets/tiles")
     raw = assemble(FLOOR_LAYOUT, floor_tiles(root))
-    quantize(raw).save(os.path.join(out_dir, "floor1.png"))
-    quantize(rehue(raw, 0.6, 0.16, 0.95)).save(os.path.join(out_dir, "floor2.png"))
-    quantize(rehue(raw, 0.01, 0.22, 0.85)).save(os.path.join(out_dir, "floor3.png"))
-    quantize(town_tiles(root)).save(os.path.join(out_dir, "town.png"))
+    outputs = {
+        "floor1.png": quantize(raw),
+        "floor2.png": quantize(rehue(raw, 0.6, 0.16, 0.95)),
+        "floor3.png": quantize(rehue(raw, 0.01, 0.22, 0.85)),
+        "town.png": quantize(town_tiles(root)),
+    }
+    for name, img in outputs.items():
+        save_guarded(img, os.path.join(out_dir, name), force)
 
 
 if __name__ == "__main__":
