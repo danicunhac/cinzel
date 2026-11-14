@@ -21,8 +21,15 @@ func test_same_seed_same_loot() -> void:
 	var b := _rng(9)
 	for i in 30:
 		T.eq(LootTable.roll_chest(2, 3, a), LootTable.roll_chest(2, 3, b))
-		T.eq(LootTable.roll_enemy(&"crawler", 1, a), LootTable.roll_enemy(&"crawler", 1, b))
-		T.eq(LootTable.roll_boss(3, 1, a), LootTable.roll_boss(3, 1, b))
+		T.eq(_flat(LootTable.roll_enemy(&"crawler", 1, a)), _flat(LootTable.roll_enemy(&"crawler", 1, b)))
+		T.eq(_flat(LootTable.roll_boss(3, 1, a)), _flat(LootTable.roll_boss(3, 1, b)))
+
+
+func _flat(drops: Array[LootDrop]) -> Array[String]:
+	var out: Array[String] = []
+	for d in drops:
+		out.append("%s:%d" % [d.id, d.qty])
+	return out
 
 
 func test_rarity_weights_shift_with_floor_and_clock() -> void:
@@ -63,11 +70,11 @@ func test_enemy_materials_by_floor_and_type() -> void:
 	var rng := _rng(1)
 	var seen: Dictionary[StringName, bool] = {}
 	for i in 200:
-		for drop: Dictionary in LootTable.roll_enemy(&"shooter", 2, rng):
-			seen[drop["id"]] = true
+		for drop: LootDrop in LootTable.roll_enemy(&"shooter", 2, rng):
+			seen[drop.id] = true
 	T.eq(seen.keys(), [LootTable.ENEMY_MATERIALS[2][&"shooter"]], "one material per type and floor")
 	T.ok(ItemDB.materials_of_floor(2).has(LootTable.ENEMY_MATERIALS[2][&"shooter"]), "floor 2 material")
-	T.eq(LootTable.roll_enemy(&"ghost", 1, rng), [] as Array[Dictionary], "unknown enemy drops nothing")
+	T.ok(LootTable.roll_enemy(&"ghost", 1, rng).is_empty(), "unknown enemy drops nothing")
 
 
 func test_enemy_drop_chance() -> void:
@@ -83,14 +90,14 @@ func test_boss_drop_has_gear_and_materials() -> void:
 	var drops := LootTable.roll_boss(1, 0, rng)
 	var gear := 0
 	var mats := 0
-	for d: Dictionary in drops:
-		var k := ItemDB.kind(d["id"])
+	for d: LootDrop in drops:
+		var k := ItemDB.kind(d.id)
 		if k == &"material":
-			mats += int(d["qty"])
+			mats += d.qty
 		else:
 			gear += 1
 			if k != &"outfit":
-				T.ok(ItemDB.rarity(d["id"]) != &"common", "boss gear is at least rare")
+				T.ok(ItemDB.rarity(d.id) != &"common", "boss gear is at least rare")
 	T.ok(gear >= 1, "boss gives gear")
 	T.ok(mats >= LootTable.BOSS_MATERIALS, "boss gives materials")
 
@@ -99,7 +106,7 @@ func test_floor_three_boss_always_gives_crystal() -> void:
 	var rng := _rng(8)
 	for i in 20:
 		var has := false
-		for d: Dictionary in LootTable.roll_boss(3, 0, rng):
-			if d["id"] == &"mat_tower_crystal":
+		for d: LootDrop in LootTable.roll_boss(3, 0, rng):
+			if d.id == &"mat_tower_crystal":
 				has = true
 		T.ok(has, "crystal on floor 3 boss")

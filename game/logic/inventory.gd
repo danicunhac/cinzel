@@ -23,6 +23,8 @@ func clear() -> void:
 ## Adds up to `qty`, filling stacks first, then empty slots. Returns what did
 ## not fit (0 when everything went in).
 func add(id: StringName, qty: int = 1) -> int:
+	if qty <= 0:
+		return 0
 	if not ItemDB.has(id):
 		push_error("Inventory.add: unknown item '%s'" % id)
 		return qty
@@ -45,9 +47,10 @@ func add(id: StringName, qty: int = 1) -> int:
 	return left
 
 
-## Removes `qty` units of `id` (from the last slots first). All or nothing.
+## Removes `qty` units of `id` (from the last slots first). All or nothing;
+## qty <= 0 removes nothing and returns false.
 func remove(id: StringName, qty: int = 1) -> bool:
-	if count(id) < qty:
+	if qty <= 0 or count(id) < qty:
 		return false
 	var left := qty
 	for i in range(slots.size() - 1, -1, -1):

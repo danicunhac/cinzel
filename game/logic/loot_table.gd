@@ -6,7 +6,7 @@ extends RefCounted
 ##   Bosses: gear of rare or better, 3 floor materials, maybe the tower
 ##   crystal, and the first boss gives an outfit.
 ## Rarity is weighted by floor and run clock level.
-## Drops are {"id": StringName, "qty": int}.
+## Drops are LootDrop (id, qty).
 
 const ENEMY_DROP_CHANCE := 0.5
 const ENEMY_MATERIALS: Dictionary[int, Dictionary] = {
@@ -44,13 +44,13 @@ static func roll_rarity(floor_num: int, clock_level: int, rng: RandomNumberGener
 
 
 ## Material drop of one enemy (crawler, shooter, charger). [] when nothing drops.
-static func roll_enemy(enemy_type: StringName, floor_num: int, rng: RandomNumberGenerator) -> Array[Dictionary]:
-	var out: Array[Dictionary] = []
+static func roll_enemy(enemy_type: StringName, floor_num: int, rng: RandomNumberGenerator) -> Array[LootDrop]:
+	var out: Array[LootDrop] = []
 	var table: Dictionary = ENEMY_MATERIALS.get(clampi(floor_num, 1, 3), {})
 	if not table.has(enemy_type):
 		return out
 	if rng.randf() < ENEMY_DROP_CHANCE:
-		out.append({"id": table[enemy_type], "qty": 1})
+		out.append(LootDrop.new(table[enemy_type], 1))
 	return out
 
 
@@ -72,26 +72,26 @@ static func roll_chest(floor_num: int, clock_level: int, rng: RandomNumberGenera
 
 ## Everything a floor boss drops.
 static func roll_boss(floor_num: int, clock_level: int, rng: RandomNumberGenerator,
-		exclude: Array[StringName] = []) -> Array[Dictionary]:
-	var out: Array[Dictionary] = []
+		exclude: Array[StringName] = []) -> Array[LootDrop]:
+	var out: Array[LootDrop] = []
 	var kinds := CHEST_KIND_WEIGHTS.duplicate()
 	kinds.erase(&"outfit")
 	var rarity := roll_rarity(floor_num, clock_level, rng)
 	if rarity == &"common":
 		rarity = &"rare"
-	out.append({"id": _gear(_pick(kinds, rng), rarity, rng), "qty": 1})
+	out.append(LootDrop.new(_gear(_pick(kinds, rng), rarity, rng), 1))
 	var mats := ItemDB.materials_of_floor(clampi(floor_num, 1, 3))
 	var counts: Dictionary[StringName, int] = {}
 	for i in BOSS_MATERIALS:
 		var m := mats[rng.randi_range(0, mats.size() - 1)]
 		counts[m] = counts.get(m, 0) + 1
 	for m: StringName in counts:
-		out.append({"id": m, "qty": counts[m]})
+		out.append(LootDrop.new(m, counts[m]))
 	if rng.randf() < BOSS_CRYSTAL_CHANCE.get(clampi(floor_num, 1, 3), 0.0):
-		out.append({"id": BOSS_CRYSTAL, "qty": 1})
+		out.append(LootDrop.new(BOSS_CRYSTAL, 1))
 	var outfit: StringName = BOSS_OUTFITS.get(floor_num, &"")
 	if outfit != &"" and not exclude.has(outfit):
-		out.append({"id": outfit, "qty": 1})
+		out.append(LootDrop.new(outfit, 1))
 	return out
 
 

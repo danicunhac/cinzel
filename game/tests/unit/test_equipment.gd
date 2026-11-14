@@ -95,6 +95,42 @@ func test_smaller_backpack_refused_when_it_would_not_fit() -> void:
 	T.eq(inv.count(&"fang"), 7)
 
 
+func test_equip_weapon_from_full_backpack() -> void:
+	var eq := Equipment.starter()
+	var inv := Inventory.new(8)
+	inv.add(&"axe_war")
+	inv.add(&"fang", 7)
+	T.eq(inv.is_full(), true)
+	T.eq(eq.equip(&"axe_war", inv), true, "the axe's slot takes the old sword")
+	T.eq(inv.count(&"sword_iron"), 1)
+	T.eq(inv.is_full(), true)
+
+
+func test_swap_relic_from_full_backpack() -> void:
+	var eq := Equipment.starter()
+	eq.relics = [&"fang", &"spark", &"wind_cape"] as Array[StringName]
+	var inv := Inventory.new(8)
+	inv.add(&"glass_shield")
+	inv.add(&"axe_war", 7)
+	T.eq(eq.equip(&"glass_shield", inv, 2), true)
+	T.eq(eq.relics[2], &"glass_shield")
+	T.eq(inv.count(&"wind_cape"), 1)
+
+
+func test_downgrade_refused_from_full_medium_backpack() -> void:
+	var eq := Equipment.starter()
+	var inv := Inventory.new(8)
+	inv.add(&"backpack_medium")
+	eq.equip(&"backpack_medium", inv)
+	inv.add(&"fang", 13)
+	T.eq(inv.is_full(), true, "14 of 14")
+	T.eq(eq.equip(&"backpack_small", inv), false)
+	T.eq(eq.backpack, &"backpack_medium")
+	T.eq(inv.capacity, 14)
+	T.eq(inv.used(), 14, "nothing lost")
+	T.eq(inv.count(&"backpack_small"), 1)
+
+
 func test_relics_fill_then_swap() -> void:
 	var eq := Equipment.starter()
 	var inv := Inventory.new(8)

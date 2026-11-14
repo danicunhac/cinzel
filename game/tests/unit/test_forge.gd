@@ -29,6 +29,13 @@ func test_recipes_unlock_by_floors_beaten() -> void:
 	T.ok(not at0.has(&"armor_shadow"), "late recipe locked at start")
 
 
+func test_any_craftable() -> void:
+	var run := RunState.new()
+	T.eq(Forge.any_craftable(run), false)
+	_fill(run, &"helm_iron")
+	T.eq(Forge.any_craftable(run), true)
+
+
 func test_craft_consumes_materials_and_gold() -> void:
 	var run := RunState.new()
 	_fill(run, &"armor_leather")

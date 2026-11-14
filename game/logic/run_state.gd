@@ -14,7 +14,7 @@ var equipment: Equipment = Equipment.starter()
 var inventory: Inventory = Inventory.new(equipment.capacity())
 ## Outfits the player can wear. Visual only, so they survive death.
 var unlocked_outfits: Array[StringName] = [Equipment.STARTER_OUTFIT]
-## The town market keeps its prices between visits (not reset by death).
+## The town market keeps its prices between visits; death starts a fresh one.
 var market: Market = Market.new()
 var unlocked_floors: int = 1
 ## Bosses beaten in this run (unlocks forge recipes).
@@ -24,9 +24,12 @@ var clock: RunClock = RunClock.new()
 ## Floor 1 opens with the 3 tutorial rooms until they are finished in this run.
 var tutorial_done: bool = false
 ## The equipped relics (old name kept for the HUD and the swap panel).
+## Read-only: change relics with add_item/replace_item/remove_item or equip.
 var items: Array[StringName]:
 	get:
 		return equipment.relics
+	set(_value):
+		push_error("RunState.items is read-only: use add_item, replace_item, remove_item or equip")
 
 
 func can_take_item() -> bool:
@@ -146,11 +149,12 @@ func beat_floor(floor_num: int) -> void:
 	unlock_floor(floor_num + 1)
 
 
-## Loses everything and goes back to the starter kit. Unlocked outfits (and
-## the one being worn) stay.
+## Loses everything and goes back to the starter kit; the market starts fresh.
+## Unlocked outfits (and the one being worn) stay.
 func die() -> void:
 	var outfit := equipment.outfit
 	gold = 0
+	market = Market.new()
 	equipment = Equipment.starter()
 	equipment.outfit = outfit
 	inventory = Inventory.new(equipment.capacity())

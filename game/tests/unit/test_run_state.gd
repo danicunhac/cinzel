@@ -1,7 +1,7 @@
 extends RefCounted
 
 ## Tests whose push_error is the behaviour under test (see run_tests.gd).
-const EXPECTS_ERRORS: Array[String] = ["test_add_unknown_item_rejected"]
+const EXPECTS_ERRORS: Array[String] = ["test_add_unknown_item_rejected", "test_items_is_read_only"]
 
 var _fired: int = 0
 
@@ -176,3 +176,18 @@ func test_die_restores_hp() -> void:
 
 func test_hp_defaults_to_base_max() -> void:
 	T.eq(RunState.new().hp, 100)
+
+
+func test_die_resets_market() -> void:
+	var r := RunState.new()
+	r.market.begin_visit(RandomNumberGenerator.new())
+	r.market.factors[&"fang"] = 0.4
+	r.die()
+	T.near(r.market.factor(&"fang"), 1.0)
+	T.eq(r.market.visits, 0, "new run, fresh market")
+
+
+func test_items_is_read_only() -> void:
+	var r := RunState.new()
+	r.items = [&"fang"] as Array[StringName]
+	T.ok(r.items.is_empty(), "assignment ignored: use add_item or equip")

@@ -41,8 +41,8 @@ const LAMP_COLOR := Color(1.0, 0.72, 0.38)
 const LINES: Dictionary[String, String] = {
 	"shop": "Poções frescas, lâminas afiadas. Ouro na mão, item na bolsa!",
 	"shop_sell": "Achou algo na torre? Eu compro, e pago bem.",
-	"smith": "Me dê dois itens e eu forjo um novo no fogo.",
-	"smith_wait": "Traga dois itens da torre. Eu fundo os dois em um só.",
+	"smith": "Você tem o material certo! Escolha a receita e eu forjo na hora.",
+	"smith_wait": "Traga materiais da torre e ouro. Eu forjo armas e armaduras.",
 }
 
 ## Large pieces: [name, base position (origin), footprint size or ZERO for
@@ -162,7 +162,7 @@ func _apply_debug_args() -> void:
 		for id in String(args["items"]).split(",", false):
 			Game.run.add_item(StringName(id))
 	if args.has("floors"):
-		Game.run.unlock_floor(int(args["floors"]))
+		Game.run.beat_floor(int(args["floors"]) - 1)
 	if args.has("player"):
 		var xy := String(args["player"]).split(",")
 		player.global_position = Vector2(float(xy[0]), float(xy[1]))
@@ -173,9 +173,10 @@ func _apply_debug_args() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	near = _nearest_spot()
-	var items := Game.run.items.size()
+	var items := Game.run.inventory.used()
+	var can_forge := Forge.any_craftable(Game.run)
 	for id: StringName in _ctas:
-		var on := TownLogic.cta_visible(id, near, items)
+		var on := TownLogic.cta_visible(id, near, items, can_forge)
 		_ctas[id].active = on
 		var glow := 1.0 + (0.1 + 0.06 * sin(_t * 4.0) if on else 0.0)
 		_glow_targets[id].modulate = Color(glow, glow, glow * 0.96)
@@ -209,12 +210,13 @@ func open_panel(id: StringName) -> UiPanel:
 
 
 ## Line the NPC at `id` says now ("" for the crystal, which has no speaker).
+## `item_count` is the backpack's used slots.
 func line_for(id: StringName, item_count: int) -> String:
 	match id:
 		&"shop":
 			return LINES["shop_sell"] if item_count > 0 else LINES["shop"]
 		&"smith":
-			return LINES["smith"] if item_count >= 2 else LINES["smith_wait"]
+			return LINES["smith"] if Forge.any_craftable(Game.run) else LINES["smith_wait"]
 	return ""
 
 
@@ -230,7 +232,7 @@ func _update_hint(items: int) -> void:
 		return
 	_hint.visible = true
 	_hint.text = "E  %s" % SPOT_NAMES[near]
-	var ok := TownLogic.can_act(near, items)
+	var ok := TownLogic.can_act(near, items, Forge.any_craftable(Game.run))
 	_hint.add_theme_color_override("font_color", UiKit.COLOR_ITEM if ok else UiKit.COLOR_MUTED)
 	# Over the player's head, except at the crystal, where that would cover
 	# the crystal itself: there it goes under the feet.

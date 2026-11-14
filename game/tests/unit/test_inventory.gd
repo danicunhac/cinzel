@@ -60,6 +60,17 @@ func test_shrink_refused_when_too_full() -> void:
 	T.eq(inv.count(&"fang"), 7, "items kept and packed")
 
 
+func test_non_positive_qty_is_a_no_op() -> void:
+	var inv := Inventory.new(8)
+	T.eq(inv.add(&"mat_slime_gel", 0), 0)
+	T.eq(inv.add(&"mat_slime_gel", -3), 0)
+	T.ok(inv.is_empty(), "nothing added")
+	inv.add(&"mat_slime_gel", 2)
+	T.eq(inv.remove(&"mat_slime_gel", 0), false)
+	T.eq(inv.remove(&"mat_slime_gel", -1), false)
+	T.eq(inv.count(&"mat_slime_gel"), 2)
+
+
 func test_unknown_id_not_added() -> void:
 	var inv := Inventory.new(8)
 	T.eq(inv.add(&"nope"), 1)

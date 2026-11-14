@@ -60,6 +60,14 @@ static func can_craft(run: RunState, recipe_id: StringName) -> bool:
 	return true
 
 
+## Whether any unlocked recipe can be forged right now (smith call to action).
+static func any_craftable(run: RunState) -> bool:
+	for id: StringName in RECIPES:
+		if can_craft(run, id):
+			return true
+	return false
+
+
 ## Spends materials and gold and puts the result in the backpack. Refused
 ## (nothing spent) when the result would not fit after paying.
 static func craft(run: RunState, recipe_id: StringName) -> bool:
