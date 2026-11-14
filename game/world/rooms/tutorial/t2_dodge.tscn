@@ -17,7 +17,19 @@ fill = 1
 fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4j2ij"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4j2ij"]
+size = Vector2(4, 112)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kh8by"]
+size = Vector2(4, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5pjd1"]
+size = Vector2(4, 112)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6butn"]
+size = Vector2(4, 64)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3rh0n"]
 content_margin_left = 2.0
 content_margin_top = 2.0
 content_margin_right = 2.0
@@ -29,86 +41,105 @@ border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.45, 0.3, 0.17, 1)
 
-[node name="T2Dodge" type="Node2D" unique_id=462027525]
+[node name="T2Dodge" type="Node2D" unique_id=1690341001]
 y_sort_enabled = true
 script = ExtResource("1_1k1ko")
 is_tutorial = true
 
-[node name="Background" type="Sprite2D" parent="." unique_id=105061811]
+[node name="Background" type="Sprite2D" parent="." unique_id=1855913826]
 z_index = -5
 texture = ExtResource("2_r3ug8")
 centered = false
 
-[node name="Ambient" type="CanvasModulate" parent="." unique_id=1821805162]
+[node name="Ambient" type="CanvasModulate" parent="." unique_id=1345840985]
 color = Color(0.8, 0.76, 0.74, 1)
 
-[node name="Torches" type="Node2D" parent="." unique_id=1023440955]
+[node name="Torches" type="Node2D" parent="." unique_id=1754727456]
 
-[node name="Torch1" type="PointLight2D" parent="Torches" unique_id=1718994286]
+[node name="Torch1" type="PointLight2D" parent="Torches" unique_id=349286381]
 position = Vector2(40, 56)
 color = Color(1, 0.72, 0.42, 1)
-energy = 0.4
+energy = 0.18
 texture = SubResource("GradientTexture2D_vaj8d")
 texture_scale = 1.2
 
-[node name="Torch2" type="PointLight2D" parent="Torches" unique_id=955315517]
+[node name="Torch2" type="PointLight2D" parent="Torches" unique_id=330331286]
 position = Vector2(440, 56)
 color = Color(1, 0.72, 0.42, 1)
-energy = 0.4
+energy = 0.18
 texture = SubResource("GradientTexture2D_vaj8d")
 texture_scale = 1.2
 
-[node name="Torch3" type="PointLight2D" parent="Torches" unique_id=819672796]
+[node name="Torch3" type="PointLight2D" parent="Torches" unique_id=1752853188]
 position = Vector2(120, 248)
 color = Color(1, 0.72, 0.42, 1)
-energy = 0.4
+energy = 0.18
 texture = SubResource("GradientTexture2D_vaj8d")
 texture_scale = 1.2
 
-[node name="Torch4" type="PointLight2D" parent="Torches" unique_id=1508550790]
+[node name="Torch4" type="PointLight2D" parent="Torches" unique_id=1022509401]
 position = Vector2(360, 248)
 color = Color(1, 0.72, 0.42, 1)
-energy = 0.4
+energy = 0.18
 texture = SubResource("GradientTexture2D_vaj8d")
 texture_scale = 1.2
 
-[node name="Walls" type="TileMapLayer" parent="." unique_id=253026068]
+[node name="Walls" type="TileMapLayer" parent="." unique_id=1479599362]
 visible = false
 tile_map_data = PackedByteArray("AAAAAAAAAAAFAAAAAAABAAAAAAAFAAAAAAACAAAAAAAFAAAAAAADAAAAAAAFAAAAAAAEAAAAAAAFAAAAAAAFAAAAAAAFAAAAAAAGAAAAAAAFAAAAAAAHAAAAAAAFAAAAAAAIAAAAAAAFAAAAAAAJAAAAAAAFAAAAAAAKAAAAAAAFAAAAAAALAAAAAAAFAAAAAAAMAAAAAAAFAAAAAAANAAAAAAAFAAAAAAAOAAAAAAAFAAAAAAAPAAAAAAAFAAAAAAAQAAAAAAAFAAAAAAARAAAAAAAFAAAAAAASAAAAAAAFAAAAAAATAAAAAAAFAAAAAAAUAAAAAAAFAAAAAAAVAAAAAAAFAAAAAAAWAAAAAAAFAAAAAAAXAAAAAAAFAAAAAAAYAAAAAAAFAAAAAAAZAAAAAAAFAAAAAAAaAAAAAAAFAAAAAAAbAAAAAAAFAAAAAAAcAAAAAAAFAAAAAAAdAAAAAAAFAAAAAAAAAAEAAAAFAAAAAAABAAEAAAAFAAAAAAACAAEAAAAFAAAAAAADAAEAAAAFAAAAAAAEAAEAAAAFAAAAAAAFAAEAAAAFAAAAAAAGAAEAAAAFAAAAAAAHAAEAAAAFAAAAAAAIAAEAAAAFAAAAAAAJAAEAAAAFAAAAAAAKAAEAAAAFAAAAAAALAAEAAAAFAAAAAAAMAAEAAAAFAAAAAAANAAEAAAAFAAAAAAAOAAEAAAAFAAAAAAAPAAEAAAAFAAAAAAAQAAEAAAAFAAAAAAARAAEAAAAFAAAAAAASAAEAAAAFAAAAAAATAAEAAAAFAAAAAAAUAAEAAAAFAAAAAAAVAAEAAAAFAAAAAAAWAAEAAAAFAAAAAAAXAAEAAAAFAAAAAAAYAAEAAAAFAAAAAAAZAAEAAAAFAAAAAAAaAAEAAAAFAAAAAAAbAAEAAAAFAAAAAAAcAAEAAAAFAAAAAAAdAAEAAAAFAAAAAAAAAAIAAAAFAAAAAAABAAIAAAAFAAAAAAACAAIAAAAFAAAAAAADAAIAAAAFAAAAAAAEAAIAAAAFAAAAAAAFAAIAAAAFAAAAAAAGAAIAAAAFAAAAAAAHAAIAAAAFAAAAAAAIAAIAAAAFAAAAAAAJAAIAAAAFAAAAAAAKAAIAAAAFAAAAAAALAAIAAAAFAAAAAAAMAAIAAAAFAAAAAAANAAIAAAAFAAAAAAAOAAIAAAAFAAAAAAAPAAIAAAAFAAAAAAAQAAIAAAAFAAAAAAARAAIAAAAFAAAAAAASAAIAAAAFAAAAAAATAAIAAAAFAAAAAAAUAAIAAAAFAAAAAAAVAAIAAAAFAAAAAAAWAAIAAAAFAAAAAAAXAAIAAAAFAAAAAAAYAAIAAAAFAAAAAAAZAAIAAAAFAAAAAAAaAAIAAAAFAAAAAAAbAAIAAAAFAAAAAAAcAAIAAAAFAAAAAAAdAAIAAAAFAAAAAAAAAAMAAAAFAAAAAAABAAMAAAAEAAAAAAACAAMAAAAEAAAAAAADAAMAAAAEAAAAAAAEAAMAAAAEAAAAAAAFAAMAAAAEAAAAAAAGAAMAAAAEAAAAAAAHAAMAAAAFAAEAAAAIAAMAAAAEAAAAAAAJAAMAAAAEAAAAAAAKAAMAAAAEAAAAAAALAAMAAAAEAAAAAAAMAAMAAAAEAAAAAAANAAMAAAAEAAAAAAAOAAMAAAAEAAAAAAAPAAMAAAAEAAAAAAAQAAMAAAAEAAAAAAARAAMAAAAEAAAAAAASAAMAAAAEAAAAAAATAAMAAAAEAAAAAAAUAAMAAAAEAAAAAAAVAAMAAAAEAAAAAAAWAAMAAAAFAAEAAAAXAAMAAAAEAAAAAAAYAAMAAAAEAAAAAAAZAAMAAAAEAAAAAAAaAAMAAAAEAAAAAAAbAAMAAAAEAAAAAAAcAAMAAAAEAAAAAAAdAAMAAAAFAAAAAAAAAAQAAAAFAAAAAAABAAQAAAAHAAAAAAAcAAQAAAAHAAAAAAAdAAQAAAAFAAAAAAAAAAUAAAAFAAAAAAAdAAUAAAAFAAAAAAAAAAYAAAAFAAAAAAAdAAYAAAAFAAAAAAAAAAcAAAAFAAAAAAAdAAcAAAAFAAAAAAAAAAgAAAAFAAAAAAAdAAgAAAAFAAAAAAAAAAkAAAACAAEAAEAdAAkAAAAAAAEAAFAAAAoAAAAFAAAAAAAdAAoAAAAFAAAAAAAAAAsAAAAFAAAAAAAdAAsAAAAFAAAAAAAAAAwAAAAFAAAAAAAdAAwAAAAFAAAAAAAAAA0AAAAFAAAAAAAdAA0AAAAFAAAAAAAAAA4AAAAFAAAAAAABAA4AAAAHAAAAAAAcAA4AAAAHAAAAAAAdAA4AAAAFAAAAAAAAAA8AAAAFAAAAAAABAA8AAAAFAAAAAAACAA8AAAAFAAAAAAADAA8AAAAFAAAAAAAEAA8AAAAFAAAAAAAFAA8AAAAFAAAAAAAGAA8AAAAFAAAAAAAHAA8AAAAFAAAAAAAIAA8AAAAFAAAAAAAJAA8AAAAFAAAAAAAKAA8AAAAFAAAAAAALAA8AAAAFAAAAAAAMAA8AAAAFAAAAAAANAA8AAAAFAAAAAAAOAA8AAAAFAAAAAAAPAA8AAAAFAAAAAAAQAA8AAAAFAAAAAAARAA8AAAAFAAAAAAASAA8AAAAFAAAAAAATAA8AAAAFAAAAAAAUAA8AAAAFAAAAAAAVAA8AAAAFAAAAAAAWAA8AAAAFAAAAAAAXAA8AAAAFAAAAAAAYAA8AAAAFAAAAAAAZAA8AAAAFAAAAAAAaAA8AAAAFAAAAAAAbAA8AAAAFAAAAAAAcAA8AAAAFAAAAAAAdAA8AAAAFAAAAAAA=")
 tile_set = ExtResource("3_m8adr")
 
-[node name="Spawns" type="Node2D" parent="." unique_id=1674450847]
+[node name="Spawns" type="Node2D" parent="." unique_id=686473088]
 
-[node name="Shooter1" type="Marker2D" parent="Spawns" unique_id=1782322211]
+[node name="Shooter1" type="Marker2D" parent="Spawns" unique_id=107128672]
 position = Vector2(392, 152)
 metadata/enemy = "shooter"
 
-[node name="Entry" type="Marker2D" parent="." unique_id=147342931]
+[node name="WallFaceBlockers" type="StaticBody2D" parent="." unique_id=2066197238]
+
+[node name="@CollisionShape2D@8" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=1192752636]
+position = Vector2(18, 72)
+shape = SubResource("RectangleShape2D_4j2ij")
+
+[node name="@CollisionShape2D@9" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=595700295]
+position = Vector2(18, 208)
+shape = SubResource("RectangleShape2D_kh8by")
+
+[node name="@CollisionShape2D@10" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=684807613]
+position = Vector2(462, 72)
+shape = SubResource("RectangleShape2D_5pjd1")
+
+[node name="@CollisionShape2D@11" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=1467940481]
+position = Vector2(462, 208)
+shape = SubResource("RectangleShape2D_6butn")
+
+[node name="Entry" type="Marker2D" parent="." unique_id=1397341093]
 position = Vector2(24, 152)
 
-[node name="EntryDoor" type="Sprite2D" parent="." unique_id=2077464148]
+[node name="EntryDoor" type="Sprite2D" parent="." unique_id=140457517]
 z_index = -4
-position = Vector2(8, 152)
+position = Vector2(4, 152)
 texture = ExtResource("4_xif6c")
-offset = Vector2(0, -4)
+offset = Vector2(0, -8)
 hframes = 3
 vframes = 2
 frame = 3
 
-[node name="Exit" type="Node2D" parent="." unique_id=11619049]
+[node name="Exit" type="Node2D" parent="." unique_id=67118278]
 position = Vector2(472, 152)
 script = ExtResource("5_x60u0")
 
-[node name="Sprite" type="Sprite2D" parent="Exit" unique_id=1878172790]
+[node name="Sprite" type="Sprite2D" parent="Exit" unique_id=1371290250]
 z_index = -4
+position = Vector2(4, 0)
 texture = ExtResource("4_xif6c")
-offset = Vector2(0, -4)
+offset = Vector2(0, -8)
 flip_h = true
 hframes = 3
 vframes = 2
 frame = 4
 
-[node name="Sign" type="Label" parent="." unique_id=1218216545]
+[node name="Sign" type="Label" parent="." unique_id=1492372842]
 z_index = 2
 offset_left = 60.0
 offset_top = 26.0
@@ -117,7 +148,7 @@ offset_bottom = 68.0
 theme_override_colors/font_color = Color(0.96, 0.9, 0.78, 1)
 theme_override_constants/line_spacing = -2
 theme_override_font_sizes/font_size = 8
-theme_override_styles/normal = SubResource("StyleBoxFlat_4j2ij")
+theme_override_styles/normal = SubResource("StyleBoxFlat_3rh0n")
 text = "ESQUIVAR
 Rolar: Espaço. Ao rolar, nada te acerta.
 Role através dos tiros vermelhos.

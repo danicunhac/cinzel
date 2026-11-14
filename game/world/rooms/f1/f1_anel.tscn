@@ -17,94 +17,124 @@ fill = 1
 fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
 
-[node name="F1Anel" type="Node2D" unique_id=1014204969]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wpfxh"]
+size = Vector2(448, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_m0f3x"]
+size = Vector2(4, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gsdnh"]
+size = Vector2(4, 96)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_yoge1"]
+size = Vector2(4, 224)
+
+[node name="F1Anel" type="Node2D" unique_id=1317157791]
 y_sort_enabled = true
 script = ExtResource("1_e6rxy")
 
-[node name="Background" type="Sprite2D" parent="." unique_id=524535087]
+[node name="Background" type="Sprite2D" parent="." unique_id=1507747920]
 z_index = -5
 texture = ExtResource("2_nah8a")
 centered = false
 
-[node name="Ambient" type="CanvasModulate" parent="." unique_id=2017097505]
+[node name="Ambient" type="CanvasModulate" parent="." unique_id=1321176842]
 color = Color(0.8, 0.76, 0.74, 1)
 
-[node name="Torches" type="Node2D" parent="." unique_id=1215346966]
+[node name="Torches" type="Node2D" parent="." unique_id=1370311059]
 
-[node name="Torch1" type="PointLight2D" parent="Torches" unique_id=198570133]
+[node name="Torch1" type="PointLight2D" parent="Torches" unique_id=1100929291]
 position = Vector2(120, 8)
 color = Color(1, 0.72, 0.42, 1)
-energy = 0.4
+energy = 0.18
 texture = SubResource("GradientTexture2D_s4cj4")
 texture_scale = 1.2
 
-[node name="Torch2" type="PointLight2D" parent="Torches" unique_id=1269873430]
+[node name="Torch2" type="PointLight2D" parent="Torches" unique_id=2045348680]
 position = Vector2(360, 8)
 color = Color(1, 0.72, 0.42, 1)
-energy = 0.4
+energy = 0.18
 texture = SubResource("GradientTexture2D_s4cj4")
 texture_scale = 1.2
 
-[node name="Torch3" type="PointLight2D" parent="Torches" unique_id=1710657469]
+[node name="Torch3" type="PointLight2D" parent="Torches" unique_id=362018462]
 position = Vector2(120, 248)
 color = Color(1, 0.72, 0.42, 1)
-energy = 0.4
+energy = 0.18
 texture = SubResource("GradientTexture2D_s4cj4")
 texture_scale = 1.2
 
-[node name="Torch4" type="PointLight2D" parent="Torches" unique_id=910722063]
+[node name="Torch4" type="PointLight2D" parent="Torches" unique_id=185338805]
 position = Vector2(360, 248)
 color = Color(1, 0.72, 0.42, 1)
-energy = 0.4
+energy = 0.18
 texture = SubResource("GradientTexture2D_s4cj4")
 texture_scale = 1.2
 
-[node name="Walls" type="TileMapLayer" parent="." unique_id=1058847650]
+[node name="Walls" type="TileMapLayer" parent="." unique_id=2006802081]
 visible = false
 tile_map_data = PackedByteArray("AAAAAAAAAAAFAAAAAAABAAAAAAAEAAAAAAACAAAAAAAEAAAAAAADAAAAAAAEAAAAAAAEAAAAAAAEAAAAAAAFAAAAAAAEAAAAAAAGAAAAAAAEAAAAAAAHAAAAAAAFAAEAAAAIAAAAAAAEAAAAAAAJAAAAAAAEAAAAAAAKAAAAAAAEAAAAAAALAAAAAAAEAAAAAAAMAAAAAAAEAAAAAAANAAAAAAAEAAAAAAAOAAAAAAAEAAAAAAAPAAAAAAAEAAAAAAAQAAAAAAAEAAAAAAARAAAAAAAEAAAAAAASAAAAAAAEAAAAAAATAAAAAAAEAAAAAAAUAAAAAAAEAAAAAAAVAAAAAAAEAAAAAAAWAAAAAAAFAAEAAAAXAAAAAAAEAAAAAAAYAAAAAAAEAAAAAAAZAAAAAAAEAAAAAAAaAAAAAAAEAAAAAAAbAAAAAAAEAAAAAAAcAAAAAAAEAAAAAAAdAAAAAAAFAAAAAAAAAAEAAAAFAAAAAAAdAAEAAAAFAAAAAAAAAAIAAAAFAAAAAAAdAAIAAAAFAAAAAAAAAAMAAAAFAAAAAAAdAAMAAAAFAAAAAAAAAAQAAAAFAAAAAAAIAAQAAAAGAAAAAAAVAAQAAAAGAAAAAAAdAAQAAAAFAAAAAAAAAAUAAAAFAAAAAAAdAAUAAAAFAAAAAAAAAAYAAAAFAAAAAAAMAAYAAAAFAAAAAAANAAYAAAAFAAAAAAAOAAYAAAAFAAAAAAAPAAYAAAAFAAAAAAAQAAYAAAAFAAAAAAARAAYAAAAFAAAAAAAdAAYAAAAFAAAAAAAAAAcAAAACAAEAAEAMAAcAAAAFAAAAAAANAAcAAAAFAAAAAAAOAAcAAAAFAAAAAAAPAAcAAAAFAAAAAAAQAAcAAAAFAAAAAAARAAcAAAAFAAAAAAAdAAcAAAAFAAAAAAAAAAgAAAAFAAAAAAAMAAgAAAAEAAAAAAANAAgAAAAEAAAAAAAOAAgAAAAEAAAAAAAPAAgAAAAEAAAAAAAQAAgAAAAEAAAAAAARAAgAAAAEAAAAAAAdAAgAAAAFAAAAAAAAAAkAAAAFAAAAAAAdAAkAAAAFAAAAAAAAAAoAAAAFAAAAAAAIAAoAAAAGAAAAAAAVAAoAAAAGAAAAAAAdAAoAAAAFAAAAAAAAAAsAAAAFAAAAAAAdAAsAAAAFAAAAAAAAAAwAAAAFAAAAAAAdAAwAAAAFAAAAAAAAAA0AAAAFAAAAAAAdAA0AAAAFAAAAAAAAAA4AAAAFAAAAAAAdAA4AAAAFAAAAAAAAAA8AAAAFAAAAAAABAA8AAAAFAAAAAAACAA8AAAAFAAAAAAADAA8AAAAFAAAAAAAEAA8AAAAFAAAAAAAFAA8AAAAFAAAAAAAGAA8AAAAFAAAAAAAHAA8AAAAFAAAAAAAIAA8AAAAFAAAAAAAJAA8AAAAFAAAAAAAKAA8AAAAFAAAAAAALAA8AAAAFAAAAAAAMAA8AAAAFAAAAAAANAA8AAAAFAAAAAAAOAA8AAAAFAAAAAAAPAA8AAAAFAAAAAAAQAA8AAAAFAAAAAAARAA8AAAAFAAAAAAASAA8AAAAFAAAAAAATAA8AAAAFAAAAAAAUAA8AAAAFAAAAAAAVAA8AAAAFAAAAAAAWAA8AAAAFAAAAAAAXAA8AAAAFAAAAAAAYAA8AAAAFAAAAAAAZAA8AAAAAAAEAACAaAA8AAAAFAAAAAAAbAA8AAAAFAAAAAAAcAA8AAAAFAAAAAAAdAA8AAAAFAAAAAAA=")
 tile_set = ExtResource("3_v47rr")
 
-[node name="Spawns" type="Node2D" parent="." unique_id=1970961016]
+[node name="Spawns" type="Node2D" parent="." unique_id=270964819]
 
-[node name="Shooter1" type="Marker2D" parent="Spawns" unique_id=1136950231]
-position = Vector2(312, 24)
+[node name="Shooter1" type="Marker2D" parent="Spawns" unique_id=755495763]
+position = Vector2(296, 40)
 metadata/enemy = "shooter"
 
-[node name="Charger2" type="Marker2D" parent="Spawns" unique_id=21794687]
+[node name="Charger2" type="Marker2D" parent="Spawns" unique_id=1571809010]
 position = Vector2(408, 120)
 metadata/enemy = "charger"
 
-[node name="Crawler3" type="Marker2D" parent="Spawns" unique_id=1716022103]
+[node name="Crawler3" type="Marker2D" parent="Spawns" unique_id=2083007933]
 position = Vector2(312, 216)
 metadata/enemy = "crawler"
 
-[node name="Crawler4" type="Marker2D" parent="Spawns" unique_id=190440199]
+[node name="Crawler4" type="Marker2D" parent="Spawns" unique_id=1427211674]
 position = Vector2(408, 216)
 metadata/enemy = "crawler"
 
-[node name="ChestSpot" type="Marker2D" parent="." unique_id=1021412454]
+[node name="WallFaceBlockers" type="StaticBody2D" parent="." unique_id=1540743932]
+
+[node name="@CollisionShape2D@44" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=297455552]
+position = Vector2(240, 24)
+shape = SubResource("RectangleShape2D_wpfxh")
+
+[node name="@CollisionShape2D@45" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=1348438228]
+position = Vector2(18, 56)
+shape = SubResource("RectangleShape2D_m0f3x")
+
+[node name="@CollisionShape2D@46" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=329277399]
+position = Vector2(18, 192)
+shape = SubResource("RectangleShape2D_gsdnh")
+
+[node name="@CollisionShape2D@47" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=1013348686]
+position = Vector2(462, 128)
+shape = SubResource("RectangleShape2D_yoge1")
+
+[node name="ChestSpot" type="Marker2D" parent="." unique_id=1907142518]
 position = Vector2(248, 56)
 
-[node name="Entry" type="Marker2D" parent="." unique_id=1553894401]
+[node name="Entry" type="Marker2D" parent="." unique_id=850841413]
 position = Vector2(24, 120)
 
-[node name="EntryDoor" type="Sprite2D" parent="." unique_id=859172142]
+[node name="EntryDoor" type="Sprite2D" parent="." unique_id=1955824954]
 z_index = -4
-position = Vector2(8, 120)
+position = Vector2(4, 120)
 texture = ExtResource("4_mk6od")
-offset = Vector2(0, -4)
+offset = Vector2(0, -8)
 hframes = 3
 vframes = 2
 frame = 3
 
-[node name="Exit" type="Node2D" parent="." unique_id=270994024]
+[node name="Exit" type="Node2D" parent="." unique_id=308238220]
 position = Vector2(408, 248)
 script = ExtResource("5_epi0x")
 
-[node name="Sprite" type="Sprite2D" parent="Exit" unique_id=1394290358]
+[node name="Sprite" type="Sprite2D" parent="Exit" unique_id=1978197374]
 z_index = -4
 texture = ExtResource("4_mk6od")
-offset = Vector2(0, 4)
+offset = Vector2(0, 8)
 hframes = 3
 vframes = 2
 frame = 1

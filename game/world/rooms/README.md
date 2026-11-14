@@ -10,7 +10,7 @@ The script checks every layout before writing anything: all floor reachable from
 
 ## Painted rooms
 
-A room whose painting exists at `assets/rooms/<room id>.png` (480 x 270) shows it as the `Background` sprite. The `Walls` tile layer stays for collision only (hidden), the doors get overlay sprites from `assets/rooms/doors.png` (the exit's `Sprite` swaps locked/open in `room_door.gd`), the torch cells get `PointLight2D`s and an `Ambient` CanvasModulate darkens the room a little. A room without a painting keeps the tile look, so a new template (floor 2 or 3) works at once and can be painted later:
+A room whose painting exists at `assets/rooms/<room id>.png` (480 x 270) shows it as the `Background` sprite. The `Walls` tile layer stays for collision only (hidden), the doors get overlay sprites from `assets/rooms/doors.png` (the exit's `Sprite` swaps locked/open in `room_door.gd`), the torch cells get `PointLight2D`s and an `Ambient` CanvasModulate darkens the room a little. The painting draws the thin top wall's brick face over floor row 1, so `WallFaceBlockers` (a StaticBody2D) blocks that row (not under a top-wall door) plus a 4 px strip inside each side wall; no spawn or chest may sit in row 1 under a thin top wall (the build checks it). A room without a painting keeps the tile look, so a new template (floor 2 or 3) works at once and can be painted later:
 
 1. Add the layout to `ROOMS` (with `"floor": 2` or `3`) and run `build_rooms.gd`; it also writes `art-src/gen/rooms/layouts.json`.
 2. `python3 -I art-src/build_rooms_art.py . blockout`, upload `art-src/gen/rooms/blockout/<id>@4x.png`, edit it with the tower key art as second image (prompts in `docs/assets.md`).

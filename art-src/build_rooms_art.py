@@ -22,7 +22,7 @@ Outputs:
     outlined, for eyeballing; scores in art-src/gen/rooms/align/scores.json.
   game/assets/rooms/<room_id>.png  480x270, 1 art pixel = 1 game pixel,
     at most 48 colours, no dithering.
-  game/assets/rooms/doors.png  3x2 frames of 16x24.
+  game/assets/rooms/doors.png  3x2 frames of 24x32.
 
 Alignment score: each pixel of the painting is classed as "blocking" or
 "floor" by its nearest class mean (colour + local contrast, means taken from
@@ -66,7 +66,7 @@ DOOR_EXIT = (190, 40, 40)
 TORCH = (255, 176, 40)
 SIGN = (72, 46, 30)
 
-DOOR_FRAME = (16, 24)
+DOOR_FRAME = (24, 32)
 
 
 def load_layouts(root):

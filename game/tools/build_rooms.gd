@@ -28,9 +28,14 @@ const FLOORS := 3
 const ROOM_SCRIPT := "res://world/room.gd"
 const DOOR_SCRIPT := "res://world/room_door.gd"
 const PAINT_PATH := "res://assets/rooms/%s.png"
-## Door overlays: 3 columns (shut, locked, open) x 2 rows (front, side), 16x24.
+## Door overlays: 3 columns (shut, locked, open) x 2 rows (front, side), 24x32.
 const DOORS_PATH := "res://assets/rooms/doors.png"
-const DOOR_FRAME := Vector2i(16, 24)
+const DOOR_FRAME := Vector2i(24, 32)
+## Painted rooms draw a thin top wall's brick face over the first floor row,
+## so an extra body blocks that row (gaps under top-wall doors), and the side
+## walls look this much thicker than their cells.
+const TOP_FACE_BAND := 16
+const SIDE_WALL_PAD := 4
 ## Layouts for the art pipeline (blockouts, alignment check).
 const LAYOUTS_JSON := "res://../art-src/gen/rooms/layouts.json"
 ## Darkening per floor so the torch lights read.
@@ -148,8 +153,8 @@ var ROOMS: Array[Dictionary] = [
 		"path": "res://world/rooms/f1/f1_galeria.tscn",
 		"rows": [
 			"##########################X###",
-			"#....................s.......#",
 			"#............................#",
+			"#...................s........#",
 			"#............................#",
 			"#...xxxxxxxx.....xxxxxxxxx...#",
 			"#............................#",
@@ -236,8 +241,8 @@ var ROOMS: Array[Dictionary] = [
 		"path": "res://world/rooms/f1/f1_anel.tscn",
 		"rows": [
 			"##############################",
-			"#..................s.........#",
 			"#............................#",
+			"#.................s..........#",
 			"#..............C.............#",
 			"#.......o............o.......#",
 			"#............................#",
@@ -435,6 +440,11 @@ func _validate(def: Dictionary) -> Array[String]:
 				errs.append("%s: %s spawn %s only %.0f px from entry" % [path, k, c, dist])
 	if enemies == 0 and not def.get("heal", false):
 		errs.append("%s: no enemies" % path)
+	if _top_rows(rows) == 1:
+		for x in W:
+			var ch := rows[1][x]
+			if ENEMY_KINDS.has(ch) or ch == "C":
+				errs.append("%s: '%s' at %s sits under the top wall face (row 1)" % [path, ch, Vector2i(x, 1)])
 	var chests := _find(rows, "C")
 	if not def.get("tutorial", false) and not def.get("boss", false) and chests.size() != 1:
 		errs.append("%s: needs one chest spot" % path)
@@ -550,6 +560,12 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 	spawns.name = "Spawns"
 	_add(room, spawns)
 
+	if painted:
+		var blockers := _make_face_blockers(rows)
+		_add(room, blockers)
+		for shape in blockers.get_children():
+			shape.owner = room
+
 	for y in H:
 		for x in W:
 			var c := Vector2i(x, y)
@@ -578,7 +594,7 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 					if painted:
 						var shut := _make_door_sprite(c, 0)
 						shut.name = "EntryDoor"
-						shut.position = _center(c)
+						shut.position += _center(c)
 						_add(room, shut)
 				"X":
 					walls.set_cell(c, RoomTiles.SOURCE, RoomTiles.DOOR_LOCKED, _door_alt(c))
@@ -626,6 +642,54 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 	return err
 
 
+## Wall rows at the top (1 for normal rooms, 4 for the tutorial's thick wall).
+func _top_rows(rows: Array[String]) -> int:
+	var top := 0
+	while top < H and _ch(rows, Vector2i(1, top)) == "#":
+		top += 1
+	return top
+
+
+## Static rectangles on the walls' collision layer: the first floor row under
+## a thin top wall (not under a top-wall door), and a SIDE_WALL_PAD strip
+## along the left and right walls (not within a cell of a side door).
+func _make_face_blockers(rows: Array[String]) -> StaticBody2D:
+	var body := StaticBody2D.new()
+	body.name = "WallFaceBlockers"
+	var rects: Array[Rect2] = []
+	var t := RoomTiles.SIZE
+	if _top_rows(rows) == 1:
+		var start := -1
+		for x in range(1, W):
+			var open := x < W - 1 and _ch(rows, Vector2i(x, 0)) == "#"
+			if open and start < 0:
+				start = x
+			elif not open and start >= 0:
+				rects.append(Rect2(start * t, t, (x - start) * t, TOP_FACE_BAND))
+				start = -1
+	for side: int in [0, W - 1]:
+		var y0 := -1
+		for y in range(1, H):
+			# Keep a cell of slack around a side door so the entry spot is clear.
+			var wall := y < H - 1 and _ch(rows, Vector2i(side, y)) == "#" \
+					and not "EX".contains(_ch(rows, Vector2i(side, y - 1))) \
+					and not "EX".contains(_ch(rows, Vector2i(side, y + 1)))
+			if wall and y0 < 0:
+				y0 = y
+			elif not wall and y0 >= 0:
+				var x: int = t if side == 0 else side * t - SIDE_WALL_PAD
+				rects.append(Rect2(x, y0 * t, SIDE_WALL_PAD, (y - y0) * t))
+				y0 = -1
+	for r in rects:
+		var shape := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = r.size
+		shape.shape = rect
+		shape.position = r.get_center()
+		body.add_child(shape)
+	return body
+
+
 func _room_id(def: Dictionary) -> String:
 	return String(def["path"]).get_file().get_basename()
 
@@ -670,13 +734,14 @@ func _make_torch(pos: Vector2, floor_num: int, tex: Texture2D) -> PointLight2D:
 	light.texture = tex
 	light.texture_scale = 1.2
 	light.color = TORCH_COLOR[floor_num - 1]
-	light.energy = 0.4
+	# The painting already has its light pools; this only lifts the actors.
+	light.energy = 0.18
 	return light
 
 
 ## Overlay for a door cell: column 0 shut, 1 locked, 2 open; row 0 for doors
 ## on the top or bottom wall, row 1 (side view) for the left and right walls.
-## The 24 px frame grows into the wall away from the floor.
+## The 24x32 frame grows into the wall away from the floor.
 func _make_door_sprite(c: Vector2i, state: int) -> Sprite2D:
 	var s := Sprite2D.new()
 	s.texture = load(DOORS_PATH) as Texture2D
@@ -687,7 +752,15 @@ func _make_door_sprite(c: Vector2i, state: int) -> Sprite2D:
 	s.flip_h = c.x == W - 1
 	s.z_index = -4
 	var grow := float(DOOR_FRAME.y - RoomTiles.SIZE) / 2.0
-	# Top and side doors grow up; the bottom door grows down off the room.
+	var wide := float(DOOR_FRAME.x - RoomTiles.SIZE) / 2.0
+	# Top and side doors grow up; the bottom door grows down off the room;
+	# side doors widen outwards, off the floor.
+	var out_x := 0.0
+	if c.x == 0:
+		out_x = -wide
+	elif c.x == W - 1:
+		out_x = wide
+	s.position = Vector2(out_x, 0)
 	s.offset = Vector2(0, grow if c.y == H - 1 else -grow)
 	return s
 

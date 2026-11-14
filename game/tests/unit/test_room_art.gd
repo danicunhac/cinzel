@@ -72,3 +72,22 @@ func test_exit_door_overlay_follows_state() -> void:
 	room.exit_door.set_open(true)
 	T.eq(sprite.frame % sprite.hframes, RoomDoor.FRAME_OPEN, "open")
 	room.free()
+
+
+## The painted top wall face covers floor row 1, so a blocker keeps the player
+## below y 32 there (the body circle's top is at the player's origin).
+func test_player_stays_below_top_wall_face() -> void:
+	for path: String in ["res://world/rooms/f1/f1_colunas.tscn", "res://world/rooms/f1/f1_galeria.tscn", "res://world/rooms/boss_f1.tscn"]:
+		var room := (load(path) as PackedScene).instantiate() as Room
+		_tree().root.add_child(room)
+		var player := (load("res://actors/player/player.tscn") as PackedScene).instantiate() as Player
+		player.set_physics_process(false)
+		room.add_child(player)
+		player.position = Vector2(248, 72)
+		await _tree().physics_frame
+		await _tree().physics_frame
+		for i in 40:
+			player.move_and_collide(Vector2(0, -4))
+		T.ok(player.position.y >= 31.5, "%s player stopped at y %.1f" % [path, player.position.y])
+		T.ok(player.position.y <= 34.0, "%s player reaches the band at y %.1f" % [path, player.position.y])
+		room.free()
