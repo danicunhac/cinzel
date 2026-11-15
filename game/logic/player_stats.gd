@@ -25,6 +25,9 @@ var heal_delay: float = 1.5
 var heal_per_sec: float = 6.0
 var trail_damage: int = 0
 var block_per_room: int = 0
+## Lâminas Gêmeas: damage the off-hand sword adds to its hits (60% of its
+## catalog damage, with the same dmg_mult mods). 0 without two swords.
+var offhand_damage: int = 0
 
 
 ## Weapon: damage, attack speed, range, crit. Armor: defense, max hp, weight.
@@ -65,6 +68,9 @@ static func from_equipment(eq: Equipment) -> PlayerStats:
 			s.heal_delay = minf(s.heal_delay, float(mods["heal_delay"]))
 	s.roll_speed_mult = maxf(MIN_ROLL_SPEED_MULT, 1.0 - WEIGHT_ROLL_PENALTY * s.weight)
 	s.damage = roundi(s.damage * dmg_mult)
+	if eq.dual_active():
+		var o: Dictionary = ItemDB.get_def(eq.offhand)["stats"]
+		s.offhand_damage = roundi(int(o["damage"]) * WeaponDef.DUAL_OFFHAND_SHARE * dmg_mult)
 	s.move_speed *= move_mult
 	s.roll_distance *= roll_mult * s.roll_speed_mult
 	return s

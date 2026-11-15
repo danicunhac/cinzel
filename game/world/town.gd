@@ -208,6 +208,7 @@ func _ready() -> void:
 	_build_pieces()
 	_build_spots()
 	_build_life()
+	# No attacks in town, and the weapons are put away (hip or back).
 	player.armed = false
 	player.global_position = SPAWN
 	player.facing = Vector2.UP

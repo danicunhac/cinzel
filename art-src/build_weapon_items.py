@@ -19,7 +19,7 @@ light. Every frame lines up with the type sheet:
     wings and a red tassel under the spear head (spear_dragoon). The sword
     items draw a 7 px blade with a cross guard in the icon's guard colour
     (gold for sword_knight, dark steel for sword_iron) at the shipped
-    sword's grip;
+    sword's grip; sword_midnight's blade is black with the silver edge;
   - attack rows: the type sheet's attack rows recoloured by histogram
     matching (steel -> blade ramp, wood -> handle ramp), plus the axe and
     spear hafts split_layers.py moved out of the body, hair and outfit
@@ -81,6 +81,9 @@ ITEMS = {
     "sword_knight": {"type": "sword", "blade": lambda x, y, c: diag(x, y) >= 13,
                      "handle": lambda x, y, c: diag(x, y) <= 12 and is_blue(c),
                      "guard": lambda x, y, c: diag(x, y) <= 12 and is_gold(c)},
+    "sword_midnight": {"type": "sword", "blade": lambda x, y, c: diag(x, y) >= 13,
+                       "handle": lambda x, y, c: diag(x, y) <= 8,
+                       "guard": lambda x, y, c: 9 <= diag(x, y) <= 12, "shape": "midnight"},
     "longsword_steel": {"type": "longsword", "blade": lambda x, y, c: diag(x, y) >= 13,
                         "handle": lambda x, y, c: diag(x, y) <= 8},
     "longsword_ember": {"type": "longsword", "blade": lambda x, y, c: diag(x, y) >= 13,
@@ -167,7 +170,12 @@ def draw_sword(h, d):
 def draw_item(kind, shape, pal, h, d, L, row, sign):
     px = draw_sword(h, d) if kind == "sword" else bw.draw(kind, h, d, L, row, sign)
     n = bw.perp(d)
-    if shape == "double":
+    if shape == "midnight":
+        # black blade, thin silver edge and tip
+        b = pal["blade"]
+        swap = {bw.STEEL_L: b[0], bw.STEEL_M: b[3], bw.STEEL_H: b[3]}
+        px = {p: swap.get(c, c) for p, c in px.items()}
+    elif shape == "double":
         # a second blade on the other side of the haft, mirrored
         for t in (5.6, 6.6, 7.6):
             for s in (1, 2, 3):

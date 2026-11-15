@@ -59,6 +59,8 @@ func _build(box: VBoxContainer) -> void:
 	hero = LayeredSprite.new()
 	holder.add_child(hero)
 	hero.dress(run.equipment)
+	# the wardrobe is in town: weapons put away, as on the player
+	hero.set_sheathed(true)
 	hero.set_outfit(preview_id)
 	hero.play(&"idle", Vector2.DOWN)
 	armor_toggle = CheckBox.new()

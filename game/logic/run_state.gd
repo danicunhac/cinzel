@@ -1,7 +1,8 @@
 class_name RunState
 extends RefCounted
 ## Everything the player carries and has unlocked in this run. Death loses it
-## all (equipment, backpack, gold, floors) except the unlocked outfits.
+## all (equipment, backpack, gold, floors) except the unlocked outfits and
+## the secret skill Lâminas Gêmeas.
 
 signal changed
 ## Loot that went into the run (take_loot): `qty` units of `id` (HUD toasts).
@@ -16,6 +17,9 @@ var equipment: Equipment = Equipment.starter()
 var inventory: Inventory = Inventory.new(equipment.capacity())
 ## Outfits the player can wear. Visual only, so they survive death.
 var unlocked_outfits: Array[StringName] = [Equipment.STARTER_OUTFIT]
+## Secret skill Lâminas Gêmeas: an off-hand slot for a second sword. Off by
+## default, nothing in the game gives it yet (debug `--dual`). Survives death.
+var dual_blades: bool = false
 ## The town market keeps its prices between visits; death starts a fresh one.
 var market: Market = Market.new()
 var unlocked_floors: int = 1
@@ -114,6 +118,26 @@ func equip(id: StringName, relic_slot: int = -1) -> bool:
 	return ok
 
 
+## Second sword into the off-hand (needs Lâminas Gêmeas).
+func equip_offhand(id: StringName) -> bool:
+	var ok := equipment.equip_offhand(id, inventory)
+	if ok:
+		changed.emit()
+	return ok
+
+
+## Turns Lâminas Gêmeas on or off. Off puts the off-hand sword back in the
+## backpack when it fits (else it stays in the slot, unused).
+func set_dual_blades(on: bool) -> void:
+	if dual_blades == on:
+		return
+	if not on and equipment.offhand != &"":
+		equipment.unequip(&"offhand", inventory)
+	dual_blades = on
+	equipment.dual = on
+	changed.emit()
+
+
 func unequip(kind: StringName, relic_slot: int = 0) -> bool:
 	var ok := equipment.unequip(kind, inventory, relic_slot)
 	if ok:
@@ -174,8 +198,8 @@ func beat_floor(floor_num: int) -> void:
 
 
 ## Loses everything and goes back to the starter kit; the market starts fresh.
-## Unlocked outfits (and the one being worn) stay, and so does the
-## "Mostrar armadura" choice.
+## Unlocked outfits (and the one being worn) stay, and so do the
+## "Mostrar armadura" choice and Lâminas Gêmeas (its slot comes back empty).
 func die() -> void:
 	var outfit := equipment.outfit
 	var show_armor := equipment.show_armor
@@ -184,6 +208,7 @@ func die() -> void:
 	equipment = Equipment.starter()
 	equipment.outfit = outfit
 	equipment.show_armor = show_armor
+	equipment.dual = dual_blades
 	inventory = Inventory.new(equipment.capacity())
 	unlocked_floors = 1
 	floors_beaten = 0

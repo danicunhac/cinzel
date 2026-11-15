@@ -3,7 +3,7 @@ extends RefCounted
 
 
 func test_content_counts() -> void:
-	T.eq(ItemDB.ids(&"weapon").size(), 12, "weapons")
+	T.eq(ItemDB.ids(&"weapon").size(), 13, "weapons (12 + sword_midnight)")
 	T.eq(ItemDB.ids(&"armor").size(), 6, "armors")
 	T.eq(ItemDB.ids(&"helm").size(), 4, "helms")
 	T.eq(ItemDB.ids(&"backpack").size(), 3, "backpacks")
@@ -12,9 +12,12 @@ func test_content_counts() -> void:
 	T.eq(ItemDB.ids(&"material").size(), 10, "materials")
 
 
+## Two per type that the game hands out (sword_midnight has no source).
 func test_two_weapons_per_type() -> void:
 	var per_type: Dictionary[StringName, int] = {}
 	for id: StringName in ItemDB.ids(&"weapon"):
+		if not ItemDB.has_source(id):
+			continue
 		var t := ItemDB.weapon_type(id)
 		per_type[t] = per_type.get(t, 0) + 1
 	for t: StringName in ItemDB.WEAPON_TYPES:

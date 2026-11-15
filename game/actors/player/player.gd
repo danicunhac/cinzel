@@ -3,6 +3,9 @@ extends CharacterBody2D
 ## The climber. The equipped weapon (WeaponDef from its item) drives the
 ## attack: combo, arc or thrust, arrows, stun, crit, and the special fired by
 ## holding attack (SpecialCharge). Stats come from Game.run.stats().
+## With Lâminas Gêmeas and two swords (Equipment.dual_active) the def is
+## WeaponDef.dual_swords: the combo alternates hands and the off-hand hits
+## add the off-hand sword's share (PlayerStats.offhand_damage).
 ## Debug: `--weapon=<item id>` equips that weapon; `--special-cd=<s>` starts
 ## the special cooling down.
 
@@ -74,9 +77,16 @@ var invincible_time: float = 0.0
 var blocks_left: int = 0
 var weapon: WeaponDef = WeaponDef.for_type(&"sword")
 var weapon_id: StringName = &""
+## Off-hand sword in use (&"" = none, or no Lâminas Gêmeas).
+var offhand_id: StringName = &""
 var special: SpecialCharge = SpecialCharge.new()
-## False in town: the attack button does nothing (no swing, shot or special).
-var armed: bool = true
+## False in town: the attack button does nothing (no swing, shot or special)
+## and the weapons are drawn put away (LayeredSprite.set_sheathed).
+var armed: bool = true:
+	set(v):
+		armed = v
+		if sprite != null:
+			sprite.set_sheathed(not v)
 ## Crit rolls. Seed it for deterministic tests.
 var rng := RandomNumberGenerator.new()
 
@@ -106,6 +116,8 @@ var _step_time: float = 0.0
 var _steps: int = 0
 var _was_charged: bool = false
 var _heal_spark: float = 0.0
+## The swing now is the off-hand's (Lâminas Gêmeas).
+var _offhand_hit: bool = false
 
 
 func _ready() -> void:
@@ -118,6 +130,7 @@ func _ready() -> void:
 	add_child(_fx)
 	Game.run.changed.connect(_refresh_stats)
 	_refresh_stats()
+	sprite.set_sheathed(not armed)
 	health.hp = clampi(Game.run.hp, 0, health.max_hp)
 	blocks_left = _stats.block_per_room
 	hitbox.team = &"player"
@@ -266,14 +279,16 @@ func _start_attack(charged: bool = false) -> void:
 	_shot_charged = charged
 	_shot_fired = false
 	_swing_dur = weapon.swing_time(_stats.attack_speed_mult)
+	_offhand_hit = weapon.is_offhand_step(_combo_step)
 	sprite.speed_scale = ANIM_SWING / _swing_dur
+	sprite.offhand_swing = _offhand_hit
 	sprite.play(&"attack", facing, true)
 	if weapon.ranged:
 		return
 	var finisher := weapon.combo > 1 and _combo_step == weapon.combo - 1
 	Sfx.play(&"swing_heavy" if finisher or weapon.type in HEAVY_WEAPONS else &"swing_light", 0.08)
 	hitbox.heavy = finisher
-	_roll_hit(weapon.combo_mult[_combo_step])
+	_roll_hit(weapon.combo_mult[_combo_step], _stats.offhand_damage if _offhand_hit else 0)
 	hitbox.stun = weapon.stun
 	_set_swing_shape(weapon.reach, weapon.arc_deg)
 	hitbox.scale = Vector2.ONE * (FINISHER_SCALE if finisher else 1.0)
@@ -292,7 +307,7 @@ func _swing_fx(r: float) -> void:
 	var side := 1.0 if _combo_step % 2 == 0 else -1.0
 	var depth := r * (0.42 if weapon.type == &"axe" else 0.3)
 	var life := 0.12 if weapon.type == &"dagger" else (0.18 if weapon.type == &"axe" or weapon.type == &"longsword" else WeaponFx.SLASH_LIFE)
-	_fx.slash(_hand(), r, dir.angle() - half * side, dir.angle() + half * side, depth, _fx.slash_color(), life)
+	_fx.slash(_hand(), r, dir.angle() - half * side, dir.angle() + half * side, depth, _fx.slash_color(_offhand_hit), life)
 
 
 func _process_attack(delta: float) -> void:
@@ -328,6 +343,8 @@ func _end_swing() -> void:
 	hitbox.heavy = false
 	hitbox.scale = Vector2.ONE
 	sprite.speed_scale = 1.0
+	sprite.offhand_swing = false
+	_offhand_hit = false
 
 
 func _fire_arrow(charged: bool) -> void:
@@ -383,6 +400,8 @@ func _start_special() -> void:
 			_fx.line(hand, hand + _special_dir * (LUNGE_SPEED * LUNGE_DASH + weapon.reach), _fx.skill_color(), 0.4, 5.0)
 		&"flurry":
 			_flurry_cut()
+		&"cross_flurry":
+			_cross_cut()
 		&"arrow_rain":
 			var b := PlayerBlast.new()
 			b.kind = PlayerBlast.Kind.RAIN
@@ -431,6 +450,13 @@ func _process_special(delta: float) -> void:
 				_special_step = cut
 				_flurry_cut()
 			velocity = _special_dir * 40.0
+		&"cross_flurry":
+			done = WeaponDef.CROSS_GAP * WeaponDef.CROSS_CUTS + 0.05
+			var cut := int(t / WeaponDef.CROSS_GAP)
+			if cut > _special_step and cut < WeaponDef.CROSS_CUTS:
+				_special_step = cut
+				_cross_cut()
+			velocity = _special_dir * 40.0
 		&"arrow_rain":
 			done = RAIN_TIME
 	if t >= done:
@@ -473,14 +499,40 @@ func _flurry_cut() -> void:
 	_fx.arc(_hand(), weapon.reach * FLURRY_REACH_MULT, dir.angle() - half * side, dir.angle() + half * side, _fx.skill_color(), 0.22, 3.0)
 
 
+## One X of the two-sword special: both blades cut across each other in
+## front of the hero (two cuts tilted CROSS_TILT to each side of the facing,
+## swept in opposite directions, each in its sword's light), one hit with
+## both swords' damage. The hands take turns leading.
+func _cross_cut() -> void:
+	var reach := weapon.reach * WeaponDef.CROSS_REACH_MULT
+	_roll_hit(weapon.special_mult, _stats.offhand_damage)
+	_set_swing_shape(reach, WeaponDef.CROSS_ARC)
+	hitbox.rotation = _special_dir.angle()
+	hitbox.reset_hits()
+	hitbox.set_active(true)
+	hitbox.hit_overlapping()
+	facing = _special_dir
+	sprite.offhand_swing = _special_step % 2 == 1
+	sprite.play(&"attack", facing, true)
+	Sfx.play(&"swing_light", 0.08)
+	var tilt := deg_to_rad(WeaponDef.CROSS_TILT)
+	var mid := _hand() + _special_dir * reach * 0.55
+	var arm := reach * 0.6
+	var v1 := _special_dir.rotated(PI / 2.0 - tilt) * arm
+	var v2 := _special_dir.rotated(PI / 2.0 + tilt) * arm
+	_fx.jab(mid - v1, mid + v1, 8.0, _fx.skill_color(), 0.22)
+	_fx.jab(mid + v2, mid - v2, 8.0, _fx.skill_color(true), 0.22)
+
+
 # --- hit shapes and damage ---
 
 var _last_crit: bool = false
 
 
-## Base damage times `mult`, after one crit roll.
-func _roll_damage(mult: float) -> int:
-	var base := roundi(_stats.damage * mult)
+## (Base damage + `bonus`) times `mult`, after one crit roll. The bonus is
+## the off-hand sword's share on its hits.
+func _roll_damage(mult: float, bonus: int = 0) -> int:
+	var base := roundi((_stats.damage + bonus) * mult)
 	var dmg := Combat.hit_damage(base, _stats.crit_chance, _stats.crit_mult, rng)
 	_last_crit = dmg != base
 	return dmg
@@ -493,8 +545,8 @@ func _blast_roll(blast: Hitbox, mult: float) -> int:
 	return dmg
 
 
-func _roll_hit(mult: float) -> void:
-	hitbox.damage = _roll_damage(mult)
+func _roll_hit(mult: float, bonus: int = 0) -> void:
+	hitbox.damage = _roll_damage(mult, bonus)
 	hitbox.crit = _last_crit
 
 
@@ -645,25 +697,34 @@ func _refresh_stats() -> void:
 	_stats = Game.run.stats()
 	health.set_max_hp(_stats.max_hp)
 	var e := Game.run.equipment
-	if e.weapon != weapon_id:
-		_set_weapon(e.weapon)
+	var off := e.offhand if e.dual_active() else &""
+	if e.weapon != weapon_id or off != offhand_id:
+		_set_weapon(e.weapon, off)
 	if sprite.outfit_dir != String(e.outfit).trim_prefix("outfit_"):
 		sprite.set_outfit(e.outfit)
 	sprite.set_gear(e.armor, e.helm, e.show_armor)
 	sprite.set_backpack(e.backpack)
 
 
-func _set_weapon(id: StringName) -> void:
+## Main weapon `id`, and the off-hand sword `off` when Lâminas Gêmeas is on
+## with two swords (&"" otherwise).
+func _set_weapon(id: StringName, off: StringName = &"") -> void:
 	weapon_id = id
-	weapon = WeaponDef.for_item(id) if ItemDB.kind(id) == &"weapon" else WeaponDef.for_type(&"sword")
+	offhand_id = off
+	if off != &"":
+		weapon = WeaponDef.dual_swords(id)
+	else:
+		weapon = WeaponDef.for_item(id) if ItemDB.kind(id) == &"weapon" else WeaponDef.for_type(&"sword")
 	var cd := special.cooldown
 	special = SpecialCharge.new(weapon.special_hold, weapon.charge_hold)
 	special.cooldown = cd
 	_combo_step = -1
 	_set_swing_shape(weapon.reach, weapon.arc_deg)
 	sprite.set_weapon(weapon.type, id if ItemDB.kind(id) == &"weapon" else &"")
+	sprite.set_offhand(off)
 	if _fx != null:
 		_fx.tint = ItemDB.fx_color(id)
+		_fx.offhand_tint = ItemDB.fx_color(off)
 
 
 func _apply_debug_weapon() -> void:

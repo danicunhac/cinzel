@@ -66,7 +66,9 @@ Pedido do Daniel: mais armas, armaduras, roupas e mochilas, mais perto de SAO.
 | Relíquias (até 3) | Os 8 itens atuais, com efeitos passivos | Não |
 | **Roupa (visual)** | Só aparência, estilo SAO: escolhida livremente na cidade (guarda-roupa) e desbloqueada por compra, baú ou chefe. Não muda números. | Sim (camadas `hair` e `outfit`) |
 
-Os números vêm do equipamento. A aparência vem da roupa e, por cima dela, da armadura e do elmo equipados. No guarda-roupa o jogador escolhe em "Mostrar armadura" (ligado no começo): ligado, a armadura cobre o tronco e os ombros da roupa e o elmo cobre o capuz e o cabelo; desligado, só a roupa aparece. A escolha fica salva na corrida junto com a roupa e não se perde na morte. Cada roupa precisa da sua folha de sprite completa (8×13 quadros de 32 px nas camadas `hair` e `outfit`); cada armadura e cada elmo têm a sua (camadas `armor` e `helm`). Ordem das camadas: `body`, `hair`, `outfit`, `armor`, `helm`, `weapon`.
+Os números vêm do equipamento. A aparência vem da roupa e, por cima dela, da armadura e do elmo equipados. No guarda-roupa o jogador escolhe em "Mostrar armadura" (ligado no começo): ligado, a armadura cobre o tronco e os ombros da roupa e o elmo cobre o capuz e o cabelo; desligado, só a roupa aparece. A escolha fica salva na corrida junto com a roupa e não se perde na morte. Cada roupa precisa da sua folha de sprite completa (8×13 quadros de 32 px nas camadas `hair` e `outfit`); cada armadura e cada elmo têm a sua (camadas `armor` e `helm`). Ordem das camadas: `body`, `hair`, `outfit`, `armor`, `backpack`, `helm`, `weapon`, `offhand` (a segunda espada; vai para trás do corpo na vista de lado).
+
+Na cidade não se ataca, então as armas ficam guardadas: espada e adaga na cintura (cabo para cima, na bainha), espada longa, machado, lança e arco nas costas, na diagonal (atrás do corpo de frente, só o cabo ou a cabeça aparece sobre o ombro; por cima da mochila de costas e de lado). O guarda-roupa mostra o herói do mesmo jeito.
 
 ### Tipos de arma (decidido pelo Daniel em 14/11)
 - **Espada:** equilibrada, combo de 3. Especial: estocada em linha.
@@ -78,11 +80,21 @@ Os números vêm do equipamento. A aparência vem da roupa e, por cima dela, da 
 
 O **golpe especial** imita as Sword Skills de SAO: segurar o ataque por 0,5 s carrega um golpe com rastro de luz, com uma recarga curta.
 
+### Habilidade secreta: Lâminas Gêmeas (15/11)
+Fica na corrida e não se perde na morte, como as roupas. Começa desligada e ainda não há como ganhá-la no jogo (só o debug `--dual`). Ligada, a mochila mostra um espaço de mão secundária, que só aceita espada de uma mão (tipo espada). Equipar uma espada pergunta a mão (arma ou mão secundária); tirar devolve para a mochila, como a arma.
+
+Com espada na mão principal e espada na secundária:
+- combo de 4 golpes alternando as mãos, 15% mais rápido;
+- os golpes da mão secundária somam 60% do dano da espada dela;
+- o especial vira um X: 4 cortes cruzados das duas lâminas, cada um com o dano das duas.
+
+Sem a segunda espada (ou com outra arma na mão principal) nada muda. Os números ficam em `game/logic/weapon_def.gd`.
+
 ### Raridade
 Comum (branco), Rara (azul), Épica (roxo). A raridade aumenta os números, e as épicas trazem um efeito extra.
 
 ### Quantidade de conteúdo (decidido em 14/11, opção B)
-- 12 armas (2 de cada tipo)
+- 12 armas (2 de cada tipo), mais a Lâmina da Meia-Noite (`sword_midnight`, espada épica, lâmina negra de fio prateado, um pouco acima da espada do cavaleiro). Ela está no catálogo, mas nada a entrega ainda: fora do saque, da loja e da forja (`no_source` no catálogo).
 - 6 armaduras
 - 4 capuzes/elmos
 - 3 mochilas: 8, 14 e 20 espaços

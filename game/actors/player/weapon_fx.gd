@@ -21,6 +21,9 @@ var hand: Vector2 = Vector2.ZERO
 ## Colour of the equipped weapon item's light (ItemDB.fx_color; alpha 0 =
 ## the default amber swings and cyan specials).
 var tint: Color = Color(0, 0, 0, 0)
+## Same for the off-hand sword (Lâminas Gêmeas); its swings and its half of
+## the cross special use it.
+var offhand_tint: Color = Color(0, 0, 0, 0)
 
 var _trails: Array[Trail] = []
 var _t: float = 0.0
@@ -47,14 +50,16 @@ func _ready() -> void:
 	material = mat
 
 
-## Swing light: the item's tint, else SLASH_COLOR.
-func slash_color() -> Color:
-	return tint if tint.a > 0.0 else SLASH_COLOR
+## Swing light: the item's tint (the off-hand's when `offhand`), else SLASH_COLOR.
+func slash_color(offhand: bool = false) -> Color:
+	var c := offhand_tint if offhand else tint
+	return c if c.a > 0.0 else SLASH_COLOR
 
 
 ## Special light: the item's tint a little paler, else SKILL_COLOR.
-func skill_color() -> Color:
-	return tint.lerp(Color.WHITE, 0.25) if tint.a > 0.0 else SKILL_COLOR
+func skill_color(offhand: bool = false) -> Color:
+	var c := offhand_tint if offhand else tint
+	return c.lerp(Color.WHITE, 0.25) if c.a > 0.0 else SKILL_COLOR
 
 
 func arc(center: Vector2, radius: float, from_angle: float, to_angle: float, color: Color, life: float, width: float = 3.0) -> void:

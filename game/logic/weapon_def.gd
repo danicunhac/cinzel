@@ -9,6 +9,20 @@ extends RefCounted
 const WORLD_SCALE := 1.5
 ## A swing at attack_speed 1.0 lasts base_swing; faster weapons divide it.
 const DEFAULT_CRIT_MULT := 1.5
+## Lâminas Gêmeas (sword + off-hand sword, Equipment.dual_active): a combo
+## of 4 that alternates hands (odd steps are the off-hand), swings 15%
+## faster, and the off-hand hits add 60% of the off-hand sword's damage.
+## The special becomes cross_flurry: CROSS_CUTS X-shaped double slashes.
+const DUAL_COMBO_MULT: Array[float] = [1.0, 1.0, 1.0, 1.5]
+const DUAL_SWING_MULT := 0.85
+const DUAL_OFFHAND_SHARE := 0.6
+const DUAL_SPECIAL_MULT := 0.9
+const CROSS_CUTS := 4
+const CROSS_GAP := 0.12
+const CROSS_ARC := 150.0
+const CROSS_REACH_MULT := 1.35
+## Each X is two cuts this far (degrees) from square to the facing.
+const CROSS_TILT := 40.0
 
 var type: StringName = &"sword"
 var combo: int = 3
@@ -34,9 +48,11 @@ var charged_mult: float = 1.0
 ## Hold time of the charged shot (bow only, -1 = none) and of the special.
 var charge_hold: float = -1.0
 var special_hold: float = SpecialCharge.HOLD
-## thrust_line, spin, ground_slam, lunge, flurry, arrow_rain.
+## thrust_line, spin, ground_slam, lunge, flurry, arrow_rain, cross_flurry.
 var special: StringName = &"thrust_line"
 var special_mult: float = 2.0
+## Two swords (dual_swords): odd combo steps are off-hand hits.
+var dual: bool = false
 
 
 ## Seconds of one swing at this attack speed multiplier.
@@ -100,6 +116,23 @@ static func for_type(t: StringName) -> WeaponDef:
 			d.special_mult = 1.0
 		_:
 			push_error("WeaponDef: unknown weapon type '%s'" % t)
+	return d
+
+
+## Whether combo step `step` is swung by the off-hand sword.
+func is_offhand_step(step: int) -> bool:
+	return dual and step % 2 == 1
+
+
+## The main sword's def turned into the two-sword fighting style.
+static func dual_swords(main_id: StringName) -> WeaponDef:
+	var d := for_item(main_id)
+	d.dual = true
+	d.combo = DUAL_COMBO_MULT.size()
+	d.combo_mult = DUAL_COMBO_MULT.duplicate()
+	d.base_swing *= DUAL_SWING_MULT
+	d.special = &"cross_flurry"
+	d.special_mult = DUAL_SPECIAL_MULT
 	return d
 
 

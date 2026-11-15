@@ -143,12 +143,13 @@ func buy_outfit(run: RunState, id: StringName) -> bool:
 	return true
 
 
-## Ids of `kinds` the opened `floors` can offer, without the starter kit.
+## Ids of `kinds` the opened `floors` can offer, without the starter kit and
+## the items with no source.
 func _pool(kinds: Array[StringName], floors: int = RunState.MAX_FLOOR) -> Array[StringName]:
 	var out: Array[StringName] = []
 	for id: StringName in ItemDB.ids():
 		if kinds.has(ItemDB.kind(id)) and id != Equipment.STARTER_WEAPON and id != Equipment.STARTER_BACKPACK \
-				and available(id, floors):
+				and ItemDB.has_source(id) and available(id, floors):
 			out.append(id)
 	return out
 

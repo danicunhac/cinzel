@@ -30,6 +30,22 @@ static func ids_by(kind: StringName, rarity: StringName) -> Array[StringName]:
 	return out
 
 
+## Ids of `kind` and `rarity` (&"" = any) that loot and the market can hand
+## out: no "no_source" items.
+static func sourced_by(kind: StringName, rarity: StringName = &"") -> Array[StringName]:
+	var out: Array[StringName] = []
+	for k: StringName in ids(kind):
+		if has_source(k) and (rarity == &"" or ItemCatalog.ITEMS[k]["rarity"] == rarity):
+			out.append(k)
+	return out
+
+
+## False for catalog items nothing in the game hands out yet (no loot, no
+## market stock, no forge recipe): "no_source" in the catalog.
+static func has_source(id: StringName) -> bool:
+	return has(id) and not bool(ItemCatalog.ITEMS[id].get("no_source", false))
+
+
 static func has(id: StringName) -> bool:
 	return ItemCatalog.ITEMS.has(id)
 

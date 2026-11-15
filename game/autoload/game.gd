@@ -122,9 +122,15 @@ func swap_for(id: StringName, slot: int) -> Dictionary:
 ## `--give=<id>:<qty>,...` puts any catalog item in the backpack (materials
 ## stack, outfits unlock; `gold:<n>` adds gold), `--equip=<id>,...` gives and
 ## equips them (an outfit is unlocked and worn), `--hide-armor` turns the wardrobe's "Mostrar armadura" off.
+## `--dual` turns on the secret skill Lâminas Gêmeas (off-hand slot; nothing
+## in the game gives it yet) and `--offhand=<sword id>` gives that sword and
+## puts it in the off-hand (needs `--dual`).
 ## An unknown id, or what does not fit, only warns.
 func apply_debug_loadout() -> void:
-	for a in OS.get_cmdline_user_args():
+	var args := OS.get_cmdline_user_args()
+	if args.has("--dual"):
+		run.set_dual_blades(true)
+	for a in args:
 		if a == "--hide-armor":
 			run.set_show_armor(false)
 		if a.begins_with("--give="):
@@ -141,6 +147,16 @@ func apply_debug_loadout() -> void:
 					run.equip(id)
 				else:
 					push_warning("--equip: unknown item '%s'" % part)
+	for a in args:
+		if a.begins_with("--offhand="):
+			var id := StringName(a.substr(10))
+			if not ItemDB.has(id):
+				push_warning("--offhand: unknown item '%s'" % id)
+				continue
+			run.inventory.add(id)
+			if not run.equip_offhand(id):
+				run.inventory.remove(id)
+				push_warning("--offhand: needs --dual and a sword, got '%s'" % id)
 
 
 ## One `<id>:<qty>` of --give (qty defaults to 1). Returns what was given.

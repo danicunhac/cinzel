@@ -9,6 +9,9 @@ extends UiPanel
 ## Dropping works in the tower only: the stack falls at the player's feet as
 ## a pickup. In town dropping is disabled (sell at the shop instead).
 ## The outfit is read-only here; it changes at the wardrobe in town.
+## With Lâminas Gêmeas (RunState.dual_blades) the doll gets an off-hand slot
+## (OFFHAND_SLOT). Equipping a sword then asks which hand (like a relic swap
+## with 3 relics): the weapon slot or the off-hand one.
 
 const PickupScene := preload("res://world/pickup_item.tscn")
 const GRID_COLS := 5
@@ -26,10 +29,15 @@ const DOLL: Array = [
 	[&"relic", 1, Vector2(53, 98)],
 	[&"relic", 2, Vector2(78, 98)],
 ]
+## Off-hand slot, only with Lâminas Gêmeas: [kind, index, position].
+const OFFHAND_SLOT: Array = [&"offhand", 0, Vector2(106, 60)]
+const OFFHAND_NAME := "Mão secundária"
+const HAND_PICK_TEXT := "Escolha a mão: arma ou mão secundária."
 ## Faded icon in an empty slot, so its kind reads without words.
 const HINT_ICON: Dictionary[StringName, StringName] = {
 	&"weapon": &"sword_iron", &"armor": &"armor_cloth", &"helm": &"helm_hood",
 	&"backpack": &"backpack_small", &"outfit": &"outfit_starter", &"relic": &"glass_shield",
+	&"offhand": &"sword_iron",
 }
 
 ## True in town: drop is disabled.
@@ -41,6 +49,8 @@ var sel_kind: StringName = &""
 var sel_relic: int = 0
 ## A relic waiting for the equipped relic it replaces (all 3 are taken).
 var relic_pick: StringName = &""
+## A sword waiting for the hand it goes to (Lâminas Gêmeas).
+var hand_pick: StringName = &""
 var bag_cells: Array[ItemCell] = []
 var doll_cells: Array[ItemCell] = []
 var primary_button: Button
@@ -123,7 +133,10 @@ func _build_doll(run: RunState, parent: Control) -> void:
 	relic_label.position = Vector2(0, 87)
 	relic_label.size = Vector2(DOLL_W, 10)
 	doll.add_child(relic_label)
-	for d: Array in DOLL:
+	var slots: Array = DOLL.duplicate()
+	if run.dual_blades:
+		slots.append(OFFHAND_SLOT)
+	for d: Array in slots:
 		var kind: StringName = d[0]
 		var id := run.equipment.get_slot(kind, d[1])
 		var hint := UiKit.item_icon(HINT_ICON[kind])
@@ -132,7 +145,7 @@ func _build_doll(run: RunState, parent: Control) -> void:
 		c.position = d[2]
 		if kind == &"outfit":
 			c.set_dim(true)
-		if relic_pick != &"" and kind == &"relic":
+		if (relic_pick != &"" and kind == &"relic") or (hand_pick != &"" and kind in [&"weapon", &"offhand"]):
 			c.set_marker(TrendArrow.make(false, UiKit.COLOR_TITLE))
 		c.focus_entered.connect(select_doll.bind(kind, int(d[1])))
 		c.activated.connect(_on_doll_activated.bind(kind, int(d[1])))
@@ -231,11 +244,14 @@ func _show_cell(c: ItemCell) -> void:
 func _show_info(where: StringName, id: StringName, kind: StringName) -> void:
 	var eq := Game.run.equipment
 	if id == &"":
-		var empty := "Espaço vazio" if where == &"bag" else "%s: vazio" % UiKit.KIND_NAME.get(kind, "")
+		var slot_name: String = OFFHAND_NAME if kind == &"offhand" else UiKit.KIND_NAME.get(kind, "")
+		var empty := "Espaço vazio" if where == &"bag" else "%s: vazio" % slot_name
 		_info.show_item(&"", [], empty)
 		return
 	if where == &"doll":
 		var note := "Troque no guarda-roupa da cidade." if kind == &"outfit" else "Equipado"
+		if kind == &"offhand":
+			note = "Mão secundária" if eq.dual_active() else "Mão secundária: só luta com espada na mão principal."
 		_info.show_item(id, ItemCompare.own(id), note)
 		return
 	var rows := ItemCompare.compare(eq, id)
@@ -245,7 +261,10 @@ func _show_info(where: StringName, id: StringName, kind: StringName) -> void:
 			note = "Material de forja. Vende na loja."
 		&"relic":
 			note = "Soma às relíquias." if eq.relics.size() < Equipment.RELIC_SLOTS else "Troca por uma relíquia."
-	if rows.is_empty() and Equipment.SLOT_KINDS.has(ItemDB.kind(id)) and ItemDB.kind(id) != &"relic":
+		&"weapon":
+			if eq.can_offhand(id):
+				note = "Vai para a arma ou para a mão secundária."
+	if rows.is_empty() and Equipment.SLOT_KINDS.has(ItemDB.kind(id)) and ItemDB.kind(id) != &"relic" and not eq.can_offhand(id):
 		note = "Igual ao equipado."
 	_info.show_item(id, rows, note)
 
@@ -255,6 +274,8 @@ func _show_info(where: StringName, id: StringName, kind: StringName) -> void:
 ## What the primary button does now: &"equip", &"unequip", &"pick" (choose
 ## the relic to replace), &"cancel" (leave relic choice) or &"" (nothing).
 func primary_kind() -> StringName:
+	if hand_pick != &"":
+		return &"pick" if sel_where == &"doll" and sel_kind in [&"weapon", &"offhand"] else &"cancel"
 	if relic_pick != &"":
 		return &"pick" if sel_where == &"doll" and sel_kind == &"relic" else &"cancel"
 	var id := selected_id()
@@ -262,7 +283,7 @@ func primary_kind() -> StringName:
 		return &""
 	if sel_where == &"bag":
 		return &"equip" if Equipment.SLOT_KINDS.has(ItemDB.kind(id)) else &""
-	return &"unequip" if sel_kind in [&"armor", &"helm", &"relic"] else &""
+	return &"unequip" if sel_kind in [&"armor", &"helm", &"relic", &"offhand"] else &""
 
 
 ## Equip, take off or finish the relic swap, by what is selected.
@@ -273,9 +294,10 @@ func primary() -> bool:
 		&"unequip":
 			return unequip_selected()
 		&"pick":
-			return _finish_relic_pick(sel_relic)
+			return _finish_hand_pick(sel_kind) if hand_pick != &"" else _finish_relic_pick(sel_relic)
 		&"cancel":
 			relic_pick = &""
+			hand_pick = &""
 			_set_msg("", UiKit.COLOR_MUTED)
 			refresh()
 	return false
@@ -291,6 +313,12 @@ func equip_selected() -> bool:
 		_set_msg("Escolha a relíquia que sai.", UiKit.COLOR_TITLE)
 		refresh()
 		_focus_doll(&"relic", 0)
+		return false
+	if run.equipment.can_offhand(id):
+		hand_pick = id
+		_set_msg(HAND_PICK_TEXT, UiKit.COLOR_TITLE)
+		refresh()
+		_focus_doll(&"offhand", 0)
 		return false
 	var ok := run.equip(id)
 	if ok:
@@ -310,7 +338,7 @@ func unequip_selected() -> bool:
 	var id := selected_id()
 	if id == &"":
 		return false
-	if not (sel_kind in [&"armor", &"helm", &"relic"]):
+	if not (sel_kind in [&"armor", &"helm", &"relic", &"offhand"]):
 		_set_msg("Só dá para trocar por outro.", UiKit.COLOR_DANGER)
 		refresh()
 		return false
@@ -376,6 +404,21 @@ func _finish_relic_pick(relic_slot: int) -> bool:
 	return ok
 
 
+## Puts the sword waiting in hand_pick in the weapon slot or the off-hand.
+func _finish_hand_pick(kind: StringName) -> bool:
+	var id := hand_pick
+	hand_pick = &""
+	var run := Game.run
+	var ok := run.equip_offhand(id) if kind == &"offhand" else run.equip(id)
+	if ok:
+		var where := "na mão secundária" if kind == &"offhand" else "como arma"
+		_set_msg("Equipou %s %s." % [UiKit.item_name(id), where], UiKit.COLOR_ITEM)
+	else:
+		_set_msg("Não dá para equipar.", UiKit.COLOR_DANGER)
+	refresh()
+	return ok
+
+
 func _on_bag_activated(slot: int) -> void:
 	select_bag(slot)
 	primary()
@@ -393,7 +436,7 @@ func _update_actions() -> void:
 	var labels := {&"equip": "Equipar", &"unequip": "Tirar", &"pick": "Trocar", &"cancel": "Cancelar"}
 	primary_button.text = labels.get(k, "Tirar" if sel_where == &"doll" else "Equipar")
 	primary_button.disabled = k == &""
-	drop_button.disabled = sel_where != &"bag" or selected_id() == &"" or in_town or relic_pick != &""
+	drop_button.disabled = sel_where != &"bag" or selected_id() == &"" or in_town or relic_pick != &"" or hand_pick != &""
 	# Why "Largar" is off in town, before anyone tries it.
 	if in_town and _msg == "" and _msg_label != null:
 		_msg_label.text = TOWN_DROP_TEXT
@@ -424,9 +467,10 @@ func _input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_open():
 		return
-	if relic_pick != &"" and event.is_action_pressed(&"ui_cancel"):
+	if (relic_pick != &"" or hand_pick != &"") and event.is_action_pressed(&"ui_cancel"):
 		get_viewport().set_input_as_handled()
 		relic_pick = &""
+		hand_pick = &""
 		_set_msg("", UiKit.COLOR_MUTED)
 		refresh()
 		return
