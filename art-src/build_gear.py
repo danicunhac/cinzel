@@ -15,15 +15,18 @@ and helm line up with body.png, every outfit and every weapon by
 construction (the outfits are recolours of the starter, same pixels):
   - armor: the torso pixels of outfit.png (jacket, gloves, backpack, scarf
     and the belt above the trousers; never the trousers or a blade-coloured
-    pixel of the slash) repainted by brightness rank onto the armor's ramp,
+    pixel of the slash) repainted onto the armor's ramp (sampled from its
+    icon, histogram-matched so the sprite keeps the icon's mix of tones),
     plus a pattern per armor (quilting, a strap, chain dither, scales, plate
     bands and pauldrons that stick out 1 px past the shoulders);
   - helm: the visible head pixels of hair.png (hood and the fringe under it,
     where outfit.png does not cover them) repainted onto the helm's ramp, so
     the hair never pokes through; horns and the circlet band are drawn on
     top. The circlet only adds the band and leaves the hood and hair.
-The game draws body, hair, outfit, armor, helm, weapon (LayeredSprite), so
-the outfit's own dark outline stays visible under the armor and the helm.
+The game draws body, hair, outfit, armor, backpack, helm, weapon
+(LayeredSprite), so the outfit's own dark outline stays visible under the
+armor and the helm, and the backpack layer (build_backpacks.py) covers the
+pack on the armor's back.
 """
 import os
 import sys
@@ -34,88 +37,85 @@ from PIL import Image  # noqa: E402
 
 import build_climber as bc  # noqa: E402
 import build_outfits as bo  # noqa: E402
-from artlib import OUTLINE, save_guarded  # noqa: E402
+from artlib import OUTLINE, colour_counts, icon_ramp, icon_ramp_shares, quantile_index, save_guarded  # noqa: E402
 
 F = 32
 COLS = 8
 ROWS = bc.ROW_NAMES
 ATTACK_ROWS = ["attack_down", "attack_up", "attack_side"]
 
-# Ramps dark -> light. body: jacket and gloves; trim: belt and buckles above
-# the trousers; collar: the scarf around the neck.
+# Colours come from the item icon (game/assets/items/<id>.png): k-means on
+# its opaque pixels (artlib.icon_ramp), sorted dark -> light, so the sprite
+# wears the icon's own tones. Armor ramps: body (jacket and gloves: the icon
+# minus its belt row), trim (belt and buckles above the trousers: the icon's
+# belt row), collar (the scarf: the darker body tones). Selectors take
+# (x, y, colour) on the 16x16 icon.
+BELT_ROW = 10
+
+
+def not_belt(x, y, c):
+    return y != BELT_ROW
+
+
+def belt(x, y, c):
+    return y == BELT_ROW
+
+
+def blue(x, y, c):
+    return c[2] > c[0] + 20
+
+
 ARMORS = {
     # padded cloth: beige quilted gambeson
-    "armor_cloth": {
-        "body": [(112, 94, 68), (150, 130, 96), (188, 170, 130), (214, 198, 160), (232, 220, 186)],
-        "trim": [(94, 70, 46), (128, 98, 64), (160, 128, 86)],
-        "collar": [(150, 130, 96), (188, 170, 130), (214, 198, 160)],
-        "pattern": "quilt",
-    },
-    # brown leather with a dark strap across the chest and a brass buckle
-    "armor_leather": {
-        "body": [(42, 28, 26), (62, 40, 32), (84, 56, 40), (106, 72, 50), (128, 90, 62)],
-        "trim": [(150, 112, 44), (196, 156, 66), (232, 200, 104)],
-        "collar": [(62, 40, 32), (84, 56, 40), (106, 72, 50)],
-        "strap": [(134, 98, 58), (182, 140, 88)],
-        "pattern": "strap",
-    },
-    # grey chain mail, dithered
-    "armor_chain": {
-        "body": [(70, 72, 80), (104, 108, 116), (140, 144, 150), (174, 178, 182), (204, 206, 208)],
-        "trim": [(72, 50, 34), (104, 72, 44), (134, 96, 58)],
-        "collar": [(70, 72, 80), (104, 108, 116), (140, 144, 150)],
-        "pattern": "chain",
-    },
-    # green-bronze scales
-    "armor_scale": {
-        "body": [(46, 62, 40), (70, 92, 52), (100, 122, 62), (140, 148, 74), (182, 176, 98)],
-        "trim": [(110, 76, 34), (160, 116, 50), (204, 160, 76)],
-        "collar": [(46, 62, 40), (70, 92, 52), (100, 122, 62)],
-        "pattern": "scale",
-    },
-    # bright steel plate with pauldrons
-    "armor_plate": {
-        "body": [(66, 70, 84), (108, 114, 128), (152, 158, 170), (192, 196, 204), (226, 228, 234)],
-        "trim": [(66, 70, 84), (108, 114, 128), (152, 158, 170)],
-        "collar": [(108, 114, 128), (152, 158, 170), (192, 196, 204)],
-        "pattern": "plate",
-    },
-    # dark purple shadow cloth with a faint violet trim
-    "armor_shadow": {
-        "body": [(26, 18, 40), (40, 28, 62), (58, 40, 88), (78, 56, 116), (100, 74, 144)],
-        "trim": [(110, 84, 168), (146, 116, 204), (186, 160, 232)],
-        "collar": [(40, 28, 62), (58, 40, 88), (78, 56, 116)],
-        "pattern": "shadow",
-    },
+    "armor_cloth": {"pattern": "quilt"},
+    # red-brown leather with a strap across the chest and a buckle
+    "armor_leather": {"pattern": "strap"},
+    # grey chain mail, dithered (the icon's brown straps stay out of the mail)
+    "armor_chain": {"pattern": "chain", "select": lambda x, y, c: y != BELT_ROW and c[0] - c[2] < 25},
+    # dark olive-bronze scales
+    "armor_scale": {"pattern": "scale"},
+    # pale steel plate with pauldrons
+    "armor_plate": {"pattern": "plate"},
+    # dark purple-brown shadow cloth
+    "armor_shadow": {"pattern": "shadow"},
 }
 
 HELMS = {
-    # travel hood: dusty grey-brown wool, dark inside the brim
-    "helm_hood": {
-        "ramp": [(66, 58, 52), (96, 86, 74), (128, 116, 98), (160, 148, 124)],
-        "inside": (40, 32, 30),
-        "style": "hood",
-    },
-    "helm_iron": {
-        "ramp": [(72, 76, 88), (110, 116, 128), (152, 158, 168), (196, 200, 206)],
-        "inside": (44, 44, 52),
-        "brim": (226, 228, 232),
-        "style": "iron",
-    },
-    "helm_horned": {
-        "ramp": [(72, 76, 88), (110, 116, 128), (152, 158, 168), (196, 200, 206)],
-        "inside": (44, 44, 52),
-        "brim": (226, 228, 232),
-        "horn": [(160, 140, 108), (212, 196, 160), (240, 230, 204)],
-        "style": "horned",
-    },
+    # travel hood: orange-brown leather, dark inside the brim
+    "helm_hood": {"style": "hood"},
+    # bronze cap with a bright brim and a nose guard
+    "helm_iron": {"style": "iron"},
+    # bronze cap with yellow-bone horns (the icon's outer columns)
+    "helm_horned": {"style": "horned", "select": lambda x, y, c: 4 <= x <= 11,
+                    "horn_select": lambda x, y, c: x <= 3 or x >= 12},
     # thin gold band over the hood with a blue gem in front
-    "helm_circlet": {
-        "gold": [(150, 104, 30), (220, 176, 60), (252, 228, 128)],
-        "gem": (80, 160, 236),
-        "style": "circlet",
-    },
+    "helm_circlet": {"style": "circlet"},
 }
+
+
+def icon_spec(root, gid):
+    """Spec of armor or helm `gid` with its ramps (and each ramp colour's
+    share of the icon, for histogram matching) sampled from its icon."""
+    path = os.path.join(root, "game/assets/items", gid + ".png")
+    if gid in ARMORS:
+        spec = dict(ARMORS[gid])
+        # the icon's darkest folds play the part of the sprite's own outline
+        body, body_w = icon_ramp_shares(path, 5, spec.get("select", not_belt), dark=48)
+        trim, trim_w = icon_ramp_shares(path, 3, belt)
+        spec.update(body=body, trim=trim, collar=body[:3], strap=trim[1:])
+        spec["shares"] = {"body": body_w, "trim": trim_w}
+        return spec
+    spec = dict(HELMS[gid])
+    if spec["style"] == "circlet":
+        spec["gold"] = icon_ramp(path, 3, lambda x, y, c: not blue(x, y, c))
+        spec["gem"] = icon_ramp(path, 1, blue)[0]
+        return spec
+    full, w = icon_ramp_shares(path, 5, spec.get("select"), dark=20)
+    spec.update(ramp=full[1:], inside=full[0], brim=full[-1])
+    spec["shares"] = {"ramp": [s / sum(w[1:]) for s in w[1:]]}
+    if "horn_select" in spec:
+        spec["horn"] = icon_ramp(path, 3, spec["horn_select"])
+    return spec
 
 
 def load(path):
@@ -130,8 +130,18 @@ def step(ramp, i, d):
     return ramp[max(0, min(len(ramp) - 1, i + d))]
 
 
-def rank(ramps, c, src_group, ramp):
-    """Index on `ramp` of starter colour c (brightness rank in its group)."""
+def rank(ramps, c, src_group, spec, name):
+    """Index on spec[name] of starter colour c: histogram matching of its
+    group onto the icon's tones when the ramp has icon shares, else its
+    brightness rank in the group."""
+    ramp = spec[name]
+    shares = spec.get("shares", {}).get(name)
+    if shares:
+        idx = spec.setdefault("_index", {})
+        if name not in idx:
+            idx[name] = quantile_index(ramps.counts[src_group], shares)
+        if c[:3] in idx[name]:
+            return idx[name][c[:3]]
     cols = ramps.groups[src_group]
     i = cols.index(c[:3]) if c[:3] in cols else min(range(len(cols)), key=lambda j: abs(lum(cols[j]) - lum(c)))
     return round(i * (len(ramp) - 1) / max(1, len(cols) - 1))
@@ -157,11 +167,11 @@ def armor_cell(row, body, hair, outfit, weapon, spec, ramps):
             if k == "khaki":
                 if not legs or y >= legs[0]:
                     continue
-                px[(x, y)] = ("trim", rank(ramps, p, "khaki", spec["trim"]))
+                px[(x, y)] = ("trim", rank(ramps, p, "khaki", spec, "trim"))
             elif k == "scarf":
-                px[(x, y)] = ("collar", rank(ramps, p, "scarf", spec["collar"]))
+                px[(x, y)] = ("collar", rank(ramps, p, "scarf", spec, "collar"))
             else:
-                px[(x, y)] = ("body", rank(ramps, p, "leather", spec["body"]))
+                px[(x, y)] = ("body", rank(ramps, p, "leather", spec, "body"))
     if not px:
         return out
     xs = [p[0] for p in px]
@@ -282,7 +292,7 @@ def head(row, body, hair, outfit):
     return px, (hx0 + 1, hy0 + 1, hx1 - 1, hy1), face_top
 
 
-def helm_cell(row, body, hair, outfit, spec, hood_ramp):
+def helm_cell(row, body, hair, outfit, spec, ramps):
     out = Image.new("RGBA", (F, F), (0, 0, 0, 0))
     q = out.load()
     px, box, face_top = head(row, body, hair, outfit)
@@ -316,9 +326,7 @@ def helm_cell(row, body, hair, outfit, spec, hood_ramp):
         elif bc.is_outline(c):
             continue
         else:
-            i = round(hood_ramp.index(c[:3]) * (len(ramp) - 1) / max(1, len(hood_ramp) - 1)) \
-                if c[:3] in hood_ramp else 1
-            q[x, y] = ramp[i] + (255,)
+            q[x, y] = ramp[rank(ramps, c, "hood", spec, "ramp")] + (255,)
     if style in ("iron", "horned"):
         # bright brim band just above the face (or the same height behind),
         # and a nose guard down the middle of the face from the front
@@ -379,16 +387,16 @@ def cells(img):
             yield r, c, (c * F, r * F, c * F + F, r * F + F)
 
 
-def build_sheet(names, body, hair, outfit, weapon, gid, ramps, hood_ramp):
+def build_sheet(names, body, hair, outfit, weapon, spec, ramps):
     out = Image.new("RGBA", outfit.size, (0, 0, 0, 0))
     for r, c, box in cells(outfit):
         cut = [im.crop(box) for im in (body, hair, outfit, weapon)]
         if not (cut[1].getbbox() or cut[2].getbbox()):
             continue
-        if gid in ARMORS:
-            cell = armor_cell(names[r], *cut, ARMORS[gid], ramps)
+        if "pattern" in spec:
+            cell = armor_cell(names[r], *cut, spec, ramps)
         else:
-            cell = helm_cell(names[r], cut[0], cut[1], cut[2], HELMS[gid], hood_ramp)
+            cell = helm_cell(names[r], cut[0], cut[1], cut[2], spec, ramps)
         out.alpha_composite(cell, box[:2])
     return bo.no_orphans(out)
 
@@ -408,16 +416,22 @@ def main():
     for t in kinds:
         sheets += [("hair", attacks[t]["hair"]), ("outfit", attacks[t]["outfit"])]
     ramps = bo.Ramps(sheets)
-    hood_ramp = ramps.groups["hood"]
+    # pixel counts per starter colour group (for histogram matching)
+    ramps.counts = {}
+    for layer, img in sheets:
+        for k, d in colour_counts([img], lambda p, layer=layer: bo.group(p, layer)).items():
+            for c, n in d.items():
+                ramps.counts.setdefault(k, {})[c] = ramps.counts.get(k, {}).get(c, 0) + n
     gdir = os.path.join(climber, "gear")
     os.makedirs(os.path.join(gdir, "attacks"), exist_ok=True)
     for gid in ids:
-        sheet = build_sheet(ROWS, base["body"], base["hair"], base["outfit"], base["weapon"], gid, ramps, hood_ramp)
+        spec = icon_spec(root, gid)
+        sheet = build_sheet(ROWS, base["body"], base["hair"], base["outfit"], base["weapon"], spec, ramps)
         save_guarded(sheet, os.path.join(gdir, gid + ".png"), force)
         for t in kinds:
             a = attacks[t]
             wa = load(os.path.join(climber, "weapons", t + ".png")).crop((0, 6 * F, COLS * F, 9 * F))
-            strip = build_sheet(ATTACK_ROWS, a["body"], a["hair"], a["outfit"], wa, gid, ramps, hood_ramp)
+            strip = build_sheet(ATTACK_ROWS, a["body"], a["hair"], a["outfit"], wa, spec, ramps)
             save_guarded(strip, os.path.join(gdir, "attacks", "%s_%s.png" % (t, gid)), force)
 
 

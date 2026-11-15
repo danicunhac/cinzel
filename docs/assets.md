@@ -18,8 +18,11 @@ Os scripts em `art-src/` transformam esses originais nas folhas do jogo. Rode co
 - `build_weapons.py`: camada de arma de cada tipo e as poses de ataque próprias (Task E3).
 - `build_outfits.py`: as roupas visuais (camadas `hair` e `outfit`), repintando a roupa inicial pixel a pixel (Task E3).
 - `build_items.py`: ícones 16x16 de armas, armaduras, capuzes, mochilas, materiais e roupas, e as molduras de raridade (Task E3). `preview_items.py` monta a folha de conferência.
-- `build_gear.py`: camadas de armadura e elmo (`climber/gear/`), tiradas quadro a quadro das camadas do escalador.
+- `build_weapon_items.py`: camada de arma de cada item (`climber/weapons/<id>.png`), da folha do tipo com as cores e a forma do ícone.
+- `build_gear.py`: camadas de armadura e elmo (`climber/gear/`), tiradas quadro a quadro das camadas do escalador, nas cores do ícone de cada item.
+- `build_backpacks.py`: camada da mochila de cada item (`climber/gear/backpack_*.png`), desenhada quadro a quadro nas costas do escalador.
 - `preview_gear.py`: prévias 4x e GIFs do escalador com cada arma e cada roupa, empilhando as camadas como o jogo.
+- `preview_equip.py`: folha ícone x sprite (ícone, parado de frente, parado de lado e um quadro de ataque) de cada item equipável.
 - `build_logo.py`: logo CINZEL (240, 120 e 80 px de largura, brilho de brasa do logo grande), emblema quadrado (16, 32, 64, 256), `icon.ico` do Windows e imagem do boot splash.
 - `build_title.py`: camadas da tela de título desenhadas por script (parapeito, faixa de névoa, luz quente).
 - `check_art.py`: confere tamanho, transparência, no máximo 32 cores, quadros sem uso vazios, pixels soltos nas camadas do escalador e a linha do chão (escalador e NPCs 30, inimigos 22, chefe 44).
@@ -85,14 +88,16 @@ Nenhum desses scripts sobrescreve um arquivo que já existe, porque ele pode ter
 
 | `game/assets/characters/climber/weapons/sword.png` | Gerado por IA + ajuste por script | Cópia de `climber/weapon.png` por `build_weapons.py` | 2026-11-14 |
 | `game/assets/characters/climber/weapons/longsword.png`, `bow.png`, `axe.png`, `spear.png`, `dagger.png` | Gerado por IA (gpt-image-2.5 flare edit) + desenho por script | Linhas de parado, andar, rolamento e morte: a arma é desenhada por `build_weapons.py` na mão, no lugar e na direção da espada de cada quadro. Linhas de ataque: tiras `art-src/gen/r2/climber32-attack-<tipo>-*` (abaixo) | 2026-11-14 |
+| `game/assets/characters/climber/weapons/<id>.png` (as 12 armas do catálogo) | Feito por script sobre `weapons/<tipo>.png` | `build_weapon_items.py`: cores tiradas do ícone do item (k-means por parte: lâmina ou cabeça, cabo, guarda, corda, borla). Linhas de parado, andar, rolamento e morte redesenhadas com o código de `build_weapons.py` nas cores do item, mais a forma: machado de duas lâminas (`axe_war`), asas e borla vermelha sob a ponta (`spear_dragoon`), guarda dourada (`sword_knight`). Linhas de ataque: as do tipo recoloridas por casamento de histograma; na estocada da lança a haste sai das tiras `attacks/spear_*` para a camada da arma | 2026-11-15 |
 | `game/assets/characters/climber/attacks/<tipo>_{body,hair,outfit}.png` (`longsword`, `bow`, `axe`, `spear`, `dagger`) | Gerado por IA (gpt-image-2.5 flare edit) + ajuste por script | Poses de ataque próprias: espada longa (varrida larga com as duas mãos), arco (puxar a corda e soltar), machado (golpe de cima até o chão), lança (estocada) e adaga (duas estocadas rápidas), 8x3 de 32x32, cores levadas para a paleta das camadas do escalador | 2026-11-14 |
 | `game/assets/characters/climber/outfits/starter/*` | Gerado por IA + ajuste por script | Cópias de `climber/hair.png`, `climber/outfit.png` e de `climber/attacks/<tipo>_{hair,outfit}.png` | 2026-11-14 |
 | `game/assets/characters/climber/outfits/casaco_longo/*` | Gerado por IA + ajuste por script | Roupa inicial repintada por `build_outfits.py`: capuz e casaco longo cinza-escuro quase preto, gola alta cinza, abas do casaco sobre as coxas, fivelas prateadas | 2026-11-14 |
 | `game/assets/characters/climber/outfits/cavaleiro_leve/*` | Gerado por IA + ajuste por script | Idem: coifa de malha de aço, peitoral branco-prateado, gola e calça carmim fosco, aba curta sobre as coxas | 2026-11-14 |
 | `game/assets/characters/climber/outfits/tunica_ferreiro/*` | Gerado por IA + ajuste por script | Idem: bandana vermelho-ferrugem, túnica de linho, avental de couro na frente (linhas de frente), cinto e calça marrom-escuros | 2026-11-14 |
 | `game/assets/characters/climber/outfits/manto_mago/*` | Gerado por IA + ajuste por script | Idem: capuz e manto violeta até as botas (o vão entre as pernas vira pano), gola e fivelas verde-água claro | 2026-11-14 |
-| `game/assets/characters/climber/gear/armor_<id>.png` (`armor_cloth`, `armor_leather`, `armor_chain`, `armor_scale`, `armor_plate`, `armor_shadow`) e `gear/attacks/<tipo>_armor_<id>.png` | Feito por script sobre as camadas do escalador | `build_gear.py`: os pixels do tronco de `climber/outfit.png` (jaqueta, luvas, mochila, cachecol e cinto, nunca a calça) de cada quadro, repintados por brilho: pano acolchoado bege com costuras, couro marrom-escuro com correia clara e fivela, malha cinza pontilhada, escamas verde-bronze, placas de aço claro com ombreiras de 1 px para fora, pano de sombra roxo-escuro | 2026-11-14 |
-| `game/assets/characters/climber/gear/helm_<id>.png` (`helm_hood`, `helm_iron`, `helm_horned`, `helm_circlet`) e `gear/attacks/<tipo>_helm_<id>.png` | Feito por script sobre as camadas do escalador | `build_gear.py`: os pixels visíveis do capuz e do cabelo de `climber/hair.png` de cada quadro, repintados: capuz de viajante cinza-marrom, elmo de ferro com aba clara e protetor de nariz, o mesmo elmo com dois chifres de osso, e o diadema (só uma faixa dourada com pedra azul sobre o capuz) | 2026-11-14 |
+| `game/assets/characters/climber/gear/armor_<id>.png` (`armor_cloth`, `armor_leather`, `armor_chain`, `armor_scale`, `armor_plate`, `armor_shadow`) e `gear/attacks/<tipo>_armor_<id>.png` | Feito por script sobre as camadas do escalador | `build_gear.py`: os pixels do tronco de `climber/outfit.png` (jaqueta, luvas, mochila, cachecol e cinto, nunca a calça) de cada quadro, repintados nas cores do ícone (k-means no ícone, casamento de histograma com as cores da roupa): pano acolchoado bege com costuras, couro marrom-avermelhado com correia e fivela, malha cinza pontilhada, escamas oliva-escuro, placas de aço claro com ombreiras de 1 px para fora, pano de sombra roxo-amarronzado | 2026-11-15 |
+| `game/assets/characters/climber/gear/helm_<id>.png` (`helm_hood`, `helm_iron`, `helm_horned`, `helm_circlet`) e `gear/attacks/<tipo>_helm_<id>.png` | Feito por script sobre as camadas do escalador | `build_gear.py`: os pixels visíveis do capuz e do cabelo de `climber/hair.png` de cada quadro, repintados nas cores do ícone: capuz de couro marrom-alaranjado, elmo de bronze com aba clara e protetor de nariz, o mesmo elmo com dois chifres amarelados, e o diadema (só uma faixa dourada com pedra azul sobre o capuz) | 2026-11-15 |
+| `game/assets/characters/climber/gear/backpack_<id>.png` (`backpack_small`, `backpack_medium`, `backpack_large`) e `gear/attacks/<tipo>_backpack_<id>.png` | Feito por script sobre as camadas do escalador | `build_backpacks.py`: mochila desenhada em cada quadro de parado, andar e ataque a partir do tronco de `climber/outfit.png`, nas cores do ícone: pequena (bolsa compacta marrom), média (mais alta, cobertor cinza-ardósia em cima), grande (alta, saco de dormir grosso que aparece dos lados da cabeça de frente). Rolamento e morte ficam com a mochila da roupa | 2026-11-15 |
 | `game/assets/items/<id>.png` (armas, armaduras, capuzes, mochilas, materiais; 35 ícones 16x16) | Gerado por IA (gpt-image-2.5 flare, preset `cinzel-pixel`) + ajuste por script | Folhas `art-src/gen/icons-*.png` por `build_items.py` (lista de ids abaixo) | 2026-11-14 |
 | `game/assets/items/mat_iron_ore.png`, `mat_old_leather.png`, `mat_ash_wood.png`, `mat_chitin.png`, `mat_silver_ore.png`, `mat_coal.png` | Gerado por IA (gpt-image-2.5 flare, preset `cinzel-pixel`, papel `gameplayProps`) + ajuste por script | `art-src/gen/icons-materials2-sheet.png` por `build_items.py`; substituem gosma, núcleo, lasca, olho, carapaça e pó de brasa | 2026-11-14 |
 | `game/assets/items/outfit_<id>.png` (5 ícones 16x16) | Feito por script sobre a arte gerada | Busto (cabeça e ombros) do quadro parado de frente de cada roupa, 1:1, por `build_items.py` | 2026-11-14 |
@@ -259,19 +264,25 @@ Tipos com pose de ataque própria trazem também `game/assets/characters/climber
 | `spear` | sim | sim: estocada |
 | `dagger` | sim | sim: duas estocadas rápidas |
 
+Cada item de arma tem a própria folha `weapons/<id>.png` (mesma grade, mesmos quadros da folha do tipo, nas cores e na forma do ícone). O jogo usa `weapons/<id>.png`, senão `weapons/<tipo>.png`, senão `climber/weapon.png` (`LayeredSprite.weapon_sheet_path`). As poses de ataque continuam por tipo.
+
 ### Roupas visuais
 
 `game/assets/characters/climber/outfits/<id>/hair.png` e `outfit.png` (8x13 cheio), com `<id>` em `starter`, `casaco_longo`, `cavaleiro_leve`, `tunica_ferreiro` e `manto_mago`. Para cada tipo com pose de ataque própria há também `outfits/<id>/attacks/<tipo>_hair.png` e `<tipo>_outfit.png` (8x3, mesmas linhas). Com a roupa `<id>` e a arma `<tipo>`, as camadas ficam:
 
 - `body`: `climber/body.png`, com as linhas de ataque de `attacks/<tipo>_body.png` se existir;
 - `hair` e `outfit`: `outfits/<id>/<camada>.png`, com as linhas de ataque de `outfits/<id>/attacks/<tipo>_<camada>.png` se existir;
-- `weapon`: `weapons/<tipo>.png`.
+- `weapon`: `weapons/<id da arma>.png` (senão `weapons/<tipo>.png`).
 
 A roupa não muda o corpo nem a arma, então qualquer roupa combina com qualquer arma em todo quadro.
 
-### Armaduras e elmos
+### Armaduras, elmos e mochilas
 
-`game/assets/characters/climber/gear/<id>.png` (8x13 cheio), um por item `armor_*` e `helm_*` do catálogo. Para cada tipo com pose de ataque própria há também `gear/attacks/<tipo>_<id>.png` (8x3, mesmas linhas). O jogo desenha `body`, `hair`, `outfit`, `armor`, `helm`, `weapon`; `armor` e `helm` só aparecem com "Mostrar armadura" ligado no guarda-roupa.
+`game/assets/characters/climber/gear/<id>.png` (8x13 cheio), um por item `armor_*`, `helm_*` e `backpack_*` do catálogo. Para cada tipo com pose de ataque própria há também `gear/attacks/<tipo>_<id>.png` (8x3, mesmas linhas). O jogo desenha `body`, `hair`, `outfit`, `armor`, `backpack`, `helm`, `weapon`; `armor` e `helm` só aparecem com "Mostrar armadura" ligado no guarda-roupa, a mochila aparece sempre.
+
+As cores vêm do ícone do item: k-means nos pixels opacos do ícone (sem o contorno), em rampa do escuro ao claro, e as cores da roupa inicial vão para essa rampa por casamento de histograma (`artlib.kmeans`, `artlib.quantile_index`), então o sprite tem a mesma mistura de tons do ícone.
+
+A mochila (`build_backpacks.py`) é desenhada por quadro a partir do tronco da roupa inicial: de costas no meio das costas, de lado sobre o volume que a roupa já tem nas costas (cobre-o por inteiro), de frente só o que sobra para fora do corpo, de toda armadura e de todo elmo (o rolo de cima) e as alças. As camadas da roupa e da armadura ainda têm o volume antigo nas costas, sempre coberto pela mochila nas linhas de parado, andar e ataque; no rolamento e na morte é ele que aparece.
 
 `build_gear.py` tira cada quadro das camadas da roupa inicial no mesmo quadro (as outras roupas são repinturas dela, com os mesmos pixels), então armadura e elmo encaixam em qualquer roupa e arma:
 
@@ -292,7 +303,7 @@ Ids (o catálogo da Task E1 usa os mesmos):
 - Roupas: `outfit_starter`, `outfit_casaco_longo`, `outfit_cavaleiro_leve`, `outfit_tunica_ferreiro`, `outfit_manto_mago`
 - Relíquias (já existiam): `heavy_blade`, `light_boots`, `stone_heart`, `fang`, `wind_cape`, `cracked_hourglass`, `spark`, `glass_shield`
 
-Para refazer tudo: `build_weapons.py`, depois `build_outfits.py`, depois `build_gear.py`, depois `build_items.py` (os ícones das roupas saem das folhas das roupas), todos com `--force` só quando for para sobrescrever.
+Para refazer tudo: `build_weapons.py`, depois `build_weapon_items.py`, depois `build_outfits.py`, depois `build_gear.py`, depois `build_backpacks.py`, depois `build_items.py` (os ícones das roupas saem das folhas das roupas), todos com `--force` só quando for para sobrescrever.
 | `game/assets/rooms/decor.png` | Gerado por IA (gpt-image-2.5 sunburst edit) + ajuste por script | `art-src/gen/decor-sheet.png` (`cinzel-decor-sheet-town-1`, 4x3 objetos no magenta, repintados no estilo de `town-props.png`) por `build_decor.py`: chave magenta, redução por área, até 64 cores, alfa binário | 2026-11-14 |
 | `game/assets/audio/sfx/<id>.ogg` (28 efeitos: `swing_light`, `swing_heavy`, `bow_shot`, `hit`, `crit`, `player_hurt`, `enemy_die`, `boss_roar`, `coin`, `item_pickup`, `ui_open`, `ui_close`, `ui_move`, `ui_confirm`, `step`, `roll`, `door_open`, `door_locked`, `chest_open`, `heal_loop`, `buy`, `sell`, `forge`, `teleport`, `stairs`, `special_charge`, `special_release`, `shockwave`) | Gerado por IA (ElevenLabs/MiniMax) | `generate_sfx` (ElevenLabs Sound Effects V2, projeto `asset-gen`, nomes `cinzel-sfx-<id>`), convertidos com ffmpeg: silêncio cortado nas pontas (-50 dB), pico normalizado em -3 dB, Ogg Vorbis. `heal_loop` em laço | 2026-11-14 |
 | `game/assets/audio/music/town.ogg`, `tower.ogg`, `boss.ogg` | Gerado por IA (ElevenLabs/MiniMax) | `generate_music` (MiniMax Music 2.6, instrumental, projeto `asset-gen`, nomes `cinzel-music-<id>`): cidade (alaúde, aconchegante), torre (cordas graves e percussão, tensa), chefe (intensa). Cortadas em 88 s com fade de 2 s no fim, loudness ~-15 LUFS (loudnorm), Ogg Vorbis em laço | 2026-11-14 |

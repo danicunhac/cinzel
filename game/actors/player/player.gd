@@ -650,6 +650,7 @@ func _refresh_stats() -> void:
 	if sprite.outfit_dir != String(e.outfit).trim_prefix("outfit_"):
 		sprite.set_outfit(e.outfit)
 	sprite.set_gear(e.armor, e.helm, e.show_armor)
+	sprite.set_backpack(e.backpack)
 
 
 func _set_weapon(id: StringName) -> void:
@@ -660,7 +661,7 @@ func _set_weapon(id: StringName) -> void:
 	special.cooldown = cd
 	_combo_step = -1
 	_set_swing_shape(weapon.reach, weapon.arc_deg)
-	sprite.set_weapon(weapon.type)
+	sprite.set_weapon(weapon.type, id if ItemDB.kind(id) == &"weapon" else &"")
 
 
 func _apply_debug_weapon() -> void:
