@@ -10,7 +10,7 @@ extends UiPanel
 
 const GRID_COLS := 5
 const LIST_W := 190.0
-const INFO_W := 166.0
+const INFO_W := 222.0
 
 var shop: Market
 var tab: StringName = &"sell"
@@ -33,7 +33,9 @@ var _msg_color: Color = UiKit.COLOR_MUTED
 
 func _init() -> void:
 	super._init()
-	panel_size = Vector2(400, 206)
+	# Fixed size, as tall as the longest entry (stats, price, quantity): a
+	# window that grew with the selection moved the list under the mouse.
+	panel_size = Vector2(458, 244)
 	panel_title = "Loja"
 
 

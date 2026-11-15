@@ -56,7 +56,9 @@ var _hover: ItemCell = null
 
 func _init() -> void:
 	super._init()
-	panel_size = Vector2(452, 0)
+	# Fixed size, as tall as the longest item text: a window that grew with
+	# the hovered item slid the cells under the mouse and flickered.
+	panel_size = Vector2(458, 224)
 	panel_title = "Mochila"
 	close_hint = "Tab: fechar   E: equipar   X: largar"
 	close_actions = [&"ui_cancel", &"pause"]

@@ -475,3 +475,91 @@ func test_debug_give_takes_any_catalog_item() -> void:
 	T.ok(run.unlocked_outfits.has(&"outfit_manto_mago"))
 	T.eq(_game().give_debug("nope:3"), 0, "unknown id gives nothing")
 	_game().new_run()
+
+
+## Hovering any cell must not resize or move the window: a window that grows
+## with the item text slides the cells under the mouse, the hover flips and
+## the screen flickers.
+func test_inventory_window_keeps_its_rect_on_hover() -> void:
+	_game().new_run()
+	var run: RunState = _game().run
+	_game().give_debug("backpack_large")
+	run.equip(&"backpack_large")
+	for id: StringName in [&"armor_plate", &"helm_circlet", &"longsword_ember", &"bow_elven",
+			&"dagger_twin_fang", &"armor_shadow", &"cracked_hourglass", &"glass_shield",
+			&"mat_tower_crystal", &"outfit_manto_mago", &"spear_dragoon", &"axe_war"]:
+		run.inventory.add(id)
+	var town := await _spawn("res://world/town.tscn")
+	var inv := _open_inventory(town, true)
+	# Let the slide-in finish first.
+	for i in 40:
+		await _tree().process_frame
+	var frame := inv.find_children("*", "NinePatchRect", true, false)[0] as Control
+	var rect := frame.get_global_rect()
+	var cells: Array[ItemCell] = []
+	cells.append_array(inv.bag_cells)
+	cells.append_array(inv.doll_cells)
+	var worst := rect
+	for c in cells:
+		inv._on_hover(true, c)
+		await _tree().process_frame
+		var r := frame.get_global_rect()
+		if r != rect:
+			worst = r
+		inv._on_hover(false, c)
+	T.eq(worst, rect, "window rect stays put on hover")
+	# Every item in the catalog, as if hovered in the backpack (the longest
+	# text and stat list decide the window size).
+	for id in ItemDB.ids():
+		inv._show_info(&"bag", id, &"")
+		await _tree().process_frame
+		if frame.get_global_rect() != rect:
+			worst = frame.get_global_rect()
+	T.eq(worst, rect, "no item resizes the window")
+	inv.close()
+	town.free()
+	_game().new_run()
+
+
+## Same rule for the shop and the forge: selecting any entry keeps the window.
+func test_shop_and_forge_keep_their_rect_for_any_entry() -> void:
+	_game().new_run()
+	var run: RunState = _game().run
+	run.unlock_floor(3)
+	_game().give_debug("backpack_large")
+	run.equip(&"backpack_large")
+	for id: StringName in [&"armor_plate", &"dagger_twin_fang", &"longsword_ember", &"cracked_hourglass",
+			&"helm_circlet", &"mat_tower_crystal", &"spear_dragoon", &"bow_elven"]:
+		run.inventory.add(id)
+	var town := await _spawn("res://world/town.tscn")
+	for id: StringName in [&"shop", &"smith"]:
+		var p := town.open_panel(id) as UiPanel
+		for i in 40:
+			await _tree().process_frame
+		var frame := p.find_children("*", "NinePatchRect", true, false)[0] as Control
+		var rect := frame.get_global_rect()
+		var picks: Array[Callable] = []
+		if p is ShopPanel:
+			var sp := p as ShopPanel
+			for slot in run.inventory.capacity:
+				picks.append(func() -> void: sp.select_tab(&"sell"); sp.select_sell(slot))
+			for b in sp.buy_buttons.size():
+				picks.append(func() -> void: sp.select_tab(&"buy"); sp.select_buy(b))
+			sp.select_tab(&"buy")
+			for b in sp.buy_buttons.size():
+				picks.append(func() -> void: sp.select_tab(&"buy"); sp.select_buy(b))
+		else:
+			var sm := p as SmithPanel
+			for r in Forge.unlocked(3).size():
+				picks.append(func() -> void: sm.select(r))
+		var worst := rect
+		for pick in picks:
+			pick.call()
+			await _tree().process_frame
+			if frame.get_global_rect() != rect:
+				worst = frame.get_global_rect()
+		T.eq(worst, rect, "%s window stays put (%d picks)" % [id, picks.size()])
+		p.close()
+		await _tree().process_frame
+	town.free()
+	_game().new_run()
