@@ -18,6 +18,9 @@ var glow: float = 0.0
 var charged: bool = false
 var stage_one: bool = false
 var hand: Vector2 = Vector2.ZERO
+## Colour of the equipped weapon item's light (ItemDB.fx_color; alpha 0 =
+## the default amber swings and cyan specials).
+var tint: Color = Color(0, 0, 0, 0)
 
 var _trails: Array[Trail] = []
 var _t: float = 0.0
@@ -42,6 +45,16 @@ func _ready() -> void:
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	material = mat
+
+
+## Swing light: the item's tint, else SLASH_COLOR.
+func slash_color() -> Color:
+	return tint if tint.a > 0.0 else SLASH_COLOR
+
+
+## Special light: the item's tint a little paler, else SKILL_COLOR.
+func skill_color() -> Color:
+	return tint.lerp(Color.WHITE, 0.25) if tint.a > 0.0 else SKILL_COLOR
 
 
 func arc(center: Vector2, radius: float, from_angle: float, to_angle: float, color: Color, life: float, width: float = 3.0) -> void:

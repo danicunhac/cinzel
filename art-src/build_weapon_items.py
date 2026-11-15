@@ -4,8 +4,8 @@ of the item's icon.
 python3 -I art-src/build_weapon_items.py <repo_root> [--force] [id ...]
 
 Inputs: game/assets/items/<id>.png (the icon), climber/weapons/<type>.png
-and the attack overrides climber/attacks/<type>_{body,hair,outfit}.png
-(build_weapons.py), climber/{body,hair,outfit,weapon}.png.
+(build_weapons.py), climber/{body,weapon}.png, the unsplit starter layers and
+the hafts split_layers.py took out of the attack strips (art-src/split/).
 Output: climber/weapons/<id>.png, 8x13 grid of 32x32 like the type sheet
 (the game falls back to the type sheet when an item has none).
 
@@ -17,14 +17,14 @@ light. Every frame lines up with the type sheet:
     grip and drawing code (same pixels as the type sheet) in the item's
     colours, plus the item's shape edits: a second axe blade (axe_war),
     wings and a red tassel under the spear head (spear_dragoon). The sword
-    items recolour the shipped sword rows instead, and sword_knight gets
-    its gold cross guard at the grip;
+    items draw a 7 px blade with a cross guard in the icon's guard colour
+    (gold for sword_knight, dark steel for sword_iron) at the shipped
+    sword's grip;
   - attack rows: the type sheet's attack rows recoloured by histogram
-    matching (steel -> blade ramp, wood -> handle ramp). Where the weapon
-    layer shows a long straight weapon (a spear thrust), the shaft pixels
-    the colour split left in the body, hair and outfit strips (on the line
-    through the weapon pixels) are copied onto the weapon layer in the
-    handle colours, and the spear wings are added next to the tip.
+    matching (steel -> blade ramp, wood -> handle ramp), plus the axe and
+    spear hafts split_layers.py moved out of the body, hair and outfit
+    strips, in the handle colours; axe_war's head mirrored across that haft
+    (second blade) and the dragoon wings by the spear tip.
 """
 import math
 import os
@@ -76,10 +76,11 @@ def is_red(c):
 # and accent (dragoon tassel). "shape" names the item's edits.
 ITEMS = {
     "sword_iron": {"type": "sword", "blade": lambda x, y, c: diag(x, y) >= 13,
-                   "handle": lambda x, y, c: diag(x, y) <= 8},
+                   "handle": lambda x, y, c: diag(x, y) <= 8,
+                   "guard": lambda x, y, c: 9 <= diag(x, y) <= 12},
     "sword_knight": {"type": "sword", "blade": lambda x, y, c: diag(x, y) >= 13,
                      "handle": lambda x, y, c: diag(x, y) <= 12 and is_blue(c),
-                     "guard": lambda x, y, c: diag(x, y) <= 12 and is_gold(c), "shape": "guard"},
+                     "guard": lambda x, y, c: diag(x, y) <= 12 and is_gold(c)},
     "longsword_steel": {"type": "longsword", "blade": lambda x, y, c: diag(x, y) >= 13,
                         "handle": lambda x, y, c: diag(x, y) <= 8},
     "longsword_ember": {"type": "longsword", "blade": lambda x, y, c: diag(x, y) >= 13,
@@ -138,7 +139,8 @@ def set_colours(pal):
     b, h = pal["blade"], pal["handle"]
     bw.STEEL_D, bw.STEEL_M, bw.STEEL_L, bw.STEEL_H = b[0], b[1], b[2], b[3]
     bw.WOOD_D, bw.WOOD_M, bw.WOOD_L = h[0], h[1], h[2]
-    bw.GUARD = pal["guard"][-1]
+    # the guard's most saturated tone (the knight's gold, the iron's dark)
+    bw.GUARD = max(pal["guard"], key=lambda c: max(c) - min(c))
     bw.STRING_C = pal["string"]
 
 
@@ -146,8 +148,24 @@ def rpt(p):
     return tuple(map(round, p))
 
 
+def draw_sword(h, d):
+    """Short sword at the shipped sword's grip: a 7 px blade with its edge,
+    a cross guard 2 px each side (the item's guard colour) and the grip."""
+    n = bw.perp(d)
+    px = {}
+    for p in bw.line(bw.at(h, d, 1), bw.at(h, d, 6.5)):
+        px[p] = bw.STEEL_L
+    for p in bw.line(bw.at(h, d, 1.5, n, 1), bw.at(h, d, 5.5, n, 1)):
+        px.setdefault(p, bw.STEEL_M)
+    px[rpt(bw.at(h, d, 7.3))] = bw.STEEL_H
+    for s in (-1.2, 1.2, -2.2, 2.2, -3.2, 3.2):
+        px[rpt(bw.at(h, d, 0.4, n, s))] = bw.GUARD
+    px[rpt(h)] = bw.WOOD_D
+    return px
+
+
 def draw_item(kind, shape, pal, h, d, L, row, sign):
-    px = bw.draw(kind, h, d, L, row, sign)
+    px = draw_sword(h, d) if kind == "sword" else bw.draw(kind, h, d, L, row, sign)
     n = bw.perp(d)
     if shape == "double":
         # a second blade on the other side of the haft, mirrored
@@ -207,127 +225,95 @@ def recolour(img, maps):
     return out
 
 
-def knight_guard(sheet, pal, base):
-    """Gold cross guard at the grip of the shipped sword, every frame."""
-    gold = pal["guard"]
-    for r, row in enumerate(ROWS):
-        for i in range(bc.COUNTS[row.split("_")[0]]):
-            others = Image.new("RGBA", (F, F), (0, 0, 0, 0))
-            for k in ("body", "hair", "outfit"):
-                others.alpha_composite(bw.cell(base[k], r, i))
-            g = bw.grip(bw.cell(base["weapon"], r, i), others)
-            if g is None:
-                continue
-            h, d, _ = g
-            n = bw.perp(d)
-            for s, c in ((-1.4, gold[-1]), (1.4, gold[-1]), (-2.2, gold[0]), (2.2, gold[0])):
-                x, y = rpt(bw.at(h, d, 0.3, n, s))
-                if 0 <= x < F and 0 <= y <= bc.BASE:
-                    sheet.putpixel((i * F + x, r * F + y), c + (255,))
-
-
-# ------------------------------------------------------- attack shafts ----
+# ------------------------------------------------------- attack hafts ----
 
 def axis(pts):
-    """(centre, unit direction, half length along it, spread across it)."""
+    """(centre, unit direction) of the principal axis of `pts`."""
     mx = sum(p[0] for p in pts) / len(pts)
     my = sum(p[1] for p in pts) / len(pts)
     sxx = sum((p[0] - mx) ** 2 for p in pts)
     syy = sum((p[1] - my) ** 2 for p in pts)
     sxy = sum((p[0] - mx) * (p[1] - my) for p in pts)
     a = 0.5 * math.atan2(2 * sxy, sxx - syy)
-    d = (math.cos(a), math.sin(a))
-    along = [(p[0] - mx) * d[0] + (p[1] - my) * d[1] for p in pts]
-    across = [abs(-(p[0] - mx) * d[1] + (p[1] - my) * d[0]) for p in pts]
-    return (mx, my), d, along, max(across)
+    return (mx, my), (math.cos(a), math.sin(a))
 
 
-def attack_shafts(sheet, strips, pal, shape):
-    """Spear thrusts: copy the shaft pixels from the body, hair and outfit
-    strips onto the weapon layer in the handle colours; dragoon wings by
-    the tip."""
+def floor_outline(cell, new, others, wp):
+    """Dark outline around the `new` pixels where it sits on the floor (not
+    over the climber or the weapon)."""
+    o = others.load()
+    for (x, y) in new:
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < F and 0 <= ny <= bc.BASE and (nx, ny) not in new \
+                    and not wp[nx, ny][3] and not o[nx, ny][3]:
+                cell.putpixel((nx, ny), OUTLINE)
+
+
+def attack_hafts(sheet, haft, strips, pal, shape):
+    """Attack rows of the axe and the spear: the haft pixels split_layers.py
+    took out of the strips go on the weapon layer in the handle colours;
+    the war axe's head is mirrored across its haft (second blade) and the
+    dragoon spear gets its wings by the tip."""
     handle = pal["handle"]
+    blade = set(pal["blade"])
     for j, row in enumerate(ATTACK_ROWS):
         r = ROWS.index(row)
         for i in range(bc.COUNTS["attack"]):
             box = (i * F, r * F, i * F + F, r * F + F)
+            hp = haft.crop((i * F, j * F, i * F + F, j * F + F)).load()
+            hpts = [(x, y) for y in range(F) for x in range(F) if hp[x, y][3]]
+            for (x, y) in hpts:
+                c = handle[0 if lum(hp[x, y]) < 80 else 1 if lum(hp[x, y]) < 120 else 2]
+                sheet.putpixel((i * F + x, r * F + y), c + (255,))
             w = sheet.crop(box)
             wp = w.load()
-            pts = [(x, y) for y in range(F) for x in range(F) if wp[x, y][3] and not bc.is_outline(wp[x, y])]
-            if len(pts) < 3:
-                continue
-            # a thrust runs along the facing: across the cell from the side,
-            # up and down the cell from the front and the back
-            d = (1.0, 0.0) if row.endswith("side") else (0.0, 1.0)
-            ys = sorted(p[1] for p in pts)
-            xs = sorted(p[0] for p in pts)
-            cx, cy = xs[len(xs) // 2], ys[len(ys) // 2]
-            along = [(p[0] - cx) * d[0] + (p[1] - cy) * d[1] for p in pts]
-            if max(along) - min(along) < 3:
-                continue
-            lo, hi = min(along), max(along)
-            comp = Image.new("RGBA", (F, F), (0, 0, 0, 0))
+            others = Image.new("RGBA", (F, F), (0, 0, 0, 0))
             for k in ("body", "hair", "outfit"):
-                comp.alpha_composite(strips[k].crop((i * F, j * F, i * F + F, j * F + F)))
-            sp = comp.load()
-
-            def shaft_px(x, y):
-                p = sp[x, y] if 0 <= x < F and 0 <= y < F else (0, 0, 0, 0)
-                return p[3] and not bc.is_outline(p) and not bc.is_skin(p)
-
-            # walk the line through the weapon pixels both ways from each
-            # end while the strips have a (non-outline, non-skin) pixel on it
-            add = {}
-            for start, step in ((hi, 1), (lo, -1)):
-                t, miss = start, 0
-                while miss < 2 and abs(t - start) < 12:
-                    t += step
-                    x, y = rpt((cx + d[0] * t, cy + d[1] * t))
-                    if not (0 <= x < F and 0 <= y < F):
-                        break
-                    if wp[x, y][3]:
-                        miss = 0
-                        continue
-                    if shaft_px(x, y):
-                        add[(x, y)] = handle[min(2, int(lum(sp[x, y]) / 60))]
-                        miss = 0
-                    else:
-                        miss += 1
-            for (x, y), c in add.items():
-                sheet.putpixel((i * F + x, r * F + y), c + (255,))
-            if shape == "wings":
-                # the tip is the weapon end farther from the figure's centre
-                fig = strips["outfit"].crop((i * F, j * F, i * F + F, j * F + F)).getbbox()
-                fx = (fig[0] + fig[2]) / 2 if fig else 16
-                fy = (fig[1] + fig[3]) / 2 if fig else 20
-                ends = [(cx + d[0] * lo, cy + d[1] * lo), (cx + d[0] * hi, cy + d[1] * hi)]
-                tip = max(ends, key=lambda e: math.dist(e, (fx, fy)))
-                back = (cx - tip[0], cy - tip[1])
-                bl = math.hypot(*back) or 1
-                u = (back[0] / bl, back[1] / bl)
-                n = (-u[1], u[0])
-                others = Image.new("RGBA", (F, F), (0, 0, 0, 0))
-                for k in ("body", "hair", "outfit"):
-                    others.alpha_composite(strips[k].crop((i * F, j * F, i * F + F, j * F + F)))
-                wings = {}
-                for s in (-2, 2):
-                    for t, c in ((3, pal["blade"][2]), (4, pal["blade"][1])):
-                        x, y = rpt((tip[0] + u[0] * t + n[0] * s * (1 if t == 3 else 0.6),
-                                    tip[1] + u[1] * t + n[1] * s * (1 if t == 3 else 0.6)))
-                        if 0 <= x < F and 0 <= y <= bc.BASE and not wp[x, y][3]:
-                            wings[(x, y)] = c
-                cell = Image.new("RGBA", (F, F), (0, 0, 0, 0))
-                for (x, y), c in wings.items():
-                    cell.putpixel((x, y), c + (255,))
-                # the outline only where it sits on the floor
-                o = others.load()
-                for (x, y) in wings:
-                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                        nx, ny = x + dx, y + dy
-                        if 0 <= nx < F and 0 <= ny <= bc.BASE and (nx, ny) not in wings \
-                                and not wp[nx, ny][3] and not o[nx, ny][3]:
-                            cell.putpixel((nx, ny), OUTLINE)
-                sheet.alpha_composite(cell, (i * F, r * F))
+                others.alpha_composite(strips[k].crop((i * F, j * F, i * F + F, j * F + F)))
+            head = [(x, y) for y in range(F) for x in range(F)
+                    if wp[x, y][3] and wp[x, y][:3] in blade and (x, y) not in hpts
+                    and any(math.dist((x, y), q) <= 5 for q in hpts)]
+            cell = Image.new("RGBA", (F, F), (0, 0, 0, 0))
+            new = {}
+            if shape == "double" and len(hpts) >= 3 and head:
+                (cx, cy), d = axis(hpts)
+                n = (-d[1], d[0])
+                for (x, y) in head:
+                    s = (x - cx) * n[0] + (y - cy) * n[1]
+                    mx, my = rpt((x - 2 * s * n[0], y - 2 * s * n[1]))
+                    if 0 <= mx < F and 0 <= my <= bc.BASE and not wp[mx, my][3]:
+                        new[(mx, my)] = wp[x, y][:3]
+            elif shape == "wings":
+                pts = hpts + [(x, y) for y in range(F) for x in range(F)
+                              if wp[x, y][3] and not bc.is_outline(wp[x, y])]
+                if len(pts) >= 3:
+                    # a thrust runs along the facing
+                    d = (1.0, 0.0) if row.endswith("side") else (0.0, 1.0)
+                    xs = sorted(p[0] for p in pts)
+                    ys = sorted(p[1] for p in pts)
+                    cx, cy = xs[len(xs) // 2], ys[len(ys) // 2]
+                    along = [(p[0] - cx) * d[0] + (p[1] - cy) * d[1] for p in pts]
+                    fig = others.getbbox()
+                    fx = (fig[0] + fig[2]) / 2 if fig else 16
+                    fy = (fig[1] + fig[3]) / 2 if fig else 20
+                    ends = [(cx + d[0] * min(along), cy + d[1] * min(along)),
+                            (cx + d[0] * max(along), cy + d[1] * max(along))]
+                    tip = max(ends, key=lambda e: math.dist(e, (fx, fy)))
+                    back = (cx - tip[0], cy - tip[1])
+                    bl = math.hypot(*back) or 1
+                    u = (back[0] / bl, back[1] / bl)
+                    nn = (-u[1], u[0])
+                    for s in (-2, 2):
+                        for t, c in ((3, pal["blade"][2]), (4, pal["blade"][1])):
+                            k = 1 if t == 3 else 0.6
+                            x, y = rpt((tip[0] + u[0] * t + nn[0] * s * k, tip[1] + u[1] * t + nn[1] * s * k))
+                            if 0 <= x < F and 0 <= y <= bc.BASE and not wp[x, y][3]:
+                                new[(x, y)] = c
+            for (x, y), c in new.items():
+                cell.putpixel((x, y), c + (255,))
+            floor_outline(cell, new, others, wp)
+            sheet.alpha_composite(cell, box[:2])
 
 
 # ---------------------------------------------------------------- main ----
@@ -339,14 +325,12 @@ def build_item(root, iid, base):
     type_sheet = Image.open(os.path.join(climber, "weapons", kind + ".png")).convert("RGBA")
     pal = palette(root, iid)
     sheet = recolour(type_sheet, recolour_maps(type_sheet, pal))
-    if kind != "sword":
-        procedural_rows(kind, shape, pal, base, sheet)
-    if shape == "guard":
-        knight_guard(sheet, pal, base)
-    if kind == "spear":
-        strips = {k: Image.open(os.path.join(climber, "attacks", "%s_%s.png" % (kind, k))).convert("RGBA")
-                  for k in ("body", "hair", "outfit")}
-        attack_shafts(sheet, strips, pal, shape)
+    procedural_rows(kind, shape, pal, base, sheet)
+    haft_path = os.path.join(root, "art-src/split", "haft_%s.png" % kind)
+    if os.path.exists(haft_path):
+        orig = os.path.join(root, "art-src/split/orig/attacks")
+        strips = {k: bw.load(os.path.join(orig, "%s_%s.png" % (kind, k))) for k in ("body", "hair", "outfit")}
+        attack_hafts(sheet, bw.load(haft_path), strips, pal, shape)
     return drop_orphans(sheet)
 
 
@@ -356,7 +340,11 @@ def main():
     root = args[0]
     ids = args[1:] or list(ITEMS)
     climber = os.path.join(root, "game/assets/characters/climber")
-    base = {k: bw.load(os.path.join(climber, k + ".png")) for k in ("body", "hair", "outfit", "weapon")}
+    # the unsplit starter layers (split_layers.py): the weapon hides behind
+    # the pack too
+    orig = os.path.join(root, "art-src/split/orig")
+    base = {k: bw.load(os.path.join(orig if k in ("hair", "outfit") else climber, k + ".png"))
+            for k in ("body", "hair", "outfit", "weapon")}
     for iid in ids:
         save_guarded(build_item(root, iid, base), os.path.join(climber, "weapons", iid + ".png"), force)
 

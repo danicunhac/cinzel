@@ -210,3 +210,16 @@ func test_player_sprite_follows_weapon_and_backpack() -> void:
 	T.eq(_layer(player.sprite, &"backpack").texture.resource_path, LayeredSprite.gear_sheet_path(&"backpack_medium"))
 	town.free()
 	_game().new_run()
+
+
+func test_weapon_light_takes_the_item_colour() -> void:
+	for id: StringName in [&"longsword_ember", &"bow_elven", &"spear_dragoon"]:
+		T.ok(ItemDB.fx_color(id).a > 0.0, "%s has its own light" % id)
+	T.eq(ItemDB.fx_color(&"sword_iron").a, 0.0, "steel keeps the default light")
+	var fx := WeaponFx.new()
+	T.eq(fx.slash_color(), WeaponFx.SLASH_COLOR)
+	T.eq(fx.skill_color(), WeaponFx.SKILL_COLOR)
+	fx.tint = ItemDB.fx_color(&"longsword_ember")
+	T.eq(fx.slash_color(), ItemDB.fx_color(&"longsword_ember"), "ember swings orange")
+	T.ok(fx.skill_color() != WeaponFx.SKILL_COLOR, "and its specials too")
+	fx.free()

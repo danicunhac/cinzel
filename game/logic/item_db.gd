@@ -57,6 +57,12 @@ static func weapon_type(id: StringName) -> StringName:
 	return ItemCatalog.ITEMS[id].get("weapon_type", &"") if has(id) else &""
 
 
+## Light colour of a weapon's swings and specials when its icon is not the
+## plain steel the default light fits (alpha 0 = default).
+static func fx_color(id: StringName) -> Color:
+	return ItemCatalog.ITEMS[id].get("fx_color", Color(0, 0, 0, 0)) if has(id) else Color(0, 0, 0, 0)
+
+
 static func backpack_slots(id: StringName) -> int:
 	return int(ItemCatalog.ITEMS[id].get("slots", 0)) if has(id) else 0
 

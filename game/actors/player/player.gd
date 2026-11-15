@@ -286,13 +286,13 @@ func _start_attack(charged: bool = false) -> void:
 func _swing_fx(r: float) -> void:
 	var dir := facing.normalized()
 	if weapon.thrust:
-		_fx.jab(_hand(), _hand() + dir * r, 7.0)
+		_fx.jab(_hand(), _hand() + dir * r, 7.0, _fx.slash_color())
 		return
 	var half := deg_to_rad(weapon.arc_deg) / 2.0
 	var side := 1.0 if _combo_step % 2 == 0 else -1.0
 	var depth := r * (0.42 if weapon.type == &"axe" else 0.3)
 	var life := 0.12 if weapon.type == &"dagger" else (0.18 if weapon.type == &"axe" or weapon.type == &"longsword" else WeaponFx.SLASH_LIFE)
-	_fx.slash(_hand(), r, dir.angle() - half * side, dir.angle() + half * side, depth, WeaponFx.SLASH_COLOR, life)
+	_fx.slash(_hand(), r, dir.angle() - half * side, dir.angle() + half * side, depth, _fx.slash_color(), life)
 
 
 func _process_attack(delta: float) -> void:
@@ -367,7 +367,7 @@ func _start_special() -> void:
 			_set_thrust_shape(THRUST_LEN, 14.0)
 			hitbox.rotation = _special_dir.angle()
 			hitbox.set_active(true)
-			_fx.line(hand, hand + _special_dir * (THRUST_SPEED * THRUST_DASH + THRUST_LEN), WeaponFx.SKILL_COLOR, 0.35, 6.0)
+			_fx.line(hand, hand + _special_dir * (THRUST_SPEED * THRUST_DASH + THRUST_LEN), _fx.skill_color(), 0.35, 6.0)
 		&"spin":
 			_roll_hit(weapon.special_mult)
 			_set_circle_shape(weapon.reach * SPIN_REACH_MULT)
@@ -380,7 +380,7 @@ func _start_special() -> void:
 			_set_thrust_shape(weapon.reach * 1.1, 16.0)
 			hitbox.rotation = _special_dir.angle()
 			hitbox.set_active(true)
-			_fx.line(hand, hand + _special_dir * (LUNGE_SPEED * LUNGE_DASH + weapon.reach), WeaponFx.SKILL_COLOR, 0.4, 5.0)
+			_fx.line(hand, hand + _special_dir * (LUNGE_SPEED * LUNGE_DASH + weapon.reach), _fx.skill_color(), 0.4, 5.0)
 		&"flurry":
 			_flurry_cut()
 		&"arrow_rain":
@@ -391,7 +391,7 @@ func _start_special() -> void:
 			b.damage_roll = _blast_roll.bind(b, weapon.special_mult)
 			b.landed.connect(func(_h: Hurtbox) -> void: _lifesteal(b.damage))
 			_room().add_child(b)
-			_fx.line(hand, b.global_position + Vector2(0, -24), WeaponFx.SKILL_COLOR, 0.3, 2.0)
+			_fx.line(hand, b.global_position + Vector2(0, -24), _fx.skill_color(), 0.3, 2.0)
 
 
 func _process_special(delta: float) -> void:
@@ -412,7 +412,7 @@ func _process_special(delta: float) -> void:
 			sprite.play(&"attack", facing)
 			hitbox.set_active(t < SPIN_TIME * 0.8)
 			var a := _special_dir.angle() + TAU * k
-			_fx.arc(_hand(), weapon.reach * SPIN_REACH_MULT, a - 0.9, a, WeaponFx.SKILL_COLOR, 0.25, 4.0)
+			_fx.arc(_hand(), weapon.reach * SPIN_REACH_MULT, a - 0.9, a, _fx.skill_color(), 0.25, 4.0)
 		&"ground_slam":
 			done = SLAM_TIME
 			if _special_step == 0 and t >= SLAM_IMPACT:
@@ -455,7 +455,7 @@ func _slam() -> void:
 	w.damage_roll = _blast_roll.bind(w, WAVE_MULT)
 	w.landed.connect(func(_h: Hurtbox) -> void: _lifesteal(w.damage))
 	_room().add_child(w)
-	_fx.ring(at + HAND, SLAM_RADIUS, WeaponFx.SKILL_COLOR, 0.35, 5.0)
+	_fx.ring(at + HAND, SLAM_RADIUS, _fx.skill_color(), 0.35, 5.0)
 
 
 func _flurry_cut() -> void:
@@ -470,7 +470,7 @@ func _flurry_cut() -> void:
 	facing = dir
 	sprite.play(&"attack", facing, true)
 	var half := deg_to_rad(FLURRY_ARC) / 2.0
-	_fx.arc(_hand(), weapon.reach * FLURRY_REACH_MULT, dir.angle() - half * side, dir.angle() + half * side, WeaponFx.SKILL_COLOR, 0.22, 3.0)
+	_fx.arc(_hand(), weapon.reach * FLURRY_REACH_MULT, dir.angle() - half * side, dir.angle() + half * side, _fx.skill_color(), 0.22, 3.0)
 
 
 # --- hit shapes and damage ---
@@ -662,6 +662,8 @@ func _set_weapon(id: StringName) -> void:
 	_combo_step = -1
 	_set_swing_shape(weapon.reach, weapon.arc_deg)
 	sprite.set_weapon(weapon.type, id if ItemDB.kind(id) == &"weapon" else &"")
+	if _fx != null:
+		_fx.tint = ItemDB.fx_color(id)
 
 
 func _apply_debug_weapon() -> void:
