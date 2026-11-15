@@ -2,9 +2,11 @@
 
 python3 -I art-src/build_backpacks.py <repo_root> [--force] [id ...]
 
-Inputs: game/assets/items/<id>.png (the icon), climber/{body,hair,outfit}.png,
-the attack overrides climber/attacks/<type>_{body,hair,outfit}.png and the
-armor and helm sheets in climber/gear/ (build_gear.py).
+Inputs: game/assets/items/<id>.png (the icon), the pack pixels split_layers.py
+took out of the starter layers (art-src/split/pack.png, pack_<type>.png),
+the unsplit layers it kept (art-src/split/orig/, for the torso of each
+frame), climber/body.png, and the armor and helm sheets in climber/gear/
+(build_gear.py, for the front view).
 Outputs, per backpack id (backpack_* in game/data/item_catalog.gd):
   climber/gear/<id>.png                  8x13 grid of 32x32
   climber/gear/attacks/<type>_<id>.png   8x3 (attack_down, attack_up,
@@ -12,19 +14,21 @@ Outputs, per backpack id (backpack_* in game/data/item_catalog.gd):
 
 The game draws it between the armor and the helm (LayeredSprite), whatever
 the outfit, the armor and "Mostrar armadura" (a backpack is always worn).
-Per standing frame (idle, walk, attack) the pack is drawn from the torso of
-the starter outfit.png in that frame (the jacket above the trousers):
-  - from behind (*_up): over the middle of the back, under the hood;
-  - from the side (facing right): on the back edge of the torso, over the
-    bulge the starter outfit already draws there, under the hood;
-  - from the front (*_down): only the parts that stick out around the body,
-    hair and every armor and helm (the bedroll over the shoulders), plus
-    the two shoulder straps over the jacket.
-Sizes and colours per item: the small pack is a compact satchel, the
-medium one is taller with a grey blanket roll on top, the large one is a
-tall frame pack with a thick bedroll. Colours: k-means on the icon (body:
-the lower part, roll: the top rows), sorted dark -> light.
-Roll and death rows draw nothing (the outfit's own pack shows there).
+Only this layer draws a pack: the outfit, hair and armor layers have a hole
+where the starter pack was, and every backpack covers it. Per frame:
+  - the starter pack pixels, repainted on the item's ramp by brightness rank
+    (so the hole is always filled, roll and death included);
+  - standing rows (idle, walk, attack) from behind and from the side: the
+    item's pack drawn over them from the torso of that frame (sizes below),
+    under the hood;
+  - from the front: the item's shoulder straps over the jacket (width and
+    colour per item) and the parts of the pack that stick out around the
+    body, hair and every armor and helm (the blanket or bedroll ends by the
+    shoulders).
+Sizes: the small pack is a compact satchel, the medium one is taller with a
+slate-grey blanket roll on top, the large one is a tall frame pack with a
+thick bedroll. Colours: k-means on the icon (body: the lower part, roll: the
+top rows), sorted dark -> light.
 """
 import os
 import sys
@@ -35,7 +39,8 @@ from PIL import Image  # noqa: E402
 
 import build_climber as bc  # noqa: E402
 import build_outfits as bo  # noqa: E402
-from artlib import OUTLINE, icon_ramp, save_guarded  # noqa: E402
+import split_layers as sl  # noqa: E402
+from artlib import OUTLINE, icon_ramp, lum, save_guarded  # noqa: E402
 
 F = 32
 COLS = 8
@@ -44,13 +49,14 @@ ATTACK_ROWS = ["attack_down", "attack_up", "attack_side"]
 
 # w, h: pack seen from behind; back: how far the pack reaches behind the
 # back edge in the side view; roll: (width, height) of the roll on top
-# (0 = none). Icon parts: body (rows >= 6), roll (rows <= 5; the medium
+# (0 = none); strap: (width, ramp index) of the shoulder straps seen from
+# the front. Icon parts: body (rows >= 6), roll (rows <= 5; the medium
 # pack's roll is its slate-grey blanket, not the tan straps around it).
 PACKS = {
-    "backpack_small": {"w": 7, "h": 6, "back": 0, "roll": (0, 0)},
-    "backpack_medium": {"w": 9, "h": 7, "back": 1, "roll": (15, 2),
+    "backpack_small": {"w": 7, "h": 7, "back": 0, "roll": (0, 0), "strap": (1, 0)},
+    "backpack_medium": {"w": 9, "h": 8, "back": 1, "roll": (15, 2), "strap": (1, 3),
                         "roll_select": lambda x, y, c: y <= 5 and c[2] >= c[0] - 12},
-    "backpack_large": {"w": 11, "h": 9, "back": 2, "roll": (19, 3)},
+    "backpack_large": {"w": 11, "h": 10, "back": 2, "roll": (19, 3), "strap": (2, 2)},
 }
 
 
@@ -61,26 +67,6 @@ def palette(root, pid):
     if spec["roll"][0]:
         pal["roll"] = icon_ramp(path, 3, spec.get("roll_select", lambda x, y, c: y <= 5), dark=28)
     return pal
-
-
-def torso(body, hair, outfit, row):
-    """(x0, y0, x1, y1) of the jacket above the trousers, or None."""
-    legs = bo.legs_box(body, hair, outfit)
-    if not legs:
-        return None
-    o = outfit.load()
-    pts = [(x, y) for y in range(legs[0]) for x in range(F)
-           if o[x, y][3] and bo.group(o[x, y], "outfit") in ("leather", "scarf")]
-    if not pts:
-        return None
-    x0 = min(p[0] for p in pts)
-    x1 = max(p[0] for p in pts)
-    y0 = min(p[1] for p in pts)
-    if row.endswith("side"):
-        # the back edge at the shoulders (arms hang lower and swing)
-        xs = [p[0] for p in pts if y0 + 1 <= p[1] <= y0 + 3]
-        x0 = min(xs) if xs else x0
-    return x0, y0, x1, legs[0]
 
 
 def shade(ramp, x, y, x0, y0, x1, y1):
@@ -152,29 +138,41 @@ def pack_pixels(spec, pal, box, row):
     return px
 
 
-def straps(pal, box, outfit, hair):
+def straps(spec, pal, box, outfit):
     """Two shoulder straps over the jacket, seen from the front."""
     tx0, ty0, tx1, ty1 = box
+    width, shade_i = spec["strap"]
     o = outfit.load()
     px = {}
-    for x in (tx0 + 3, tx1 - 3):
-        for y in range(ty0, min(ty0 + 5, ty1)):
-            p = o[x, y]
-            if p[3] and not bc.is_outline(p) and bo.group(p, "outfit") == "leather":
-                px[(x, y)] = pal["body"][3] if y == ty0 + 2 else pal["body"][1]
+    for x0 in (tx0 + 3, tx1 - 3 - (width - 1)):
+        for x in range(x0, x0 + width):
+            for y in range(ty0, min(ty0 + 6, ty1)):
+                p = o[x, y]
+                if p[3] and not bc.is_outline(p) and bo.group(p, "outfit") in ("leather", "khaki"):
+                    c = pal["body"][shade_i]
+                    if y == ty0 + 3:
+                        c = pal["body"][3] if shade_i < 3 else pal["body"][1]  # buckle
+                    px[(x, y)] = c
     return px
 
 
-def pack_cell(row, body, hair, outfit, gear, spec, pal):
+def pack_cell(row, body, hair, outfit, gear, extract, emap, spec, pal):
+    """One frame: hair and outfit are the unsplit starter layers (for the
+    torso), `extract` the starter pack pixels taken out of them."""
     out = Image.new("RGBA", (F, F), (0, 0, 0, 0))
+    q = out.load()
+    e = extract.load()
+    for y in range(F):
+        for x in range(F):
+            if e[x, y][3]:
+                q[x, y] = emap[e[x, y][:3]] + (255,)
     if row.startswith(("roll", "death")):
         return out
-    box = torso(body, hair, outfit, row)
+    box = sl.torso_box(body, hair, outfit)
     if not box:
         return out
     px = pack_pixels(spec, pal, box, row)
     h = hair.load()
-    q = out.load()
     if row.endswith("_down"):
         sil = Image.new("RGBA", (F, F), (0, 0, 0, 0))
         for im in [body, hair, outfit] + gear:
@@ -183,7 +181,7 @@ def pack_cell(row, body, hair, outfit, gear, spec, pal):
         for (x, y), c in px.items():
             if 0 <= x < F and 0 <= y <= bc.BASE and not s[x, y][3]:
                 q[x, y] = c + (255,)
-        for (x, y), c in straps(pal, box, outfit, hair).items():
+        for (x, y), c in straps(spec, pal, box, outfit).items():
             q[x, y] = c + (255,)
     else:
         for (x, y), c in px.items():
@@ -195,7 +193,17 @@ def pack_cell(row, body, hair, outfit, gear, spec, pal):
     return out
 
 
-def build_sheet(names, body, hair, outfit, gear, spec, pal):
+def extract_map(extracts, pal):
+    """Starter pack colour -> item ramp colour, by brightness rank."""
+    cols = sorted({p[:3] for im in extracts for p in im.get_flattened_data() if p[3]}, key=lum)
+    ramp = pal["body"]
+    out = {}
+    for i, c in enumerate(cols):
+        out[c] = OUTLINE[:3] if bc.is_outline(c) else ramp[round(i * (len(ramp) - 1) / max(1, len(cols) - 1))]
+    return out
+
+
+def build_sheet(names, body, hair, outfit, gear, extract, emap, spec, pal):
     out = Image.new("RGBA", outfit.size, (0, 0, 0, 0))
     for r in range(outfit.height // F):
         for c in range(COLS):
@@ -204,7 +212,7 @@ def build_sheet(names, body, hair, outfit, gear, spec, pal):
             if not cut[2].getbbox():
                 continue
             g = [im.crop(box) for im in gear]
-            out.alpha_composite(pack_cell(names[r], *cut, g, spec, pal), box[:2])
+            out.alpha_composite(pack_cell(names[r], *cut, g, extract.crop(box), emap, spec, pal), box[:2])
     return bo.no_orphans(out)
 
 
@@ -214,22 +222,28 @@ def main():
     root = args[0]
     ids = args[1:] or list(PACKS)
     climber = os.path.join(root, "game/assets/characters/climber")
+    split = os.path.join(root, "art-src/split")
+    orig = os.path.join(split, "orig")
     gdir = os.path.join(climber, "gear")
     load = bo.load
-    base = {k: load(os.path.join(climber, k + ".png")) for k in ("body", "hair", "outfit")}
+    body = load(os.path.join(climber, "body.png"))
+    hair, outfit = load(os.path.join(orig, "hair.png")), load(os.path.join(orig, "outfit.png"))
     att_dir = os.path.join(climber, "attacks")
     kinds = sorted({f.split("_")[0] for f in os.listdir(att_dir) if f.endswith("_body.png")})
+    extracts = {"": load(os.path.join(split, "pack.png"))}
+    extracts.update({t: load(os.path.join(split, "pack_%s.png" % t)) for t in kinds})
     worn = sorted(f[:-4] for f in os.listdir(gdir) if f.startswith(("armor_", "helm_")) and f.endswith(".png"))
     gear = [load(os.path.join(gdir, g + ".png")) for g in worn]
     os.makedirs(os.path.join(gdir, "attacks"), exist_ok=True)
     for pid in ids:
         spec, pal = PACKS[pid], palette(root, pid)
-        sheet = build_sheet(ROWS, base["body"], base["hair"], base["outfit"], gear, spec, pal)
+        emap = extract_map(extracts.values(), pal)
+        sheet = build_sheet(ROWS, body, hair, outfit, gear, extracts[""], emap, spec, pal)
         save_guarded(sheet, os.path.join(gdir, pid + ".png"), force)
         for t in kinds:
-            a = {k: load(os.path.join(att_dir, "%s_%s.png" % (t, k))) for k in ("body", "hair", "outfit")}
+            a = {k: load(os.path.join(orig, "attacks", "%s_%s.png" % (t, k))) for k in ("body", "hair", "outfit")}
             ga = [load(os.path.join(gdir, "attacks", "%s_%s.png" % (t, g))) for g in worn]
-            strip = build_sheet(ATTACK_ROWS, a["body"], a["hair"], a["outfit"], ga, spec, pal)
+            strip = build_sheet(ATTACK_ROWS, a["body"], a["hair"], a["outfit"], ga, extracts[t], emap, spec, pal)
             save_guarded(strip, os.path.join(gdir, "attacks", "%s_%s.png" % (t, pid)), force)
 
 

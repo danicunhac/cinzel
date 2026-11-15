@@ -1,5 +1,6 @@
 """Icon vs sprite: one column per equippable item, the icon on top, then the
-hero wearing it (idle down, idle side, one attack frame), composited the way
+hero wearing it (idle down, up and side, one attack, one roll and one death
+frame), composited the way
 LayeredSprite stacks the layers. The rest of the kit is the starter (sword,
 small backpack, no armor or helm).
 
@@ -20,8 +21,9 @@ ITEMS = [
     "spear_hunter", "spear_dragoon", "dagger_rogue", "dagger_twin_fang", "bow_short", "bow_elven",
     "backpack_small", "backpack_medium", "backpack_large",
 ]
-# (row, frame) cells shown under the icon: idle down, idle side, attack side
-CELLS = [(0, 0), (2, 0), (8, 2)]
+# (row, frame) cells shown under the icon: idle down, idle up, idle side,
+# attack side, roll side, death
+CELLS = [(0, 0), (1, 0), (2, 0), (8, 2), (11, 0), (12, 5)]
 LAYERS = ["body", "hair", "outfit", "armor", "backpack", "helm", "weapon"]
 
 

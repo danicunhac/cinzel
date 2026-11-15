@@ -13,6 +13,8 @@ extends RefCounted
 ##                          heal_delay, trail_damage, block_per_room). Epic
 ##                          gear carries its extra effect here.
 ##   weapon_type            weapon only: sword, longsword, axe, spear, dagger, bow
+##   fx_color: Color        weapon, optional: colour of its swing and special
+##                          light, from its icon (default: amber and cyan)
 ##   stats: Dictionary      weapon: damage, attack_speed, range (px), crit
 ##                          armor: defense, max_hp, weight (0..4)
 ##                          helm: crit, defense
@@ -42,6 +44,7 @@ const ITEMS: Dictionary[StringName, Dictionary] = {
 		"kind": &"weapon", "rarity": &"epic", "weapon_type": &"longsword",
 		"name": "Espada Longa de Brasa", "desc": "Lâmina em brasa. Deixa um rastro que queima.",
 		"base_price": 90, "stats": {"damage": 22, "attack_speed": 0.75, "range": 32.0, "crit": 0.05}, "mods": {"trail_damage": 3},
+		"fx_color": Color(1.0, 0.5, 0.18),
 	},
 	&"axe_woodcutter": {
 		"kind": &"weapon", "rarity": &"common", "weapon_type": &"axe",
@@ -62,6 +65,7 @@ const ITEMS: Dictionary[StringName, Dictionary] = {
 		"kind": &"weapon", "rarity": &"rare", "weapon_type": &"spear",
 		"name": "Lança do Dragoneiro", "desc": "Lança de cavaleiro, alcança ainda mais longe.",
 		"base_price": 65, "stats": {"damage": 15, "attack_speed": 0.9, "range": 52.0, "crit": 0.07}, "mods": {},
+		"fx_color": Color(1.0, 0.38, 0.32),
 	},
 	&"dagger_rogue": {
 		"kind": &"weapon", "rarity": &"common", "weapon_type": &"dagger",
@@ -82,6 +86,7 @@ const ITEMS: Dictionary[StringName, Dictionary] = {
 		"kind": &"weapon", "rarity": &"epic", "weapon_type": &"bow",
 		"name": "Arco Élfico", "desc": "Leve como uma folha. Quem o usa anda mais rápido.",
 		"base_price": 90, "stats": {"damage": 12, "attack_speed": 1.0, "range": 180.0, "crit": 0.15}, "mods": {"move_speed_mult": 1.1},
+		"fx_color": Color(0.62, 1.0, 0.45),
 	},
 	# Armors: defense, max hp and weight (weight makes the roll slower).
 	&"armor_cloth": {

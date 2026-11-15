@@ -13,10 +13,12 @@ Outputs, per item id (armor_* and helm_* in game/data/item_catalog.gd):
 Every frame is derived from the starter layers of that same frame, so armor
 and helm line up with body.png, every outfit and every weapon by
 construction (the outfits are recolours of the starter, same pixels):
-  - armor: the torso pixels of outfit.png (jacket, gloves, backpack, scarf
-    and the belt above the trousers; never the trousers or a blade-coloured
-    pixel of the slash) repainted onto the armor's ramp (sampled from its
-    icon, histogram-matched so the sprite keeps the icon's mix of tones),
+  - armor: the torso pixels of outfit.png (jacket, gloves, scarf and the
+    belt above the trousers; never the trousers, the pack, which
+    split_layers.py took out, or a blade-coloured pixel of the slash)
+    repainted onto the armor's ramp (the icon's tones topped by its
+    highlight, by brightness rank spread up by `lift`, so the sprite's light
+    tones land on the icon's highlights),
     plus a pattern per armor (quilting, a strap, chain dither, scales, plate
     bands and pauldrons that stick out 1 px past the shoulders);
   - helm: the visible head pixels of hair.png (hood and the fringe under it,
@@ -37,7 +39,7 @@ from PIL import Image  # noqa: E402
 
 import build_climber as bc  # noqa: E402
 import build_outfits as bo  # noqa: E402
-from artlib import OUTLINE, colour_counts, icon_ramp, icon_ramp_shares, quantile_index, save_guarded  # noqa: E402
+from artlib import OUTLINE, colour_counts, icon_pixels, icon_ramp, icon_ramp_shares, quantile_index, save_guarded  # noqa: E402
 
 F = 32
 COLS = 8
@@ -66,18 +68,19 @@ def blue(x, y, c):
 
 
 ARMORS = {
-    # padded cloth: beige quilted gambeson
-    "armor_cloth": {"pattern": "quilt"},
+    # padded cloth: light beige quilted gambeson
+    "armor_cloth": {"pattern": "quilt", "lift": 0.5},
     # red-brown leather with a strap across the chest and a buckle
-    "armor_leather": {"pattern": "strap"},
+    "armor_leather": {"pattern": "strap", "lift": 0.8},
     # grey chain mail, dithered (the icon's brown straps stay out of the mail)
-    "armor_chain": {"pattern": "chain", "select": lambda x, y, c: y != BELT_ROW and c[0] - c[2] < 25},
+    "armor_chain": {"pattern": "chain", "lift": 0.45, "shine": 0.35,
+                    "select": lambda x, y, c: y != BELT_ROW and c[0] - c[2] < 25},
     # dark olive-bronze scales
-    "armor_scale": {"pattern": "scale"},
+    "armor_scale": {"pattern": "scale", "lift": 0.8},
     # pale steel plate with pauldrons
-    "armor_plate": {"pattern": "plate"},
+    "armor_plate": {"pattern": "plate", "lift": 0.45, "shine": 0.15},
     # dark purple-brown shadow cloth
-    "armor_shadow": {"pattern": "shadow"},
+    "armor_shadow": {"pattern": "shadow", "lift": 0.8},
 }
 
 HELMS = {
@@ -93,17 +96,34 @@ HELMS = {
 }
 
 
+def icon_highlight(path, select):
+    """Mean of the brightest tenth of the icon's selected pixels."""
+    pts = sorted(icon_pixels(path, select, 48), key=lum)
+    top = pts[-max(1, len(pts) // 10):]
+    return tuple(round(sum(p[i] for p in top) / len(top)) for i in range(3))
+
+
 def icon_spec(root, gid):
     """Spec of armor or helm `gid` with its ramps (and each ramp colour's
     share of the icon, for histogram matching) sampled from its icon."""
     path = os.path.join(root, "game/assets/items", gid + ".png")
     if gid in ARMORS:
         spec = dict(ARMORS[gid])
-        # the icon's darkest folds play the part of the sprite's own outline
-        body, body_w = icon_ramp_shares(path, 5, spec.get("select", not_belt), dark=48)
+        # Body ramp: the icon's main tones (k-means, its darkest folds play
+        # the part of the sprite's own outline) topped by the icon's own
+        # highlight, mapped by brightness rank: the sprite's lightest tones
+        # land on the icon's highlights, so the armor reads at a glance as
+        # its icon does (silver plate and mail, light beige cloth).
+        sel = spec.get("select", not_belt)
+        body = icon_ramp(path, 4, sel, dark=48)
+        hi = icon_highlight(path, sel)
+        # metal: the highlight pushed toward white by `shine` (the glint a
+        # 16 px icon has no room for), so mail and plate read as steel
+        s = spec.get("shine", 0.0)
+        body.append(tuple(round(v + (255 - v) * s) for v in hi))
         trim, trim_w = icon_ramp_shares(path, 3, belt)
-        spec.update(body=body, trim=trim, collar=body[:3], strap=trim[1:])
-        spec["shares"] = {"body": body_w, "trim": trim_w}
+        spec.update(body=body, trim=trim, collar=body[1:4], strap=trim[1:])
+        spec["shares"] = {"trim": trim_w}
         return spec
     spec = dict(HELMS[gid])
     if spec["style"] == "circlet":
@@ -144,7 +164,12 @@ def rank(ramps, c, src_group, spec, name):
             return idx[name][c[:3]]
     cols = ramps.groups[src_group]
     i = cols.index(c[:3]) if c[:3] in cols else min(range(len(cols)), key=lambda j: abs(lum(cols[j]) - lum(c)))
-    return round(i * (len(ramp) - 1) / max(1, len(cols) - 1))
+    t = i / max(1, len(cols) - 1)
+    if name == "body":
+        # most jacket pixels are its dark tones: `lift` < 1 spreads them up
+        # the ramp, so a light icon (cloth, mail, plate) reads light
+        t = t ** spec.get("lift", 1.0)
+    return round(t * (len(ramp) - 1))
 
 
 # ---------------------------------------------------------------- armor ----
