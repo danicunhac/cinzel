@@ -18,7 +18,7 @@ Anti-objetivos: árvore de habilidades, pontos de atributo, barras de XP genéri
 
 ## 1. Maestria por uso
 
-Estilos: espada, espada longa, machado, lança, adaga, arco, rolamento e cura (8). Lâminas Gêmeas, quando liberada, entra como nono estilo.
+Estilos: espada, espada longa, machado, lança, adaga, arco, rolamento e cura (8). Lâminas Gêmeas (habilidade secreta de duas espadas, em construção em 15/11, liberada só por `--dual` por enquanto) entra como nono estilo: tem maestria e os 3 degraus de golpe, reaproveitando o combo de duas espadas.
 
 - Nível 1 a 10. XP:
   - armas: dano causado com aquele tipo de arma.
@@ -53,11 +53,11 @@ As 8 relíquias atuais ficam (gerais). Entram 16 novas, 2 por estilo:
 - uma muda o jeito de jogar, por exemplo "a investida da lança atordoa" ou "rolar recarrega 20% do especial".
 - uma acelera a maestria daquele estilo, +50% de XP.
 
-Saem de baús, elites, raros e chefes, sorteadas, com a raridade definindo a força. Continuam 3 espaços de relíquia.
+Saem de baús, elites, raros e chefes, sorteadas. **[minha decisão]** O que se sorteia é qual relíquia cai; cada relíquia tem raridade fixa (como hoje, o item é só um id). As mais fortes são raras e épicas e caem mais de elites, raros e chefes. Continuam 3 espaços de relíquia.
 
 ## 4. Monstros por andar, elites e raros
 
-Cada andar tem 3 monstros próprios. Cada um derruba o material que faz sentido com ele (tabela de materiais de 14/11) e tem uma personalidade lida no comportamento e num aviso visual.
+Cada andar tem 3 monstros próprios. Cada um derruba principalmente o material que faz sentido com ele (tabela de materiais de 14/11). **[minha decisão]** Nos andares 2 e 3, cada monstro também derruba, com menos chance, ferro ou couro, que as receitas e o refino usam muito; assim ninguém precisa voltar ao andar 1 para juntar ferro e tem uma personalidade lida no comportamento e num aviso visual.
 
 | Andar | Monstro | Comportamento | Derruba |
 |---|---|---|---|
@@ -65,7 +65,7 @@ Cada andar tem 3 monstros próprios. Cada um derruba o material que faz sentido 
 | 1 | Toco Vivo | parado até chegar perto, levanta e varre com galhos | Madeira de Freixo |
 | 1 | Sentinela de Pedra | atira de longe e recua | Minério de Ferro |
 | 2 | Esqueleto Mineiro | anda com picareta, golpeia e joga pedra | Minério de Prata |
-| 2 | Besouro-Couraça | fecha a carapaça (só leva dano por trás ou depois de investir) | Quitina |
+| 2 | Besouro-Couraça | anda devagar e morde; fecha a carapaça quando leva golpe de frente (dano mínimo). Fica aberto por trás e por 1,5 s depois de morder | Quitina |
 | 2 | Besouro-Rinoceronte | avisa e investe em linha | Chifre de Besouro |
 | 3 | Salamandra de Brasa | cospe um jato de fogo curto e deixa brasa no chão | Carvão de Brasa |
 | 3 | Golem de Obsidiana | lento, golpe no chão com onda | Obsidiana |
@@ -118,6 +118,7 @@ Um quadro perto da loja com 3 missões, que mudam a cada volta à cidade.
 - Falhar gasta o material e o ouro, mas o item não quebra nem perde nível.
 - Cada + dá +8% de dano (arma) ou de defesa e vida (armadura).
 - O nome mostra o nível ("Espada de Ferro +3"). No +5, o item brilha de leve no personagem.
+- **[minha decisão]** O nível de refino fica guardado por id do item na subida (RunState), não por cópia: duas Espadas de Ferro compartilham o +3. Evita reescrever mochila, equipamento e loja para guardar dados por cópia; cópias repetidas do mesmo item são raras. Morrer zera os refinos junto com o equipamento.
 
 ## 8. Consumíveis
 
