@@ -223,3 +223,43 @@ func test_weapon_light_takes_the_item_colour() -> void:
 	T.eq(fx.slash_color(), ItemDB.fx_color(&"longsword_ember"), "ember swings orange")
 	T.ok(fx.skill_color() != WeaponFx.SKILL_COLOR, "and its specials too")
 	fx.free()
+
+
+
+func test_shaped_outfits_have_every_layer() -> void:
+	for id: StringName in [&"outfit_sobretudo_noite", &"outfit_traje_sombra"]:
+		var dir := String(id).trim_prefix("outfit_")
+		for layer: StringName in [&"hair", &"outfit"]:
+			var path := LayeredSprite.layer_sheet_path(layer, dir)
+			T.eq(path, "res://assets/characters/climber/outfits/%s/%s.png" % [dir, layer])
+			var tex := load(path) as Texture2D
+			T.eq(tex.get_size(), Vector2(LayeredSprite.COLS, LayeredSprite.VFRAMES) * LayeredSprite.FRAME_SIZE, path)
+			for type in WEAPON_TYPES:
+				if LayeredSprite.attack_strip_path(type, layer) == "":
+					continue
+				T.eq(LayeredSprite.attack_strip_path(type, layer, dir),
+						"res://assets/characters/climber/outfits/%s/attacks/%s_%s.png" % [dir, type, layer],
+						"%s %s %s" % [id, type, layer])
+		T.ok(ResourceLoader.exists("res://assets/items/%s.png" % id), "%s has an icon" % id)
+
+
+func test_wardrobe_lists_the_boss_outfits() -> void:
+	_game().new_run()
+	var town := (load("res://world/town.tscn") as PackedScene).instantiate()
+	_tree().root.add_child(town)
+	await _tree().process_frame
+	var p := town.open_panel(&"wardrobe") as WardrobePanel
+	var keys: Array[StringName] = []
+	for c in p.outfit_cells:
+		keys.append(c.key)
+	for id: StringName in [&"outfit_sobretudo_noite", &"outfit_traje_sombra"]:
+		T.ok(keys.has(id), "%s in the wardrobe" % id)
+	T.eq(WardrobePanel.unlock_text(&"outfit_sobretudo_noite"), "Prêmio do chefe do andar 2.")
+	T.eq(WardrobePanel.unlock_text(&"outfit_traje_sombra"), "Prêmio do chefe do andar 3.")
+	T.eq(p.wear(&"outfit_traje_sombra"), false, "locked until the boss falls")
+	_game().run.unlock_outfit(&"outfit_traje_sombra")
+	T.ok(p.wear(&"outfit_traje_sombra"))
+	T.eq(_game().run.equipment.outfit, &"outfit_traje_sombra")
+	p.close()
+	town.free()
+	_game().new_run()

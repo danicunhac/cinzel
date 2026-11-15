@@ -27,7 +27,8 @@ var unlocked_floors: int = 1
 var floors_beaten: int = 0
 var hp: int = PlayerStats.new().max_hp
 var clock: RunClock = RunClock.new()
-## Floor 1 opens with the 3 tutorial rooms until they are finished in this run.
+## Floor 1 opens with the 3 tutorial rooms only the first time the player
+## enters the tower (set when that floor is built). Survives death.
 var tutorial_done: bool = false
 ## The equipped relics (old name kept for the HUD and the swap panel).
 ## Read-only: change relics with add_item/replace_item/remove_item or equip.
@@ -212,7 +213,6 @@ func die() -> void:
 	unlocked_floors = 1
 	floors_beaten = 0
 	clock.reset()
-	tutorial_done = false
 	hp = stats().max_hp
 	changed.emit()
 

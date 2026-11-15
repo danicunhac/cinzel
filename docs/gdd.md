@@ -36,7 +36,7 @@ Vitória: vencer o chefe do andar 3.
 - **Cidade sem armas:** na cidade o ataque não funciona. Apertar o botão mostra o aviso "Sem armas na cidade".
 - **Entrada da torre:** para entrar é preciso subir a escada da torre, no fim do caminho norte, e passar pela porta. Com só o andar 1 liberado, entra direto; com mais andares, abre a lista de andares. Quem volta a pé pela escada do andar 1 chega por essa entrada; quem sai por teleporte chega no cristal.
 - **Morte:** perde tudo e volta ao andar 1 com o relógio zerado.
-- **Andares:** 3 andares. Cada um tem um tutorial (só no andar 1), de 4 a 5 salas sorteadas e um chefe. Vencer o chefe libera o próximo andar na entrada da torre.
+- **Andares:** 3 andares. Cada um tem um tutorial (só no andar 1 e só na primeira vez que o jogador entra na torre, mesmo depois de morrer), de 4 a 5 salas sorteadas e um chefe. Vencer o chefe libera o próximo andar na entrada da torre.
 - **Inimigos:**
   - Slime: persegue.
   - Sentinela de pedra: atira de longe.
@@ -87,7 +87,15 @@ Comum (branco), Rara (azul), Épica (roxo). A raridade aumenta os números, e as
 - 4 capuzes/elmos
 - 3 mochilas: 8, 14 e 20 espaços
 - 8 relíquias (as atuais)
-- 5 roupas visuais (a inicial e mais 4)
+- 7 roupas visuais, cada uma com a sua silhueta (o ícone mostra o mesmo recorte):
+  - Roupa de Escalador (inicial): capuz verde, jaqueta de couro;
+  - Casaco Longo Escuro (loja): casaco preto até os pés, fechado com costura;
+  - Armadura Leve de Cavaleiro (chefe do andar 1): coifa de malha, peito prateado, tabardo carmim até os joelhos, ombreiras;
+  - Túnica de Ferreiro (loja): túnica até o meio da coxa e avental de couro até os joelhos;
+  - Manto de Mago (baús): manto violeta até o chão, mangas largas;
+  - Sobretudo da Meia-Noite (chefe do andar 2, épica): sobretudo de couro negro abaixo dos joelhos, aberto na frente, cauda partida que balança no passo e no rolamento, friso prateado;
+  - Traje do Espadachim Sombrio (chefe do andar 3, épica): jaqueta negra justa de gola alta, capa curta num ombro com um fio vermelho, calça grafite, cabelo curto espetado.
+  Cada chefe dá a sua roupa na primeira vitória (toast de saque como os outros itens).
 - 10 materiais (3 por andar, mais 1 raro de chefe)
 
 ## 6. Mochila, saque e loja (novo, proposta)

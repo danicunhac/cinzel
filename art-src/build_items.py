@@ -47,7 +47,7 @@ SHEETS = [
         "mat_iron_ore", "mat_old_leather", "mat_ash_wood",
         "mat_chitin", "mat_silver_ore", "mat_coal"]),
 ]
-OUTFITS = ["starter", "casaco_longo", "cavaleiro_leve", "tunica_ferreiro", "manto_mago"]
+OUTFITS = ["starter", "casaco_longo", "cavaleiro_leve", "tunica_ferreiro", "manto_mago", "sobretudo_noite", "traje_sombra"]
 # Thin weapon sheets: drawn crisp (see icon()).
 CRISP = ("icons-weapons-sheet.png", "r2/icon-sword-midnight-2.png")
 COLORS = 16

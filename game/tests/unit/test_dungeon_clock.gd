@@ -16,6 +16,12 @@ func _spawn_dungeon() -> Dungeon:
 	return d
 
 
+## Frees a dungeon without starting a new run (keeps RunState).
+func _drop(d: Dungeon) -> void:
+	d.free()
+	await _tree().process_frame
+
+
 ## leave_to_town changes scene; drop the town it adds so later tests start clean.
 func _cleanup(d: Dungeon) -> void:
 	if is_instance_valid(d):
@@ -71,16 +77,17 @@ func test_first_floor_plan_starts_with_tutorial_and_ends_with_boss() -> void:
 	await _cleanup(d)
 
 
-func test_finished_tutorial_is_skipped_until_death() -> void:
+func test_tutorial_only_on_the_first_entry() -> void:
 	_game().new_run()
-	_game().run.tutorial_done = true
 	var d := await _spawn_dungeon()
-	T.ok(not d.plan.has(FloorPlan.TUTORIAL_ROOMS[0]), "no tutorial once done in this run")
-	d.leave_to_town()
-	await _cleanup(d)
-	_game().run.tutorial_done = true
+	T.eq(d.plan.slice(0, 3), FloorPlan.TUTORIAL_ROOMS, "first entry starts with the tutorial")
+	T.ok(_game().run.tutorial_done, "marked on entry, finished or not")
+	await _drop(d)
+	d = await _spawn_dungeon()
+	T.ok(not d.plan.has(FloorPlan.TUTORIAL_ROOMS[0]), "not on the second entry")
+	await _drop(d)
 	_game().run.die()
 	d = await _spawn_dungeon()
-	T.eq(d.plan.slice(0, 3), FloorPlan.TUTORIAL_ROOMS, "tutorial again after death")
+	T.ok(not d.plan.has(FloorPlan.TUTORIAL_ROOMS[0]), "not after death either")
 	d.leave_to_town()
 	await _cleanup(d)

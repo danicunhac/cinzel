@@ -121,7 +121,7 @@ func swap_for(id: StringName, slot: int) -> Dictionary:
 ## Debug for demos and screenshots, applied to every new run:
 ## `--give=<id>:<qty>,...` puts any catalog item in the backpack (materials
 ## stack, outfits unlock; `gold:<n>` adds gold), `--equip=<id>,...` gives and
-## equips them, `--hide-armor` turns the wardrobe's "Mostrar armadura" off.
+## equips them (an outfit is unlocked and worn), `--hide-armor` turns the wardrobe's "Mostrar armadura" off.
 ## An unknown id, or what does not fit, only warns.
 func apply_debug_loadout() -> void:
 	for a in OS.get_cmdline_user_args():
@@ -133,7 +133,10 @@ func apply_debug_loadout() -> void:
 		elif a.begins_with("--equip="):
 			for part in a.substr(8).split(",", false):
 				var id := StringName(part)
-				if ItemDB.has(id):
+				if ItemDB.has(id) and ItemDB.kind(id) == &"outfit":
+					run.unlock_outfit(id)
+					run.set_outfit(id)
+				elif ItemDB.has(id):
 					run.inventory.add(id)
 					run.equip(id)
 				else:

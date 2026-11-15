@@ -13,7 +13,7 @@ const INFO_W := 150.0
 const UNLOCK_TEXT: Dictionary[StringName, String] = {
 	&"market": "À venda na loja.",
 	&"chest": "Achada em baús da torre.",
-	&"boss": "Prêmio do primeiro chefe.",
+	&"boss": "Prêmio do chefe do andar %d.",
 	&"start": "",
 }
 
@@ -127,10 +127,19 @@ func _show(id: StringName) -> void:
 	if id == run.equipment.outfit:
 		note = "Vestindo agora."
 	elif not owned:
-		note = "Bloqueada. " + UNLOCK_TEXT.get(ItemCatalog.ITEMS[id]["unlock"], "")
+		note = "Bloqueada. " + unlock_text(id)
 	_info.show_item(id, [], note)
 	wear_button.disabled = not owned or id == run.equipment.outfit
 	wear_button.text = "Vestindo" if id == run.equipment.outfit else "Vestir"
+
+
+## Where a locked outfit comes from (a boss outfit names its floor).
+static func unlock_text(id: StringName) -> String:
+	var how: StringName = ItemCatalog.ITEMS[id]["unlock"]
+	var text: String = UNLOCK_TEXT.get(how, "")
+	if how == &"boss":
+		text = text % LootTable.BOSS_OUTFITS.find_key(id)
+	return text
 
 
 func _on_activated(id: StringName) -> void:

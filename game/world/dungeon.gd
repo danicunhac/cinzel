@@ -85,6 +85,10 @@ func enter_floor(floor_num: int) -> void:
 
 func _build_floor(floor_num: int) -> FloorState.FloorRecord:
 	var with_tutorial := floor_num == 1 and not Game.run.tutorial_done
+	# Only the first entry gets the tutorial, even if the player leaves or
+	# dies before finishing it.
+	if with_tutorial:
+		Game.run.tutorial_done = true
 	var p := FloorPlan.build(floor_num, templates_for(floor_num), _rng, with_tutorial)
 	var tutorial_count := FloorPlan.TUTORIAL_ROOMS.size() if with_tutorial else 0
 	var random_count := p.size() - tutorial_count - 1
@@ -235,8 +239,6 @@ func _collect_leftover_gold(r: Room) -> void:
 func _on_exit_reached() -> void:
 	if _busy or _leaving or room_index + 1 >= plan.size():
 		return
-	if plan[room_index] == FloorPlan.TUTORIAL_ROOMS[-1]:
-		Game.run.tutorial_done = true
 	_go_to_room(room_index + 1, true)
 
 
