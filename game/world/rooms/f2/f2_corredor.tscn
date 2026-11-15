@@ -84,7 +84,7 @@ texture = ExtResource("2_fd4r6")
 centered = false
 
 [node name="Ambient" type="CanvasModulate" parent="." unique_id=1856897859]
-color = Color(0.72, 0.77, 0.84, 1)
+color = Color(0.88, 0.92, 0.98, 1)
 
 [node name="Torches" type="Node2D" parent="." unique_id=1910915637]
 
