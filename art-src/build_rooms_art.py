@@ -21,8 +21,8 @@ Outputs:
   art-src/gen/rooms/align/<room_id>.png  painting x2 with the collision cells
     outlined, for eyeballing; scores in art-src/gen/rooms/align/scores.json.
   game/assets/rooms/<room_id>.png  480x270, 1 art pixel = 1 game pixel,
-    graded per floor (GRADE: sharpen, brightness, contrast, saturation, to
-    sit next to the town's ground), at most 48 colours, no dithering.
+    graded per floor (GRADE: sharpen, mean brightness, contrast, saturation,
+    to sit next to the town's ground), at most 48 colours, no dithering.
   game/assets/rooms/doors.png  3x2 frames of 24x32.
 
 Alignment score: each pixel of the painting is classed as "blocking" or
@@ -54,8 +54,6 @@ COLORS = 48
 MAX_SHIFT = 8
 
 FLOOR_RGB = {1: (150, 126, 96), 2: (112, 124, 140), 3: (66, 54, 60)}
-CRACK = (0.82, 0.82, 0.82)
-MOSS = (88, 118, 64)
 # Floor 2 ice patches ("i"); floor 3 ember vents ("v") stay plain floor, the
 # game draws them.
 ICE = (176, 226, 240)
@@ -72,10 +70,11 @@ SIGN = (72, 46, 30)
 
 DOOR_FRAME = (24, 32)
 
-# Per floor: unsharp percent (darker grout, crisper edges), brightness,
-# contrast, saturation. Tuned against the town screenshot: floor 1 and 2
-# paintings come out pale and flat, floor 3 too dark.
-GRADE = {1: (80, 0.86, 1.35, 1.1), 2: (80, 0.9, 1.4, 1.35), 3: (80, 1.45, 1.25, 1.05)}
+# Per floor: unsharp percent (darker grout, crisper edges), target mean
+# luminance of the room area (the painting is scaled to it, so a dark and a
+# bright painting of the same floor end up alike), contrast, saturation.
+# Tuned against the town screenshot.
+GRADE = {1: (80, 0.53, 1.35, 1.1), 2: (80, 0.55, 1.4, 1.35), 3: (80, 0.42, 1.25, 1.05)}
 
 
 def load_layouts(root):
@@ -121,12 +120,11 @@ def blockout(room):
             if ch == "X":
                 d.rectangle(box, fill=DOOR_EXIT)
                 continue
+            # Cracked (",") and mossy ("~") cells stay plain floor: drawn as
+            # squares the painter turns them into blocks; cracks and moss are
+            # asked for in the prompt instead.
             col = floor
-            if ch == ",":
-                col = tuple(int(c * k) for c, k in zip(floor, CRACK))
-            elif ch == "~":
-                col = MOSS
-            elif ch == "i":
+            if ch == "i":
                 col = ICE
             d.rectangle(box, fill=col)
             if ch == "o":
@@ -275,9 +273,10 @@ def shift_img(img, dx, dy):
 
 
 def grade(img, floor):
-    sharpen, bright, contrast, sat = GRADE[floor]
+    sharpen, target, contrast, sat = GRADE[floor]
     img = img.filter(ImageFilter.UnsharpMask(radius=1, percent=sharpen, threshold=2))
-    img = ImageEnhance.Brightness(img).enhance(bright)
+    lum = np.asarray(img.convert("L"), dtype=np.float32)[T:ROOM_H - T, T:OUT_W - T].mean() / 255.0
+    img = ImageEnhance.Brightness(img).enhance(min(1.6, max(0.7, target / max(lum, 1e-3))))
     img = ImageEnhance.Contrast(img).enhance(contrast)
     return ImageEnhance.Color(img).enhance(sat)
 
