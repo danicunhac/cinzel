@@ -18,3 +18,9 @@ A room whose painting exists at `assets/rooms/<room id>.png` (480 x 270) shows i
 4. Run `build_rooms.gd` again so the scene picks up the painting.
 
 If a layout changes, its painting must be redone: the collision follows the layout, not the picture.
+
+## In the editor
+
+Open any room scene to see its painting, walls, torches, spawn markers and doors. `world/dungeon.tscn` holds `f1_arena` as `Rooms/EditorPreview` so the editor shows a room there too; `dungeon.gd` drops it in `_enter_tree`, before its scripts run. `tools/editor_preview.gd` screenshots a scene with its scripts removed (what the editor shows):
+
+    godot --position 5000,5000 --path game -s res://tools/editor_preview.gd -- --scene=res://world/town.tscn --out=/tmp/town_editor.png

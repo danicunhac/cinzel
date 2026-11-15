@@ -52,6 +52,16 @@ var _args: Dictionary = {}
 @onready var fade: ColorRect = $Overlay/Fade
 
 
+## dungeon.tscn holds an example room (Rooms/EditorPreview) so the editor
+## shows one; it goes before its own scripts run (enter_tree reaches the
+## parent first, ready the children first).
+func _enter_tree() -> void:
+	var preview := get_node_or_null(^"Rooms/EditorPreview")
+	if preview != null:
+		preview.get_parent().remove_child(preview)
+		preview.free()
+
+
 func _ready() -> void:
 	Game.run.clock.running = true
 	_rng.randomize()

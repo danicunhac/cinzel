@@ -203,7 +203,7 @@ func test_walking_back_arrives_at_the_gate_unarmed() -> void:
 	_game().town_arrival = &"gate"
 	var town := await _spawn("res://world/town.tscn")
 	var player := town.get_node("Player") as Player
-	T.eq(player.global_position, TownScript.GATE_ARRIVAL, "arrives at the tower entrance")
+	T.eq(player.global_position, town.arrival_point(&"gate"), "arrives at the tower entrance")
 	T.eq(_game().town_arrival, &"", "arrival is used once")
 	T.ok(not player.armed, "no weapon in town")
 	await _tree().physics_frame
@@ -223,7 +223,7 @@ func test_stepping_into_the_gate_opens_the_floor_list() -> void:
 	_game().run.unlock_floor(2)
 	var town := await _spawn("res://world/town.tscn")
 	var player := town.get_node("Player") as Player
-	player.global_position = TownScript.GATE.get_center()
+	player.global_position = town.gate.get_center()
 	await _tree().process_frame
 	var p := town._panel as TeleportPanel
 	T.ok(p != null, "floor list opens")
@@ -240,7 +240,7 @@ func test_walking_up_the_tower_steps_reaches_the_door() -> void:
 	_game().run.unlock_floor(2)
 	var town := await _spawn("res://world/town.tscn")
 	var player := town.get_node("Player") as Player
-	player.global_position = TownScript.GATE_ARRIVAL
+	player.global_position = town.arrival_point(&"gate")
 	await _tree().physics_frame
 	Input.action_press(&"move_up")
 	for i in 120:

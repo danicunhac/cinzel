@@ -122,6 +122,15 @@ Nota: antes do dia 21, mostrar o sprite autoral rodando no jogo (idle e andar, p
 
 *Cada andar sorteia de 4 a 5 salas de um conjunto de modelos, mais o chefe no fim. Cada sala tem um baú e uma porta que só abre quando os inimigos morrem.*
 
+No editor do Godot (se pedirem para ver o nível aberto), estas cenas mostram o conteúdo real:
+
+- `world/town.tscn`: a cidade inteira. Prédios, árvores, postes e props em `Buildings`, `Trees`, `Lamps`, `Props`, `Fence` (ordenados por Y, cada um com seu `Footprint` de colisão). `Spots` são os pontos de interação (loja, ferreiro, guarda-roupa), `Gate` é a entrada da torre, `Arrivals` onde o herói aparece, `Walks` os caminhos dos moradores (Path2D), `Collision` os limites. Mover um nó no editor muda o jogo.
+- `world/rooms/f1/f1_arena.tscn` (ou qualquer sala em `world/rooms/`): pintura, paredes, tochas, `Spawns` dos inimigos, `ChestSpot`, portas.
+- `world/dungeon.tscn`: mostra a arena como exemplo (`Rooms/EditorPreview`, só no editor; no jogo as salas entram sorteadas).
+- `ui/title.tscn`: a tela de título montada. `actors/player/player.tscn`: o herói com as camadas.
+
+O HUD (`ui/hud.tscn`) ainda é montado por código e aparece vazio no editor.
+
 ## 8. Áudio (0:15)
 
 *28 efeitos e 3 músicas: cidade, torre e chefe. Tudo gerado por IA e tratado com ffmpeg: corte de silêncio, volume normalizado, laço. O jogo funciona sem som, mas o som dá peso ao golpe.*

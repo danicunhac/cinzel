@@ -416,7 +416,7 @@ func test_wardrobe_spot_and_outfit() -> void:
 	var run: RunState = _game().run
 	var town := await _spawn("res://world/town.tscn")
 	var player := town.get_node("Player") as Player
-	player.global_position = town.SPOTS[&"wardrobe"]
+	player.global_position = town.spots[&"wardrobe"]
 	await _tree().process_frame
 	T.eq(town.near, &"wardrobe")
 	T.ok(town._ctas[&"wardrobe"].active, "wardrobe ring on")

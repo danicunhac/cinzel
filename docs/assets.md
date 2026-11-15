@@ -78,7 +78,7 @@ Nenhum desses scripts sobrescreve um arquivo que já existe, porque ele pode ter
 | `game/assets/ui/hud/ring.png` | Gerado por IA (nano-banana-2 edit) + ajuste por script | Anel de luz de `cinzel-hud-icons-sheet`, 24x24, 8 cores | 2026-11-14 |
 | `game/assets/ui/hud/fill_hp.png`, `fill_boss.png`, `fill_exit.png`, `fill_tip.png` | Autoral (script) | Rampas de 4 tons das barras e o pulso de luz da ponta, desenhados por `build_hud.py` | 2026-11-14 |
 | `game/assets/town/ground.png` (480x270) | Gerado por IA (gpt-image-2.5 flare edit) + ajuste por script | `art-src/gen/town-ground.png` (pintado sobre `town-ground-guide.png` com a arte-chave da cidade como referência) por `build_town.py`: reduzido para 480x270, 32 cores | 2026-11-14 |
-| `game/assets/town/decals.png` (192x16) | Gerado por IA + ajuste por script | `art-src/gen/town-base-decals.png` por `build_town.py`: 12 células de 16 px (tufos de grama, musgo, pedras soltas), contorno trocado por tom de chão; `town.gd` espalha nas bases | 2026-11-14 |
+| `game/assets/town/decals.png` (192x16) | Gerado por IA + ajuste por script | `art-src/gen/town-base-decals.png` por `build_town.py`: 12 células de 16 px (tufos de grama, musgo, pedras soltas), contorno trocado por tom de chão; nós `Decals` de `town.tscn`, nas bases | 2026-11-14 |
 | `game/assets/town/shop.png` | Gerado por IA (gpt-image-2.5 flare, preset `cinzel-pixel`) + ajuste por script | `art-src/gen/town-shop.png` por `build_town.py`: recorte, 104 px de largura, até 29 cores, contorno de 1 px e sombra suave embutida | 2026-11-14 |
 | `game/assets/town/forge.png` | Idem | `art-src/gen/town-forge.png`, mesma receita; a cena espelha o sprite | 2026-11-14 |
 | `game/assets/town/house_a.png` | Idem | `art-src/gen/town-houses.png`, 80 px de altura | 2026-11-14 |
@@ -242,7 +242,7 @@ Os tilesets da torre têm 8 colunas x 2 linhas de tiles 16x16. As coordenadas s�
 
 ## Peças da cidade (`game/assets/town/`)
 
-Desde a Task P3 a cidade não é um mapa de tiles. `ground.png` é o chão inteiro da tela (480x270, opaco). Os outros arquivos são sprites soltos, ordenados por Y na cena (`world/town.gd`, lista `PIECES`).
+Desde a Task P3 a cidade não é um mapa de tiles. `ground.png` é o chão inteiro da tela (480x270, opaco). Os outros arquivos são sprites soltos, ordenados por Y na cena `world/town.tscn` (nós `Buildings`, `Trees`, `Lamps`, `Props`, `Fence`), editáveis no editor do Godot.
 
 Em todo sprite, a linha de base (onde a parede ou o tronco toca o chão) fica 4 px acima da borda de baixo; esses 4 px guardam a sombra embutida. A cena põe a origem do sprite em (largura / 2, altura - 4). A sombra é uma elipse de duas faixas de alfa, por isso esses arquivos têm alfa parcial (os outros sprites do jogo não têm).
 

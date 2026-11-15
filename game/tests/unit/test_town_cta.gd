@@ -42,13 +42,13 @@ func test_town_rings_follow_the_player() -> void:
 	_game().new_run()
 	var town := await _spawn("res://world/town.tscn")
 	var player := town.get_node("Player") as Player
-	player.global_position = TownScript.SPOTS[&"shop"]
+	player.global_position = town.spots[&"shop"]
 	await _tree().process_frame
 	T.eq(town.near, &"shop")
 	T.ok(town._ctas[&"shop"].active, "shop ring on")
 	T.ok(not town._ctas[&"smith"].active and not town._ctas[&"wardrobe"].active, "others off")
 	T.ok(town._bubble.visible, "shopkeeper talks")
-	player.global_position = TownScript.SPOTS[&"smith"]
+	player.global_position = town.spots[&"smith"]
 	await _tree().process_frame
 	T.eq(town.near, &"smith")
 	T.ok(not town._ctas[&"smith"].active, "nothing to forge: no smith ring")
@@ -59,7 +59,7 @@ func test_town_rings_follow_the_player() -> void:
 	await _tree().process_frame
 	T.ok(town._ctas[&"smith"].active, "craftable recipe: smith ring")
 	T.eq(town._bubble.label.text, TownScript.LINES["smith"])
-	player.global_position = TownScript.SPAWN
+	player.global_position = town.arrival_point(&"")
 	await _tree().process_frame
 	T.eq(town.near, &"")
 	T.ok(not town._bubble.visible, "bubble hides away from NPCs")
@@ -73,7 +73,7 @@ func test_shop_line_counts_the_backpack() -> void:
 	_game().new_run()
 	var town := await _spawn("res://world/town.tscn")
 	var player := town.get_node("Player") as Player
-	player.global_position = TownScript.SPOTS[&"shop"]
+	player.global_position = town.spots[&"shop"]
 	_game().run.add_item(&"fang")
 	_game().run.add_item(&"spark")
 	await _tree().process_frame
@@ -119,7 +119,7 @@ func test_backs_of_buildings_are_blocked_paths_open() -> void:
 	for p in blocked:
 		q.position = p
 		T.ok(not space.intersect_point(q).is_empty(), "blocked at %s" % p)
-	var open: Array[Vector2] = [Vector2(240, 40), Vector2(240, 200), Vector2(240, 258), TownScript.SPOTS[&"shop"], TownScript.SPOTS[&"smith"], TownScript.GATE.get_center(), TownScript.CRYSTAL_ARRIVAL]
+	var open: Array[Vector2] = [Vector2(240, 40), Vector2(240, 200), Vector2(240, 258), town.spots[&"shop"], town.spots[&"smith"], town.gate.get_center(), town.arrival_point(&"crystal")]
 	for p in open:
 		q.position = p
 		var walls := space.intersect_point(q).filter(func(h: Dictionary) -> bool: return h["collider"] is StaticBody2D)

@@ -45,7 +45,7 @@ const TOP_FACE_BAND := 16
 const SIDE_WALL_PAD := 4
 ## Layouts for the art pipeline (blockouts, alignment check).
 const LAYOUTS_JSON := "res://../art-src/gen/rooms/layouts.json"
-## Light tint per floor, close to the town's (town.gd TINT) so the rooms
+## Light tint per floor, close to the town's (town.tscn Tint) so the rooms
 ## read as bright as the town; the torch lights only lift the actors.
 const AMBIENT: Array[Color] = [
 	Color(0.94, 0.90, 0.84), Color(0.88, 0.92, 0.98), Color(0.94, 0.86, 0.82)]

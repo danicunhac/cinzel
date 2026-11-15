@@ -3,8 +3,13 @@
 [ext_resource type="Script" path="res://actors/player/player.gd" id="1"]
 [ext_resource type="Script" path="res://actors/player/layered_sprite.gd" id="2"]
 [ext_resource type="Script" path="res://actors/common/health.gd" id="3"]
+[ext_resource type="Texture2D" path="res://assets/characters/climber/body.png" id="3_lsln6"]
 [ext_resource type="Script" path="res://actors/common/hurtbox.gd" id="4"]
+[ext_resource type="Texture2D" path="res://assets/characters/climber/hair.png" id="4_hiosj"]
 [ext_resource type="Script" path="res://actors/common/hitbox.gd" id="5"]
+[ext_resource type="Texture2D" path="res://assets/characters/climber/outfit.png" id="5_ssdk0"]
+[ext_resource type="Texture2D" path="res://assets/characters/climber/gear/backpack_small.png" id="6_7aotg"]
+[ext_resource type="Texture2D" path="res://assets/characters/climber/weapon.png" id="7_k67x5"]
 
 [sub_resource type="CircleShape2D" id="body_shape"]
 radius = 6.0
@@ -12,30 +17,75 @@ radius = 6.0
 [sub_resource type="RectangleShape2D" id="hurt_shape"]
 size = Vector2(12, 21)
 
-[node name="Player" type="CharacterBody2D"]
+[node name="Player" type="CharacterBody2D" unique_id=348161101]
 motion_mode = 1
 script = ExtResource("1")
 
-[node name="Sprite" type="Node2D" parent="."]
+[node name="Sprite" type="Node2D" parent="." unique_id=544885722]
 position = Vector2(0, -8)
 script = ExtResource("2")
 
-[node name="Body" type="CollisionShape2D" parent="."]
+[node name="body" type="Sprite2D" parent="Sprite" unique_id=1182515467]
+texture_filter = 1
+texture = ExtResource("3_lsln6")
+hframes = 8
+vframes = 13
+
+[node name="hair" type="Sprite2D" parent="Sprite" unique_id=860959017]
+texture_filter = 1
+texture = ExtResource("4_hiosj")
+hframes = 8
+vframes = 13
+
+[node name="outfit" type="Sprite2D" parent="Sprite" unique_id=2006488744]
+texture_filter = 1
+texture = ExtResource("5_ssdk0")
+hframes = 8
+vframes = 13
+
+[node name="armor" type="Sprite2D" parent="Sprite" unique_id=860129594]
+texture_filter = 1
+hframes = 8
+vframes = 13
+
+[node name="backpack" type="Sprite2D" parent="Sprite" unique_id=2019593640]
+texture_filter = 1
+texture = ExtResource("6_7aotg")
+hframes = 8
+vframes = 13
+
+[node name="helm" type="Sprite2D" parent="Sprite" unique_id=1756211755]
+texture_filter = 1
+hframes = 8
+vframes = 13
+
+[node name="weapon" type="Sprite2D" parent="Sprite" unique_id=263601107]
+texture_filter = 1
+texture = ExtResource("7_k67x5")
+hframes = 8
+vframes = 13
+
+[node name="offhand" type="Sprite2D" parent="Sprite" unique_id=1152401979]
+texture_filter = 1
+hframes = 8
+vframes = 13
+
+[node name="Body" type="CollisionShape2D" parent="." unique_id=1219326909]
 position = Vector2(0, 6)
 shape = SubResource("body_shape")
 
-[node name="Health" type="Node" parent="."]
+[node name="Health" type="Node" parent="." unique_id=864911961]
 script = ExtResource("3")
 
-[node name="Hurtbox" type="Area2D" parent="."]
+[node name="Hurtbox" type="Area2D" parent="." unique_id=302734213]
 script = ExtResource("4")
 
-[node name="Shape" type="CollisionShape2D" parent="Hurtbox"]
+[node name="Shape" type="CollisionShape2D" parent="Hurtbox" unique_id=2031082142]
 position = Vector2(0, -3)
 shape = SubResource("hurt_shape")
 
-[node name="Hitbox" type="Area2D" parent="."]
+[node name="Hitbox" type="Area2D" parent="." unique_id=1696566721]
 position = Vector2(0, -3)
 script = ExtResource("5")
 
-[node name="Shape" type="CollisionShape2D" parent="Hitbox"]
+[node name="Shape" type="CollisionShape2D" parent="Hitbox" unique_id=203351477]
