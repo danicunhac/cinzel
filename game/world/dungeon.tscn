@@ -2,32 +2,36 @@
 
 [ext_resource type="Script" path="res://world/dungeon.gd" id="1"]
 [ext_resource type="PackedScene" path="res://actors/player/player.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://world/rooms/f1/f1_arena.tscn" id="2_avs0c"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://ui/pause.tscn" id="4"]
 
-[node name="Dungeon" type="Node2D"]
+[node name="Dungeon" type="Node2D" unique_id=292989829]
 process_mode = 1
 y_sort_enabled = true
 script = ExtResource("1")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1359637296]
 z_index = -10
 offset_right = 480.0
 offset_bottom = 270.0
 color = Color(0.094, 0.075, 0.102, 1)
 
-[node name="Camera" type="Camera2D" parent="."]
+[node name="Camera" type="Camera2D" parent="." unique_id=293721189]
 position = Vector2(240, 135)
 
-[node name="Rooms" type="Node2D" parent="."]
+[node name="Rooms" type="Node2D" parent="." unique_id=1253578112]
 y_sort_enabled = true
 
-[node name="Player" parent="." instance=ExtResource("2")]
+[node name="EditorPreview" parent="Rooms" unique_id=1725672935 instance=ExtResource("2_avs0c")]
 
-[node name="Overlay" type="CanvasLayer" parent="."]
+[node name="Player" parent="." unique_id=2021975843 instance=ExtResource("2")]
+position = Vector2(24, 120)
+
+[node name="Overlay" type="CanvasLayer" parent="." unique_id=297432097]
 layer = 10
 
-[node name="Fade" type="ColorRect" parent="Overlay"]
+[node name="Fade" type="ColorRect" parent="Overlay" unique_id=475873031]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -36,6 +40,6 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0)
 
-[node name="Hud" parent="." instance=ExtResource("3")]
+[node name="Hud" parent="." unique_id=1247391502 instance=ExtResource("3")]
 
-[node name="Pause" parent="." instance=ExtResource("4")]
+[node name="Pause" parent="." unique_id=1366049586 instance=ExtResource("4")]

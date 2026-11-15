@@ -9,12 +9,18 @@ extends Node2D
 ##   and is flipped for left.
 ## - a one-row NPC sheet (shopkeeper, blacksmith): idle frames only, with a
 ##   1 px hop while walking.
+## Placed in a scene with `sheet` set, it stands still at its position (the
+## town NPCs); its EditorPreview child (first frame, for the editor) is
+## dropped when it enters the game.
 
 const CELL := 32
 const PAUSE := Vector2(0.8, 2.2)
 const DIRS: Array[StringName] = [&"down", &"up", &"side"]
 const IDLE_FRAMES := 2
 const WALK_FRAMES := 4
+
+## Sheet of a villager placed in a scene; spawned ones get theirs in setup().
+@export var sheet: Texture2D
 
 var path: Array[Vector2] = []
 var speed: float = 16.0
@@ -30,6 +36,16 @@ var _sprite: AnimatedSprite2D
 var _directional: bool = false
 var _dir: StringName = &"down"
 var _rng := RandomNumberGenerator.new()
+
+
+func _ready() -> void:
+	var preview := get_node_or_null(^"EditorPreview")
+	if preview != null:
+		remove_child(preview)
+		preview.queue_free()
+	if sheet != null and _sprite == null:
+		var still: Array[Vector2] = [position]
+		setup(sheet, Color.WHITE, still)
 
 
 func setup(tex: Texture2D, tint: Color, waypoints: Array[Vector2]) -> void:

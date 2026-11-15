@@ -79,14 +79,18 @@ var _frame: int = 0
 var _time: float = 0.0
 
 
+## A scene may already hold the layer sprites (player.tscn, title.tscn: the
+## default look, so the editor shows the climber); they are reused.
 func _ready() -> void:
 	for layer in LAYERS:
-		var s := Sprite2D.new()
-		s.name = String(layer)
-		s.hframes = COLS
-		s.vframes = VFRAMES
-		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		add_child(s)
+		var s := get_node_or_null(NodePath(String(layer))) as Sprite2D
+		if s == null:
+			s = Sprite2D.new()
+			s.name = String(layer)
+			s.hframes = COLS
+			s.vframes = VFRAMES
+			s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			add_child(s)
 		_sprites[layer] = s
 	_reload()
 	play(&"idle", Vector2.DOWN)
