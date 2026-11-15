@@ -8,7 +8,7 @@ Cinzel
 
 ## Equipe
 
-Daniel Cunha, solo (apresentação e entrega individuais, com OK do professor: [confirmar por escrito]).
+Daniel Cunha Costa, solo (apresentação e entrega individuais, com OK do professor: [confirmar por escrito]).
 
 ## Engine
 
@@ -50,12 +50,12 @@ Vitória: vencer o chefe do andar 3.
 - Janela de 1440x810 (viewport de 480x270 com escala inteira).
 - Teclado e mouse. Sem controle.
 - Pelo código: abrir `game/project.godot` no Godot 4.7 e rodar a cena principal (título).
-- Testes: `godot --headless --path game -s res://tests/run_tests.gd` (261 testes, todos passam em 14/11).
-- Campus e turma: `[campus]`.
+- Testes: `godot --headless --path game -s res://tests/run_tests.gd` (287 testes, todos passam em 15/11).
+- Campus e turma: IFPB Campus João Pessoa.
 
 ## O que cada integrante fez
 
-Daniel Cunha (único integrante):
+Daniel Cunha Costa (único integrante):
 
 - Direção e design do jogo: ideia, pilares, regras (relógio, cura parada, morte perde tudo, mercado), escolha das armas, roupas e quantidade de conteúdo, escolha das artes-chave.
 - Programação com assistência de IA (Claude): o código foi escrito com o Claude a partir das decisões do Daniel, que revisou e testou.
