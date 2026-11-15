@@ -25,6 +25,11 @@ Outputs:
     to sit next to the town's ground), at most 48 colours, no dithering.
   game/assets/rooms/doors.png  3x2 frames of 24x32.
 
+Detailed rooms ("detail" in layouts.json, see build_rooms.gd) also get a
+contact-shade pass in `final` (contact_shade): the floor darkens in a few
+hard steps, tinted cool, along the foot of the walls (deeper under the top
+wall face) and round the pillar bases, so the floor reads with depth.
+
 Alignment score: each pixel of the painting is classed as "blocking" or
 "floor" by its nearest class mean (colour + local contrast, means taken from
 the layout); mismatch = share of pixels in the room area (y < 256) whose class
@@ -281,6 +286,67 @@ def grade(img, floor):
     return ImageEnhance.Color(img).enhance(sat)
 
 
+# Contact shade: (distance in px from a wall or pillar, multiplier) steps,
+# per side. The top wall casts the longest band. Shadows lean cool: the blue
+# channel keeps SHADE_COOL of the darkening back.
+SHADE_TOP = ((3, 0.62), (6, 0.74), (10, 0.85), (14, 0.94))
+SHADE_SIDE = ((2, 0.7), (4, 0.82), (7, 0.92))
+SHADE_PILLAR = ((1, 0.74), (3, 0.88))
+SHADE_COOL = 0.55
+
+
+def _dist_from(mask, dirs, reach):
+    """Steps (px) from `mask` moving along `dirs`, up to `reach`; reach + 1
+    where not reached."""
+    d = np.full(mask.shape, reach + 1, dtype=np.int32)
+    d[mask] = 0
+    cur = mask.copy()
+    for k in range(1, reach + 1):
+        nxt = np.zeros_like(cur)
+        for dx, dy in dirs:
+            nxt |= np.roll(np.roll(cur, dy, 0), dx, 1)
+        new = nxt & (d > k)
+        d[new] = np.minimum(d[new], k)
+        cur = nxt | cur
+    return d
+
+
+def contact_shade(img, room, edges):
+    """`edges`: the painted floor's top, bottom, left, right (score), so the
+    band hugs the walls as painted, not the layout cells."""
+    rows = room["rows"]
+    walls = np.zeros((OUT_H, OUT_W), dtype=bool)
+    pillars = np.zeros_like(walls)
+    for y in range(H):
+        for x in range(W):
+            ch = rows[y][x]
+            box = (slice(y * T, (y + 1) * T), slice(x * T, (x + 1) * T))
+            if ch in "ox":
+                pillars[box] = True
+    t, b, l, r = edges
+    walls[:t, :] = True
+    walls[b + 1:, :] = True
+    walls[:, :l] = True
+    walls[:, r + 1:] = True
+    k = np.ones((OUT_H, OUT_W), dtype=np.float32)
+    down = _dist_from(walls, ((0, 1),), 16)
+    side = _dist_from(walls, ((1, 0), (-1, 0), (0, -1)), 8)
+    ring = _dist_from(pillars, ((1, 0), (-1, 0), (0, 1), (0, -1)), 4)
+    for dist, steps in ((down, SHADE_TOP), (side, SHADE_SIDE), (ring, SHADE_PILLAR)):
+        f = np.ones_like(k)
+        for reach, mult in reversed(steps):
+            f[(dist > 0) & (dist <= reach)] = mult
+        k = np.minimum(k, f)
+    floor = ~(walls | pillars)
+    k[~floor] = 1.0
+    a = np.asarray(img.convert("RGB"), dtype=np.float32)
+    kb = k + (1.0 - k) * SHADE_COOL
+    a[..., 0] *= k
+    a[..., 1] *= k
+    a[..., 2] *= kb
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
+
+
 def quantize(img, colors=COLORS):
     return img.quantize(colors=colors, method=Image.Quantize.MEDIANCUT,
                         dither=Image.Dither.NONE).convert("RGB")
@@ -349,7 +415,10 @@ def cmd_final(root, rooms, ids, force):
             img = shift_img(img, dx, dy)
             s["applied_shift"] = [dx, dy]
             s["edges_after"] = score(img, room)["edges"]
-        img = quantize(grade(img, room["floor"]))
+        img = grade(img, room["floor"])
+        if room.get("detail"):
+            img = contact_shade(img, room, s.get("edges_after", s["edges"]))
+        img = quantize(img)
         s["after"] = score(img, room)["mismatch"]
         s["colors"] = len(img.getcolors(1 << 16))
         scores[rid] = s

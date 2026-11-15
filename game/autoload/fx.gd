@@ -43,6 +43,9 @@ const BURSTS: Dictionary[StringName, Dictionary] = {
 	&"roll_dust": {"amount": 6, "life": 0.35, "speed": Vector2(10, 25), "color": Color(0.6, 0.55, 0.5, 0.7), "size": Vector2(1, 2), "gravity": Vector2(0, -10), "radius": 3.0},
 	&"step_dust": {"amount": 3, "life": 0.3, "speed": Vector2(6, 14), "color": Color(0.6, 0.55, 0.5, 0.55), "size": Vector2(1, 1), "gravity": Vector2(0, -8), "radius": 2.0},
 	&"chest_open": {"amount": 16, "life": 0.55, "speed": Vector2(30, 60), "color": Color(1.0, 0.85, 0.35), "size": Vector2(1, 2), "gravity": Vector2(0, 40), "spread": 60.0, "dir": Vector2.UP, "add": true},
+	&"turn_dust": {"amount": 4, "life": 0.28, "speed": Vector2(8, 16), "color": Color(0.6, 0.55, 0.5, 0.6), "size": Vector2(1, 1), "gravity": Vector2(0, -8), "radius": 2.0},
+	&"pot_shards": {"amount": 10, "life": 0.4, "speed": Vector2(30, 60), "color": Color(0.72, 0.42, 0.24), "size": Vector2(1, 2), "gravity": Vector2(0, 160), "spread": 70.0, "dir": Vector2.UP},
+	&"crate_splinters": {"amount": 10, "life": 0.4, "speed": Vector2(30, 60), "color": Color(0.62, 0.42, 0.22), "size": Vector2(1, 2), "gravity": Vector2(0, 160), "spread": 70.0, "dir": Vector2.UP},
 	&"ring": {"amount": 20, "life": 0.4, "speed": Vector2(40, 40), "color": Color(1.0, 0.95, 0.75), "size": Vector2(1, 1), "radius": 4.0, "ring": true, "add": true},
 }
 

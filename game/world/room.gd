@@ -74,6 +74,9 @@ func start(extra: int, has_chest: bool, rng: RandomNumberGenerator,
 	if save != null:
 		for it in save.floor_items:
 			_drop_item(it)
+		for prop in breakables():
+			if String(prop.name) in save.props_broken:
+				prop.show_broken()
 	if save != null and save.cleared:
 		restored = true
 		_chest_looted = save.chests_opened.has(0)
@@ -169,11 +172,26 @@ func snapshot(save: FloorState.RoomSave) -> void:
 	save.chests_opened.clear()
 	if chest != null and is_instance_valid(chest) and chest.is_open:
 		save.chests_opened.append(0)
+	save.props_broken.clear()
+	for prop in breakables():
+		if prop.broken:
+			save.props_broken.append(String(prop.name))
 	save.floor_items.clear()
 	for n in get_children():
 		var p := n as PickupItem
 		if p != null and not p.is_queued_for_deletion() and p.qty > 0:
 			save.floor_items.append({"id": p.item_id, "qty": p.qty, "pos": p.position})
+
+
+## Pots and crates of a detailed room (the Breakables node), [] otherwise.
+func breakables() -> Array[Breakable]:
+	var out: Array[Breakable] = []
+	var root := get_node_or_null(^"Breakables")
+	if root != null:
+		for c in root.get_children():
+			if c is Breakable:
+				out.append(c as Breakable)
+	return out
 
 
 func _drop_item(it: Dictionary) -> void:

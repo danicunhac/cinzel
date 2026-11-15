@@ -15,6 +15,8 @@ class RoomSave:
 	var chests_opened: Array[int] = []
 	## Items lying on the floor: {"id": StringName, "qty": int, "pos": Vector2}.
 	var floor_items: Array[Dictionary] = []
+	## Names of the room's Breakable props already smashed.
+	var props_broken: Array[String] = []
 
 
 ## One floor: its plan, chest rooms, current room and room saves.

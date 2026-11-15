@@ -17,6 +17,11 @@ extends SceneTree
 ## Every non-boss room also gets a StairsSpot marker (see _stairs_spot) and
 ## the entry door a "Back" RoomDoor, for walking back down the tower.
 ## A room's optional "floor" key (default 1) picks the tileset.
+## A painted room's optional "detail" key (pilot: f1_arena) adds the richer
+## look: cool ambient and shadows, warm torch pools, a RoomAtmosphere
+## (vignette, dust motes), small floor and wall decals (Details) and
+## breakable pots and crates (Breakables), all placed by DecorLayout; the
+## painting gets a contact-shade pass (build_rooms_art.py, layouts.json).
 ##
 ## Painted rooms: when res://assets/rooms/<room id>.png exists (480 x 270, made
 ## by art-src/build_rooms_art.py from the layout dumped to LAYOUTS_JSON), the
@@ -51,6 +56,19 @@ const AMBIENT: Array[Color] = [
 	Color(0.94, 0.90, 0.84), Color(0.88, 0.92, 0.98), Color(0.94, 0.86, 0.82)]
 const TORCH_COLOR: Array[Color] = [
 	Color(1.0, 0.72, 0.42), Color(1.0, 0.8, 0.6), Color(1.0, 0.55, 0.32)]
+## Detailed rooms: the ambient leans cool and a little darker, so the warm
+## torch pools (stronger, wider) give the floor depth.
+const AMBIENT_DETAIL: Array[Color] = [
+	Color(0.9, 0.86, 0.8), Color(0.84, 0.88, 0.95), Color(0.9, 0.82, 0.78)]
+const TORCH_DETAIL_ENERGY := 0.5
+const TORCH_DETAIL_SCALE := 1.6
+const TORCH_DETAIL_COLOR: Array[Color] = [
+	Color(1.0, 0.64, 0.32), Color(1.0, 0.76, 0.52), Color(1.0, 0.5, 0.26)]
+const BREAKABLE_SCENE := "res://world/breakable.tscn"
+const ATMOSPHERE_SCRIPT := "res://world/room_atmosphere.gd"
+## Small decals of the detailed rooms (art-src/build_room_details.py).
+const DETAILS_PATH := "res://assets/rooms/details.png"
+const DETAIL_FRAME := 24
 ## No enemy starts closer than this to the player's entry point.
 const MIN_SPAWN_DIST := 144.0
 ## No ember vent this close to the player's entry point.
@@ -210,6 +228,7 @@ var ROOMS: Array[Dictionary] = [
 	{
 		# Open arena: room to dodge the charger, pillars only in the corners.
 		"path": "res://world/rooms/f1/f1_arena.tscn",
+		"detail": true,
 		"rows": [
 			"##############################",
 			"#............................#",
@@ -879,6 +898,7 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 	var floor_num := int(def.get("floor", 1))
 	var paint_path := PAINT_PATH % _room_id(def)
 	var painted := ResourceLoader.exists(paint_path)
+	var detail: bool = painted and def.get("detail", false)
 	var floor_layer: TileMapLayer = null
 	if painted:
 		var bg := Sprite2D.new()
@@ -889,14 +909,14 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 		_add(room, bg)
 		var ambient := CanvasModulate.new()
 		ambient.name = "Ambient"
-		ambient.color = AMBIENT[floor_num - 1]
+		ambient.color = (AMBIENT_DETAIL if detail else AMBIENT)[floor_num - 1]
 		_add(room, ambient)
 		var lights := Node2D.new()
 		lights.name = "Torches"
 		_add(room, lights)
 		var light_tex := _light_texture()
 		for t in _torches(rows):
-			var torch := _make_torch(_center(t), floor_num, light_tex)
+			var torch := _make_torch(_center(t), floor_num, light_tex, detail)
 			torch.name = "Torch%d" % (lights.get_child_count() + 1)
 			lights.add_child(torch)
 			torch.owner = room
@@ -1005,11 +1025,32 @@ func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
 	else:
 		hazards.free()
 
+	var decor_spots: Array[Dictionary] = []
 	if painted and ResourceLoader.exists(DECOR_PATH):
-		var decor := _make_decor(rows, def)
+		var decor := _make_decor(rows, def, decor_spots)
 		_add(room, decor)
 		for n in decor.find_children("*", "", true, false):
 			n.owner = room
+
+	if detail:
+		var rng_d := RandomNumberGenerator.new()
+		rng_d.seed = hash(path + "#detail")
+		var keep := _keep_clear(rows, def)
+		var props := DecorLayout.breakable_spots(rows, keep, decor_spots, rng_d)
+		var breakables := _make_breakables(props)
+		_add(room, breakables)
+		for n in breakables.get_children():
+			n.owner = room
+		var taken: Array[Dictionary] = decor_spots.duplicate()
+		taken.append_array(props)
+		var details := _make_details(DecorLayout.detail_spots(rows, keep, taken, rng_d))
+		_add(room, details)
+		for n in details.get_children():
+			n.owner = room
+		var atmosphere := Node2D.new()
+		atmosphere.name = "Atmosphere"
+		atmosphere.set_script(load(ATMOSPHERE_SCRIPT))
+		_add(room, atmosphere)
 
 	if def.has("sign"):
 		# In the tree, so the label measures itself with its 8 px font.
@@ -1048,7 +1089,8 @@ func _keep_clear(rows: Array[String], def: Dictionary) -> Array[Vector2]:
 
 ## Decor props of a painted room (Y-sorted with the actors): solid ones get a
 ## small static body at their feet, wall pieces draw just over the painting.
-func _make_decor(rows: Array[String], def: Dictionary) -> Node2D:
+## `placed` (out): the spots, for the detail pass.
+func _make_decor(rows: Array[String], def: Dictionary, placed: Array[Dictionary]) -> Node2D:
 	var root := Node2D.new()
 	root.name = "Decor"
 	root.y_sort_enabled = true
@@ -1056,7 +1098,9 @@ func _make_decor(rows: Array[String], def: Dictionary) -> Node2D:
 	rng.seed = hash(String(def["path"]) + "#decor")
 	var tex := load(DECOR_PATH) as Texture2D
 	var count := {}
+	var shadow := GroundShadow.COOL if def.get("detail", false) else GroundShadow.COLOR
 	for spot in DecorLayout.spots(rows, _keep_clear(rows, def), rng, def.get("tutorial", false)):
+		placed.append(spot)
 		var kind: StringName = spot["kind"]
 		count[kind] = int(count.get(kind, 0)) + 1
 		var s := Sprite2D.new()
@@ -1076,7 +1120,7 @@ func _make_decor(rows: Array[String], def: Dictionary) -> Node2D:
 		root.add_child(s)
 		if kind in DecorLayout.SHADOWED:
 			var w := 16 if kind in DecorLayout.SOLID else 11
-			s.add_child(GroundShadow.make(Vector2i(w, 4), Vector2(0, -1)))
+			s.add_child(GroundShadow.make(Vector2i(w, 4), Vector2(0, -1), shadow))
 		if spot["solid"]:
 			var body := StaticBody2D.new()
 			body.name = "Body"
@@ -1222,7 +1266,7 @@ func _light_texture() -> GradientTexture2D:
 	return tex
 
 
-func _make_torch(pos: Vector2, floor_num: int, tex: Texture2D) -> PointLight2D:
+func _make_torch(pos: Vector2, floor_num: int, tex: Texture2D, detail: bool = false) -> PointLight2D:
 	var light := PointLight2D.new()
 	light.position = pos
 	light.texture = tex
@@ -1230,7 +1274,56 @@ func _make_torch(pos: Vector2, floor_num: int, tex: Texture2D) -> PointLight2D:
 	light.color = TORCH_COLOR[floor_num - 1]
 	# The painting already has its light pools; this only lifts the actors.
 	light.energy = 0.18
+	if detail:
+		# A warm pool on the floor under the cool ambient.
+		light.texture_scale = TORCH_DETAIL_SCALE
+		light.color = TORCH_DETAIL_COLOR[floor_num - 1]
+		light.energy = TORCH_DETAIL_ENERGY
 	return light
+
+
+## Breakable pots and crates (Y-sorted with the actors).
+func _make_breakables(spots: Array[Dictionary]) -> Node2D:
+	var root := Node2D.new()
+	root.name = "Breakables"
+	root.y_sort_enabled = true
+	var scene := load(BREAKABLE_SCENE) as PackedScene
+	var count := {}
+	for spot in spots:
+		var kind: StringName = spot["kind"]
+		count[kind] = int(count.get(kind, 0)) + 1
+		var b := scene.instantiate()
+		b.name = "%s%d" % [String(kind).capitalize(), count[kind]]
+		b.set("kind", kind)
+		b.position = spot["pos"]
+		root.add_child(b)
+	return root
+
+
+## Small decals over the painting, under every prop and actor.
+func _make_details(spots: Array[Dictionary]) -> Node2D:
+	var root := Node2D.new()
+	root.name = "Details"
+	root.z_index = -4
+	var tex := load(DETAILS_PATH) as Texture2D
+	var count := {}
+	for spot in spots:
+		var kind: StringName = spot["kind"]
+		count[kind] = int(count.get(kind, 0)) + 1
+		var s := Sprite2D.new()
+		s.name = "%s%d" % [String(kind).to_pascal_case(), count[kind]]
+		s.texture = tex
+		s.hframes = DecorLayout.DETAILS.size()
+		s.frame = DecorLayout.DETAILS.find(kind)
+		s.position = spot["pos"]
+		if spot["wall"]:
+			s.offset = Vector2(0, -DETAIL_FRAME / 2.0)
+		s.flip_h = spot["flip"]
+		s.modulate = DecorLayout.DETAIL_TINT.get(kind, Color.WHITE)
+		s.set_meta(&"detail_kind", kind)
+		s.set_meta(&"detail_wall", spot["wall"])
+		root.add_child(s)
+	return root
 
 
 ## Overlay for a door cell: column 0 shut, 1 locked, 2 open; row 0 for doors
@@ -1270,6 +1363,7 @@ func _dump_layouts() -> void:
 			"floor": int(def.get("floor", 1)),
 			"tutorial": def.get("tutorial", false),
 			"boss": def.get("boss", false),
+			"detail": def.get("detail", false),
 			"rows": rows,
 			"torches": torches,
 			"sign": [SIGN_RECT.position.x, SIGN_RECT.position.y, SIGN_RECT.size.x, SIGN_RECT.size.y] if def.has("sign") else [],

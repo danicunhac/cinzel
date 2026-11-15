@@ -34,6 +34,34 @@ const MAX_FLOOR := 14
 const WALL_COLS: Array[int] = [3, 4, 14, 15, 16, 25, 26]
 const WALKABLE := ".,~cshBHFCiv"
 
+## Detailed rooms (build_rooms.gd "detail"): breakables and small decals.
+const BREAKABLE_KINDS: Array[StringName] = [&"pot", &"crate"]
+const BREAKABLES := 5
+const BREAKABLE_GAP := 18.0
+## Frames of res://assets/rooms/details.png (art-src/build_room_details.py).
+const DETAILS: Array[StringName] = [
+	&"crack", &"crack_zig", &"chips", &"grime", &"puddle", &"puddle_small", &"moss",
+	&"pebbles", &"arrow", &"arrows", &"bones", &"leaves", &"chain", &"shelf",
+]
+const DETAIL_EDGE: Array[StringName] = [
+	&"grime", &"grime", &"pebbles", &"chips", &"leaves", &"bones", &"arrow", &"arrows",
+	&"moss", &"puddle_small", &"crack_zig", &"pebbles",
+]
+const DETAIL_OPEN: Array[StringName] = [&"crack", &"crack_zig", &"grime", &"puddle", &"crack"]
+const DETAIL_WALL: Array[StringName] = [&"chain", &"shelf"]
+## Decals drawn see-through so they read as part of the floor (kind ->
+## modulate): stains and cracks fade, puddles darken toward the floor.
+const DETAIL_TINT: Dictionary[StringName, Color] = {
+	&"crack": Color(1, 1, 1, 0.6), &"crack_zig": Color(1, 1, 1, 0.6),
+	&"grime": Color(1, 1, 1, 0.45), &"bones": Color(1, 1, 1, 0.85), &"chips": Color(1, 1, 1, 0.8), &"pebbles": Color(1, 1, 1, 0.8),
+	&"puddle": Color(0.7, 0.72, 0.85, 0.75), &"puddle_small": Color(0.7, 0.72, 0.85, 0.75),
+}
+const DETAIL_EDGE_COUNT := 32
+const DETAIL_OPEN_COUNT := 7
+const DETAIL_WALL_COUNT := 2
+const DETAIL_GAP := 14.0
+const DETAIL_CLEAR := 20.0
+
 
 ## Spots for `rows` (the 30x16 layout). `keep_clear`: world points (door
 ## centres, entry, stairs, spawns, chest) no prop may come within CLEAR of.
@@ -202,6 +230,136 @@ static func _keeps_paths(rows: Array[String], blocked: Array[Vector2i]) -> bool:
 				seen[n] = true
 				queue.append(n)
 	return seen.size() == cells.size()
+
+
+## Breakable pots and crates (Breakable) of a detailed room: on free cells of
+## the edge band, clear of `keep_clear` and of the `placed` decor, never
+## cutting a path (they block until smashed). Cells next to a solid prop come
+## first, so they gather in small heaps. Each: {"kind", "pos", "cell"}.
+static func breakable_spots(rows: Array[String], keep_clear: Array[Vector2], placed: Array[Dictionary],
+		rng: RandomNumberGenerator, count: int = BREAKABLES) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var blocked: Array[Vector2i] = []
+	var near_solid: Array[Vector2i] = []
+	var rest: Array[Vector2i] = []
+	for s in placed:
+		if bool(s["solid"]):
+			blocked.append(s["cell"])
+	var cells := edge_band(rows)
+	_shuffle(cells, rng)
+	for c in cells:
+		var near := false
+		for b in blocked:
+			if absi(b.x - c.x) + absi(b.y - c.y) == 1:
+				near = true
+		(near_solid if near else rest).append(c)
+	var spaced: Array[Dictionary] = []
+	spaced.assign(placed)
+	for c in near_solid + rest:
+		if out.size() >= count:
+			break
+		var p := feet(c)
+		if not _clear_of(p, keep_clear) or not _spaced(p, spaced, BREAKABLE_GAP):
+			continue
+		if not _keeps_paths(rows, _with(blocked, c)):
+			continue
+		blocked.append(c)
+		var s := {"kind": BREAKABLE_KINDS[0] if rng.randf() < 0.6 else BREAKABLE_KINDS[1], "pos": p, "cell": c, "wall": false}
+		out.append(s)
+		spaced.append(s)
+	return out
+
+
+## Small flat decals (res://assets/rooms/details.png, DETAILS order) of a
+## detailed room: grime, debris, bones and arrows heaped along the walls and
+## round the pillars, a few cracks and puddles out on the floor, and chains
+## and shelves on free spots of the top wall face. `placed`: decor and
+## breakables already there (decals keep off them). Each: {"kind", "pos"
+## (centre; feet for wall pieces), "wall", "flip"}.
+static func detail_spots(rows: Array[String], keep_clear: Array[Vector2], placed: Array[Dictionary],
+		rng: RandomNumberGenerator) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var top := top_rows(rows)
+	var first := top + (1 if top == 1 else 0)
+	var near_wall: Array[Vector2i] = []
+	var open: Array[Vector2i] = []
+	for y in range(first, H - 1):
+		for x in range(1, W - 1):
+			var c := Vector2i(x, y)
+			if not ".,~".contains(_ch(rows, c)):
+				continue
+			(near_wall if _wall_dist(rows, c, first) <= 1 else open).append(c)
+	_shuffle(near_wall, rng)
+	_shuffle(open, rng)
+	var taken: Array[Dictionary] = []
+	for s in placed:
+		if not bool(s["wall"]):
+			taken.append(s)
+	for pass_cells: Array[Vector2i] in [near_wall, open]:
+		var edge := pass_cells == near_wall
+		var kinds := DETAIL_EDGE if edge else DETAIL_OPEN
+		var limit := DETAIL_EDGE_COUNT if edge else DETAIL_OPEN_COUNT
+		var n := 0
+		for c in pass_cells:
+			if n >= limit:
+				break
+			var p := Vector2(c * CELL) + Vector2(8, 8) + Vector2(rng.randi_range(-4, 4), rng.randi_range(-4, 4))
+			if not _clear_of_r(p, keep_clear, DETAIL_CLEAR) or not _spaced(p, taken, DETAIL_GAP):
+				continue
+			var s := {"kind": kinds[rng.randi_range(0, kinds.size() - 1)], "pos": p, "wall": false, "flip": rng.randf() < 0.5}
+			out.append(s)
+			taken.append(s)
+			n += 1
+	# Chains and shelves on the top wall face, off the torches and the other
+	# wall pieces.
+	if top == 1:
+		var cols := WALL_COLS.duplicate()
+		_shuffle(cols, rng)
+		var walls_placed: Array[Dictionary] = []
+		for s in placed:
+			if bool(s["wall"]):
+				walls_placed.append(s)
+		var put := 0
+		for col: int in cols:
+			if put >= DETAIL_WALL_COUNT:
+				break
+			if _ch(rows, Vector2i(col, 0)) != "#" or _ch(rows, Vector2i(col, 1)) == "#":
+				continue
+			var pos := Vector2(col * CELL + 8, 30.0)
+			if not _clear_of_r(pos, keep_clear, CLEAR) or not _far_from(pos, walls_placed, 40.0):
+				continue
+			var s := {"kind": DETAIL_WALL[put % DETAIL_WALL.size()], "pos": pos, "wall": true, "flip": rng.randf() < 0.5}
+			out.append(s)
+			walls_placed.append(s)
+			put += 1
+	return out
+
+
+## Cells from `c` to the nearest wall or pillar (Chebyshev), 0 next to one;
+## the row under a thin top wall's face counts as next to the wall.
+static func _wall_dist(rows: Array[String], c: Vector2i, first: int) -> int:
+	for r in range(0, 3):
+		if c.y - r <= first:
+			return r
+		for dy in range(-r - 1, r + 2):
+			for dx in range(-r - 1, r + 2):
+				if "#o".contains(_ch(rows, c + Vector2i(dx, dy))):
+					return r
+	return 3
+
+
+static func _clear_of_r(p: Vector2, keep_clear: Array[Vector2], r: float) -> bool:
+	for k in keep_clear:
+		if p.distance_to(k) < r:
+			return false
+	return true
+
+
+static func _far_from(p: Vector2, placed: Array[Dictionary], gap: float) -> bool:
+	for s in placed:
+		if p.distance_to(s["pos"]) < gap:
+			return false
+	return true
 
 
 static func _shuffle(a: Array, rng: RandomNumberGenerator) -> void:
