@@ -45,6 +45,7 @@ F = 32
 COLS = 8
 ROWS = bc.ROW_NAMES
 ATTACK_ROWS = ["attack_down", "attack_up", "attack_side"]
+GROUND_ROW = 30
 
 # Colours come from the item icon (game/assets/items/<id>.png): k-means on
 # its opaque pixels (artlib.icon_ramp), sorted dark -> light, so the sprite
@@ -69,18 +70,18 @@ def blue(x, y, c):
 
 ARMORS = {
     # padded cloth: light beige quilted gambeson
-    "armor_cloth": {"pattern": "quilt", "lift": 0.5},
+    "armor_cloth": {"pattern": "quilt", "lift": 0.5, "skirt": (3, 0.5, False)},
     # red-brown leather with a strap across the chest and a buckle
-    "armor_leather": {"pattern": "strap", "lift": 0.8},
+    "armor_leather": {"pattern": "strap", "lift": 0.8, "skirt": (2, 0.0, False), "shoulders": "flaps"},
     # grey chain mail, dithered (the icon's brown straps stay out of the mail)
     "armor_chain": {"pattern": "chain", "lift": 0.45, "shine": 0.35,
-                    "select": lambda x, y, c: y != BELT_ROW and c[0] - c[2] < 25},
+                    "select": lambda x, y, c: y != BELT_ROW and c[0] - c[2] < 25, "skirt": (3, 0.5, False)},
     # dark olive-bronze scales
-    "armor_scale": {"pattern": "scale", "lift": 0.8},
+    "armor_scale": {"pattern": "scale", "lift": 0.8, "skirt": (4, 0.6, False)},
     # pale steel plate with pauldrons
-    "armor_plate": {"pattern": "plate", "lift": 0.45, "shine": 0.15},
+    "armor_plate": {"pattern": "plate", "lift": 0.45, "shine": 0.15, "skirt": (2, 0.0, False)},
     # dark purple-brown shadow cloth
-    "armor_shadow": {"pattern": "shadow", "lift": 0.8},
+    "armor_shadow": {"pattern": "shadow", "lift": 0.8, "skirt": (3, 0.8, True), "shoulders": "spikes"},
 }
 
 HELMS = {
@@ -239,6 +240,10 @@ def armor_cell(row, body, hair, outfit, weapon, spec, ramps):
             q[bx, by] = spec["trim"][2] + (255,)
     if pattern == "plate" and standing:
         extra = pauldrons(row, body, hair, outfit, px, y0, spec["body"])
+    if standing and spec.get("shoulders"):
+        extra = shoulders(row, body, hair, outfit, px, y0, spec["body"], spec["shoulders"])
+    if standing and legs and spec.get("skirt"):
+        armor_skirt(row, body, outfit, keep, q, legs, spec, pattern)
     for (x, y), c in extra.items():
         q[x, y] = c + (255,) if len(c) == 3 else c
     return out
@@ -281,6 +286,97 @@ def pauldrons(row, body, hair, outfit, px, y0, ramp):
                 if 0 <= x < F and 0 <= y < F and (x, y) not in out and not (a[x, y][3] and not bc.is_outline(a[x, y])):
                     out[(x, y)] = OUTLINE
     return out
+
+
+def shoulders(row, body, hair, outfit, px, y0, ramp, kind):
+    """Leather flaps (1 px past the shoulder, 2 rows) or shadow spikes
+    (1 px past the shoulder and a point rising over it), outlined."""
+    comp = Image.new("RGBA", (F, F), (0, 0, 0, 0))
+    for im in (body, hair, outfit):
+        comp.alpha_composite(im)
+    a = comp.load()
+    sides = [1] if row.endswith("side") else [-1, 1]
+    out = {}
+    for s in sides:
+        top = [x for (x, yy) in px if yy == y0 + 1]
+        if not top:
+            continue
+        for dy, shade in ((0, 3), (1, 2)):
+            y = y0 + 1 + dy
+            row_px = [x for (x, yy) in px if yy == y]
+            if not row_px:
+                continue
+            x = max(row_px) if s > 0 else min(row_px)
+            out[(x + s, y)] = ramp[shade]
+        if kind == "spikes":
+            x = (max(top) if s > 0 else min(top)) + s
+            out[(x, y0)] = ramp[2]
+            out[(x + s, y0 - 1)] = ramp[3]
+    for (x, y) in list(out):
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < F and 0 <= ny < F and (nx, ny) not in out and (nx, ny) not in px \
+                    and not (a[nx, ny][3] and not bc.is_outline(a[nx, ny])):
+                out[(nx, ny)] = OUTLINE
+    return {p: c for p, c in out.items() if 0 <= p[0] < F and 0 <= p[1] < F}
+
+
+def armor_skirt(row, body, outfit, keep, q, legs, spec, pattern):
+    """The armor's skirt below the belt (`skirt`: rows, flare, ragged hem):
+    over the trousers at the hips' width, flaring toward the hem, with the
+    armor's own pattern, a ragged hem for the shadow cloth, outlined. Arms,
+    hands and blades stay in front."""
+    rows, flare, ragged = spec["skirt"]
+    ramp = spec["body"]
+    o = outfit.load()
+    b = body.load()
+    waist = legs[0]
+    hips = None
+    for y in range(waist - 1, waist - 4, -1):
+        xs = [x for x in range(F) if o[x, y][3] and (x, y) not in keep and bo.group(o[x, y], "outfit") == "leather"]
+        if xs:
+            hips = (min(xs), max(xs))
+            break
+    if hips is None:
+        return
+    face_side = row.endswith("side")
+    drawn = set()
+    hem = min(waist + rows - 1, GROUND_ROW - 1)
+    for y in range(waist, hem + 1):
+        t = (y - waist + 1) / rows
+        fl = round(t * flare)
+        x0 = hips[0] - fl
+        x1 = hips[1] + (0 if face_side else fl)
+        for x in range(max(1, x0), min(F - 1, x1 + 1)):
+            p = o[x, y]
+            g = p[3] and bo.group(p, "outfit")
+            if (x, y) in keep or g in ("leather", "scarf") or (b[x, y][3] and bc.is_skin(b[x, y])):
+                continue
+            if ragged and y == hem and (x + y) % 2 == 0:
+                continue
+            i = 2
+            if pattern == "chain":
+                i = 3 if (x + y) % 2 == 0 else 1
+            elif pattern == "scale":
+                i = 1 if (y - waist) % 2 == 1 and (x + (y - waist) // 2) % 3 == 0 else 3
+            elif pattern == "plate":
+                i = 1 if y == hem else 3
+            elif pattern == "quilt":
+                i = 1 if (x - hips[0]) % 4 == 3 else 2
+            if (x - 1, y) not in drawn and x == max(1, x0):
+                i = min(len(ramp) - 1, i + 1)
+            q[x, y] = ramp[i] + (255,)
+            drawn.add((x, y))
+    for x, y in list(drawn):
+        for dx, dy in ((1, 0), (-1, 0), (0, 1)):
+            nx, ny = x + dx, y + dy
+            if not (0 <= nx < F and ny <= GROUND_ROW) or (nx, ny) in drawn or q[nx, ny][3]:
+                continue
+            p = o[nx, ny]
+            g = p[3] and bo.group(p, "outfit")
+            if (nx, ny) in keep or g in ("leather", "scarf") or (b[nx, ny][3] and bc.is_skin(b[nx, ny])):
+                continue
+            q[nx, ny] = OUTLINE
 
 
 # ----------------------------------------------------------------- helm ----
@@ -375,7 +471,61 @@ def helm_cell(row, body, hair, outfit, spec, ramps):
                     q[mid, y] = ramp[3] + (255,)
     if style == "horned":
         horns(q, px, hy0, spec["horn"])
+    if style == "hood" and standing:
+        cowl(q, px, body, outfit, face_top, ramp)
+    if style == "iron" and standing:
+        brim_flare(q, px, brim, spec["brim"], row)
     return out
+
+
+def outline_new(q, new, px):
+    for x, y in list(new):
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < F and 0 <= ny < F and (nx, ny) not in new and (nx, ny) not in px and not q[nx, ny][3]:
+                q[nx, ny] = OUTLINE
+
+
+def cowl(q, px, body, outfit, face_top, ramp):
+    """The travel hood is a deep cowl: 1 px bigger than the hood over the
+    crown and down the sides (not below the hood's own bottom)."""
+    hood = {p for p, (k, c) in px.items() if k == "hood"}
+    if not hood:
+        return
+    y_low = max(y for x, y in hood) - 2
+    b = body.load()
+    o = outfit.load()
+    new = set()
+    for x, y in hood:
+        for dx, dy in ((0, -1), (-1, 0), (1, 0)):
+            nx, ny = x + dx, y + dy
+            if not (0 <= nx < F and 0 <= ny < F) or ny > y_low or (nx, ny) in px or q[nx, ny][3]:
+                continue
+            if b[nx, ny][3] or o[nx, ny][3]:
+                continue
+            new.add((nx, ny))
+    for x, y in new:
+        q[x, y] = ramp[1] + (255,)
+    # the old outline of the hood becomes cloth where the cowl covers it
+    for (x, y), (k, c) in px.items():
+        if k == "hood" and bc.is_outline(c) and not q[x, y][3]:
+            q[x, y] = ramp[0] + (255,)
+    outline_new(q, new, px)
+
+
+def brim_flare(q, px, brim, colour, row):
+    """The iron cap's brim sticks out 1 px past the dome on each visible
+    side (the front one from the side)."""
+    xs = sorted(x for (x, y) in px if y == brim)
+    if not xs:
+        return
+    new = set()
+    for s in ([1] if row.endswith("side") else [-1, 1]):
+        x = (xs[-1] if s > 0 else xs[0]) + s
+        if 0 <= x < F and not q[x, brim][3]:
+            q[x, brim] = colour + (255,)
+            new.add((x, brim))
+    outline_new(q, new, px)
 
 
 def horns(q, px, hy0, horn):
@@ -388,7 +538,7 @@ def horns(q, px, hy0, horn):
     left, right = xs[0], xs[-1]
     pts = []
     for s, x in ((-1, left), (1, right)):
-        shape = [(0, 0, 1), (1, -1, 1), (1, -2, 2), (2, -3, 2), (2, -4, 2)]
+        shape = [(0, 0, 1), (0, -1, 0), (1, -1, 1), (1, -2, 2), (2, -2, 1), (2, -3, 2), (2, -4, 2)]
         for dx, dy, shade in shape:
             pts.append((x + s * dx, y + dy, horn[shade]))
     drawn = set()

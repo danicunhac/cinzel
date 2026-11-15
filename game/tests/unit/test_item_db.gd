@@ -8,7 +8,7 @@ func test_content_counts() -> void:
 	T.eq(ItemDB.ids(&"helm").size(), 4, "helms")
 	T.eq(ItemDB.ids(&"backpack").size(), 3, "backpacks")
 	T.eq(ItemDB.ids(&"relic").size(), 8, "relics")
-	T.eq(ItemDB.ids(&"outfit").size(), 5, "outfits")
+	T.eq(ItemDB.ids(&"outfit").size(), 7, "outfits")
 	T.eq(ItemDB.ids(&"material").size(), 10, "materials")
 
 
