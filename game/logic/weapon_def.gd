@@ -21,8 +21,8 @@ const CROSS_CUTS := 4
 const CROSS_GAP := 0.12
 const CROSS_ARC := 150.0
 const CROSS_REACH_MULT := 1.35
-## Each X is two cuts this far (degrees) to each side of the facing.
-const CROSS_TILT := 35.0
+## Each X is two cuts this far (degrees) from square to the facing.
+const CROSS_TILT := 40.0
 
 var type: StringName = &"sword"
 var combo: int = 3

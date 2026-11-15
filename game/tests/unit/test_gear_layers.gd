@@ -148,7 +148,7 @@ func test_wardrobe_toggle_and_preview() -> void:
 
 func test_every_weapon_item_has_its_own_sheet() -> void:
 	var ids := ItemDB.ids(&"weapon")
-	T.eq(ids.size(), 12, "12 weapons")
+	T.eq(ids.size(), 13, "13 weapons (with sword_midnight)")
 	for id in ids:
 		var type := ItemDB.weapon_type(id)
 		var path := LayeredSprite.weapon_sheet_path(type, id)
@@ -200,11 +200,12 @@ func test_player_sprite_follows_weapon_and_backpack() -> void:
 	var player := town.get_node("Player") as Player
 	T.eq(_layer(player.sprite, &"backpack").texture.resource_path, LayeredSprite.gear_sheet_path(&"backpack_small"),
 			"starter backpack")
-	T.eq(_layer(player.sprite, &"weapon").texture.resource_path, "res://assets/characters/climber/weapons/sword_iron.png")
+	# in town the weapon is put away (its sheathed sheet)
+	T.eq(_layer(player.sprite, &"weapon").texture.resource_path, "res://assets/characters/climber/weapons/sword_iron_sheathed.png")
 	run.inventory.add(&"axe_war")
 	T.ok(run.equip(&"axe_war"))
 	T.eq(player.sprite.weapon_id, &"axe_war")
-	T.eq(_layer(player.sprite, &"weapon").texture.resource_path, "res://assets/characters/climber/weapons/axe_war.png")
+	T.eq(_layer(player.sprite, &"weapon").texture.resource_path, "res://assets/characters/climber/weapons/axe_war_sheathed.png")
 	run.inventory.add(&"backpack_medium")
 	T.ok(run.equip(&"backpack_medium"))
 	T.eq(_layer(player.sprite, &"backpack").texture.resource_path, LayeredSprite.gear_sheet_path(&"backpack_medium"))

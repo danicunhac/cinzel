@@ -80,8 +80,13 @@ var weapon_id: StringName = &""
 ## Off-hand sword in use (&"" = none, or no Lâminas Gêmeas).
 var offhand_id: StringName = &""
 var special: SpecialCharge = SpecialCharge.new()
-## False in town: the attack button does nothing (no swing, shot or special).
-var armed: bool = true
+## False in town: the attack button does nothing (no swing, shot or special)
+## and the weapons are drawn put away (LayeredSprite.set_sheathed).
+var armed: bool = true:
+	set(v):
+		armed = v
+		if sprite != null:
+			sprite.set_sheathed(not v)
 ## Crit rolls. Seed it for deterministic tests.
 var rng := RandomNumberGenerator.new()
 
@@ -125,6 +130,7 @@ func _ready() -> void:
 	add_child(_fx)
 	Game.run.changed.connect(_refresh_stats)
 	_refresh_stats()
+	sprite.set_sheathed(not armed)
 	health.hp = clampi(Game.run.hp, 0, health.max_hp)
 	blocks_left = _stats.block_per_room
 	hitbox.team = &"player"
@@ -493,9 +499,10 @@ func _flurry_cut() -> void:
 	_fx.arc(_hand(), weapon.reach * FLURRY_REACH_MULT, dir.angle() - half * side, dir.angle() + half * side, _fx.skill_color(), 0.22, 3.0)
 
 
-## One X of the two-sword special: both blades cut across each other (two
-## crescents tilted CROSS_TILT to each side, swept in opposite directions),
-## one hit with both swords' damage. The hands take turns leading.
+## One X of the two-sword special: both blades cut across each other in
+## front of the hero (two cuts tilted CROSS_TILT to each side of the facing,
+## swept in opposite directions, each in its sword's light), one hit with
+## both swords' damage. The hands take turns leading.
 func _cross_cut() -> void:
 	var reach := weapon.reach * WeaponDef.CROSS_REACH_MULT
 	_roll_hit(weapon.special_mult, _stats.offhand_damage)
@@ -508,11 +515,13 @@ func _cross_cut() -> void:
 	sprite.offhand_swing = _special_step % 2 == 1
 	sprite.play(&"attack", facing, true)
 	Sfx.play(&"swing_light", 0.08)
-	var half := deg_to_rad(WeaponDef.CROSS_ARC) / 2.0
 	var tilt := deg_to_rad(WeaponDef.CROSS_TILT)
-	var a := _special_dir.angle()
-	_fx.slash(_hand(), reach, a + tilt - half, a + tilt + half, reach * 0.25, _fx.skill_color(), 0.2)
-	_fx.slash(_hand(), reach, a - tilt + half, a - tilt - half, reach * 0.25, _fx.skill_color(true), 0.2)
+	var mid := _hand() + _special_dir * reach * 0.55
+	var arm := reach * 0.6
+	var v1 := _special_dir.rotated(PI / 2.0 - tilt) * arm
+	var v2 := _special_dir.rotated(PI / 2.0 + tilt) * arm
+	_fx.jab(mid - v1, mid + v1, 8.0, _fx.skill_color(), 0.22)
+	_fx.jab(mid + v2, mid - v2, 8.0, _fx.skill_color(true), 0.22)
 
 
 # --- hit shapes and damage ---

@@ -25,8 +25,14 @@ const FPS: Dictionary[StringName, float] = {
 const LOOPING: Array[StringName] = [&"idle", &"walk"]
 ## Draw order. Armor goes over the outfit's torso, the backpack over the
 ## armor's back and the helm over the hood and hair (it covers every visible
-## hair pixel except the circlet).
-const LAYERS: Array[StringName] = [&"body", &"hair", &"outfit", &"armor", &"backpack", &"helm", &"weapon"]
+## hair pixel except the circlet). The off-hand sword (Lâminas Gêmeas) is
+## last, but goes behind the body in side views (the far hand), and so does
+## a weapon sheathed on the back in front views (see _behind).
+const LAYERS: Array[StringName] = [&"body", &"hair", &"outfit", &"armor", &"backpack", &"helm", &"weapon", &"offhand"]
+## Anims that have sheathed frames (town: no attack, no death).
+const SHEATHE_ANIMS: Array[StringName] = [&"idle", &"walk", &"roll"]
+## Weapon types carried on the back when sheathed (the rest at the hip).
+const BACK_TYPES: Array[StringName] = [&"longsword", &"axe", &"spear", &"bow"]
 ## Layers drawn from the equipped armor, backpack and helm (gear/<item id>.png).
 const GEAR_LAYERS: Array[StringName] = [&"armor", &"backpack", &"helm"]
 const CLIMBER_DIR := "res://assets/characters/climber/"
@@ -43,6 +49,10 @@ var _sprites: Dictionary = {}
 ## Layer -> full 8x13 sheet, and layer -> the weapon type's 8x3 attack strip.
 var _sheets: Dictionary[StringName, Texture2D] = {}
 var _attack_strips: Dictionary[StringName, Texture2D] = {}
+## Sheathed sheets (weapon_sheathed, offhand_sheathed) and the off-hand
+## swing pair (offhand_swing: the off-hand item's weapon sheet; main_held:
+## the main sword's off-hand sheet).
+var _extra: Dictionary[String, Texture2D] = {}
 var weapon_type: StringName = &""
 ## Equipped weapon item id (&"" = draw the type's own sheet).
 var weapon_id: StringName = &""
@@ -53,6 +63,17 @@ var helm_id: StringName = &""
 ## Equipped backpack; it always shows (it is not armor).
 var backpack_id: StringName = Equipment.STARTER_BACKPACK
 var show_armor: bool = true
+## Off-hand sword item id (&"" = none): offhand/<id>.png.
+var offhand_id: StringName = &""
+## The current swing is the off-hand's: during attack frames the weapon and
+## offhand layers trade sheets (the off-hand sword swings, the main one is
+## held) and front and back views mirror, so the swing comes from the other
+## side.
+var offhand_swing: bool = false
+## Weapons put away (town): idle, walk and roll use weapons/<id>_sheathed.png
+## and offhand/<id>_sheathed.png.
+var sheathed: bool = false
+var _dir: StringName = &"down"
 var _row: int = 0
 var _frame: int = 0
 var _time: float = 0.0
@@ -87,6 +108,23 @@ static func weapon_sheet_path(type: StringName, id: StringName = &"") -> String:
 			return own
 	var path := "%sweapons/%s.png" % [CLIMBER_DIR, type]
 	return path if ResourceLoader.exists(path) else "%sweapon.png" % CLIMBER_DIR
+
+
+## Sheet of the weapon put away (hip or back), or "" when the item has none.
+static func sheathed_sheet_path(id: StringName) -> String:
+	if id == &"":
+		return ""
+	var path := "%sweapons/%s_sheathed.png" % [CLIMBER_DIR, id]
+	return path if ResourceLoader.exists(path) else ""
+
+
+## Off-hand sheet of a sword item (in hand, or sheathed on the other hip),
+## or "" when it has none.
+static func offhand_sheet_path(id: StringName, put_away: bool = false) -> String:
+	if id == &"":
+		return ""
+	var path := "%soffhand/%s%s.png" % [CLIMBER_DIR, id, "_sheathed" if put_away else ""]
+	return path if ResourceLoader.exists(path) else ""
 
 
 static func layer_sheet_path(layer: StringName, outfit_dir: String) -> String:
@@ -131,6 +169,23 @@ func set_weapon(type: StringName, id: StringName = &"") -> void:
 	_reload()
 
 
+## Off-hand sword (&"" = none); reloads only when it changed.
+func set_offhand(id: StringName) -> void:
+	if id == offhand_id:
+		return
+	offhand_id = id
+	_reload()
+
+
+## Weapons in hand (false) or put away at the hip or on the back (true).
+func set_sheathed(on: bool) -> void:
+	if on == sheathed:
+		return
+	sheathed = on
+	if not _sprites.is_empty():
+		_apply()
+
+
 ## Backpack item id; reloads only when it changed.
 func set_backpack(id: StringName) -> void:
 	if id == backpack_id:
@@ -165,6 +220,7 @@ func dress(e: Equipment) -> void:
 	helm_id = e.helm
 	backpack_id = e.backpack
 	show_armor = e.show_armor
+	offhand_id = e.offhand if e.dual_active() else &""
 	_reload()
 
 
@@ -183,6 +239,8 @@ func _reload() -> void:
 		var path := ""
 		if layer == &"weapon":
 			path = weapon_sheet_path(weapon_type, weapon_id)
+		elif layer == &"offhand":
+			path = offhand_sheet_path(offhand_id)
 		elif layer in GEAR_LAYERS:
 			path = gear_sheet_path(shown_gear(layer))
 		else:
@@ -191,6 +249,20 @@ func _reload() -> void:
 			_sheets[layer] = load(path) as Texture2D
 		else:
 			_sheets.erase(layer)
+	_extra.clear()
+	for key: String in ["weapon_sheathed", "offhand_sheathed", "offhand_swing", "main_held"]:
+		var p := ""
+		match key:
+			"weapon_sheathed":
+				p = sheathed_sheet_path(weapon_id)
+			"offhand_sheathed":
+				p = offhand_sheet_path(offhand_id, true)
+			"offhand_swing":
+				p = weapon_sheet_path(&"sword", offhand_id) if offhand_id != &"" else ""
+			"main_held":
+				p = offhand_sheet_path(weapon_id)
+		if p != "":
+			_extra[key] = load(p) as Texture2D
 	_attack_strips.clear()
 	if weapon_type != &"":
 		for layer in ATTACK_LAYERS:
@@ -221,9 +293,11 @@ func play(anim_name: StringName, facing: Vector2, restart: bool = false) -> void
 	var flip: bool = (_sprites[&"body"] as Sprite2D).flip_h
 	if absf(facing.y) > absf(facing.x):
 		dir = &"down" if facing.y > 0.0 else &"up"
-		flip = false
+		# an off-hand swing seen from the front or back comes from the other side
+		flip = anim_name == &"attack" and offhand_swing and offhand_id != &""
 	elif facing.x != 0.0:
 		flip = facing.x < 0.0
+	_dir = dir
 	for s: Sprite2D in _sprites.values():
 		s.flip_h = flip
 	var row_name: StringName = &"death" if anim_name == &"death" else StringName("%s_%s" % [anim_name, dir])
@@ -259,10 +333,58 @@ func _process(delta: float) -> void:
 	_apply()
 
 
+## Sheet a layer draws now, when it is not the plain one: sheathed weapons,
+## or the two swords trading places on an off-hand swing. null = the plain one.
+func _special_sheet(layer: StringName) -> Texture2D:
+	if layer != &"weapon" and layer != &"offhand":
+		return null
+	if sheathed and anim in SHEATHE_ANIMS:
+		return _extra.get("weapon_sheathed" if layer == &"weapon" else "offhand_sheathed")
+	if anim == &"attack" and offhand_swing and offhand_id != &"":
+		return _extra.get("offhand_swing" if layer == &"weapon" else "main_held")
+	return null
+
+
+## Whether `layer` goes behind the body now: the off-hand in side views,
+## and a weapon sheathed on the back in front views.
+func _behind(layer: StringName) -> bool:
+	if layer == &"offhand":
+		return _dir == &"side"
+	if layer == &"weapon":
+		return sheathed and anim in SHEATHE_ANIMS and weapon_type in BACK_TYPES and _dir == &"down"
+	return false
+
+
+func _sort_layers() -> void:
+	var order: Array[StringName] = []
+	for layer in LAYERS:
+		if _behind(layer):
+			order.append(layer)
+	for layer in LAYERS:
+		if not _behind(layer):
+			order.append(layer)
+	for i in order.size():
+		var s := _sprites[order[i]] as Sprite2D
+		if s.get_index() != i:
+			move_child(s, i)
+
+
 func _apply() -> void:
+	_sort_layers()
 	var strip_row := _row - ATTACK_ROW if anim == &"attack" else -1
 	for layer: StringName in _sprites:
 		var s := _sprites[layer] as Sprite2D
+		var special := _special_sheet(layer)
+		if special != null:
+			if s.texture != special:
+				s.frame = 0
+				s.texture = special
+				s.vframes = VFRAMES
+			s.frame_coords = Vector2i(_frame, _row)
+			continue
+		if layer == &"offhand" and offhand_id == &"":
+			s.texture = null
+			continue
 		var strip: Texture2D = _attack_strips.get(layer) if strip_row >= 0 else null
 		if strip != null:
 			if s.texture != strip:
