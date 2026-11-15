@@ -1,8 +1,9 @@
 """Check the shipped sheets: size, transparency, colour count, unused climber
 cells empty, villager cells filled per row, no orphan pixels in the climber
 layers, nothing below the ground row the game expects (climber, NPCs and
-villagers 30, enemies 22, boss 44). Also checks every weapon, attack override,
-outfit, armor and helm layer, item icon and rarity frame on disk.
+villagers 30, enemies 22, boss 44). Also checks every weapon layer (per type
+and per item), attack override, outfit, armor, helm and backpack layer, item
+icon and rarity frame on disk.
 
 python3 -I art-src/check_art.py <repo_root>
 """

@@ -144,3 +144,69 @@ func test_wardrobe_toggle_and_preview() -> void:
 	T.eq(_layer(player.sprite, &"armor").texture, null, "the hero follows it")
 	town.free()
 	_game().new_run()
+
+
+func test_every_weapon_item_has_its_own_sheet() -> void:
+	var ids := ItemDB.ids(&"weapon")
+	T.eq(ids.size(), 12, "12 weapons")
+	for id in ids:
+		var type := ItemDB.weapon_type(id)
+		var path := LayeredSprite.weapon_sheet_path(type, id)
+		T.eq(path, "res://assets/characters/climber/weapons/%s.png" % id)
+		var tex := load(path) as Texture2D
+		T.eq(tex.get_size(), Vector2(LayeredSprite.COLS, LayeredSprite.VFRAMES) * LayeredSprite.FRAME_SIZE, String(id))
+	T.eq(LayeredSprite.weapon_sheet_path(&"axe", &"axe_nope"), "res://assets/characters/climber/weapons/axe.png",
+			"unknown item: the type's sheet")
+	T.eq(LayeredSprite.weapon_sheet_path(&"axe"), "res://assets/characters/climber/weapons/axe.png", "no item: the type's sheet")
+	T.eq(LayeredSprite.weapon_sheet_path(&"nope"), "res://assets/characters/climber/weapon.png", "unknown type: the default")
+
+
+func test_every_backpack_has_a_layer() -> void:
+	var ids := ItemDB.ids(&"backpack")
+	T.eq(ids.size(), 3)
+	for id in ids:
+		T.eq(LayeredSprite.gear_sheet_path(id), "res://assets/characters/climber/gear/%s.png" % id)
+		for type in WEAPON_TYPES:
+			var has_override := LayeredSprite.attack_strip_path(type, &"outfit") != ""
+			T.eq(LayeredSprite.gear_attack_path(type, id) != "", has_override, "%s %s" % [type, id])
+	T.ok(LayeredSprite.LAYERS.find(&"backpack") > LayeredSprite.LAYERS.find(&"armor"), "backpack over the armor")
+	T.ok(LayeredSprite.LAYERS.find(&"backpack") < LayeredSprite.LAYERS.find(&"helm"), "helm over the backpack")
+
+
+func test_dress_draws_weapon_item_and_backpack() -> void:
+	var s := _sprite()
+	var e := Equipment.starter()
+	e.weapon = &"spear_dragoon"
+	e.backpack = &"backpack_large"
+	e.show_armor = false
+	s.dress(e)
+	T.eq(_layer(s, &"weapon").texture.resource_path, "res://assets/characters/climber/weapons/spear_dragoon.png")
+	T.eq(_layer(s, &"backpack").texture.resource_path, LayeredSprite.gear_sheet_path(&"backpack_large"),
+			"the backpack shows with the armor hidden")
+	s.play(&"attack", Vector2.RIGHT, true)
+	T.eq(_layer(s, &"backpack").texture.resource_path, LayeredSprite.gear_attack_path(&"spear", &"backpack_large"),
+			"the spear's attack rows")
+	s.set_backpack(&"backpack_small")
+	T.eq(_layer(s, &"backpack").texture.resource_path, LayeredSprite.gear_attack_path(&"spear", &"backpack_small"))
+	s.free()
+
+
+func test_player_sprite_follows_weapon_and_backpack() -> void:
+	_game().new_run()
+	var run: RunState = _game().run
+	var town := (load("res://world/town.tscn") as PackedScene).instantiate()
+	_tree().root.add_child(town)
+	await _tree().process_frame
+	var player := town.get_node("Player") as Player
+	T.eq(_layer(player.sprite, &"backpack").texture.resource_path, LayeredSprite.gear_sheet_path(&"backpack_small"),
+			"starter backpack")
+	T.eq(_layer(player.sprite, &"weapon").texture.resource_path, "res://assets/characters/climber/weapons/sword_iron.png")
+	run.inventory.add(&"axe_war")
+	T.ok(run.equip(&"axe_war"))
+	T.eq(player.sprite.weapon_id, &"axe_war")
+	T.eq(_layer(player.sprite, &"weapon").texture.resource_path, "res://assets/characters/climber/weapons/axe_war.png")
+	run.inventory.add(&"backpack_medium")
+	T.ok(run.equip(&"backpack_medium"))
+	T.eq(_layer(player.sprite, &"backpack").texture.resource_path, LayeredSprite.gear_sheet_path(&"backpack_medium"))
+	town.free()
+	_game().new_run()

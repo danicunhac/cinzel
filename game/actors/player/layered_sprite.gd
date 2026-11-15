@@ -23,15 +23,16 @@ const FPS: Dictionary[StringName, float] = {
 	&"idle": 6.0, &"walk": 12.0, &"attack": 22.0, &"roll": 15.0, &"death": 9.0,
 }
 const LOOPING: Array[StringName] = [&"idle", &"walk"]
-## Draw order. Armor goes over the outfit's torso and the helm over the
-## hood and hair (it covers every visible hair pixel except the circlet).
-const LAYERS: Array[StringName] = [&"body", &"hair", &"outfit", &"armor", &"helm", &"weapon"]
-## Layers drawn from the equipped armor and helm (gear/<item id>.png).
-const GEAR_LAYERS: Array[StringName] = [&"armor", &"helm"]
+## Draw order. Armor goes over the outfit's torso, the backpack over the
+## armor's back and the helm over the hood and hair (it covers every visible
+## hair pixel except the circlet).
+const LAYERS: Array[StringName] = [&"body", &"hair", &"outfit", &"armor", &"backpack", &"helm", &"weapon"]
+## Layers drawn from the equipped armor, backpack and helm (gear/<item id>.png).
+const GEAR_LAYERS: Array[StringName] = [&"armor", &"backpack", &"helm"]
 const CLIMBER_DIR := "res://assets/characters/climber/"
 ## Layers whose attack rows a weapon type can replace (attacks/<type>_<layer>.png,
 ## 8x3 frames: attack_down, attack_up, attack_side).
-const ATTACK_LAYERS: Array[StringName] = [&"body", &"hair", &"outfit", &"armor", &"helm"]
+const ATTACK_LAYERS: Array[StringName] = [&"body", &"hair", &"outfit", &"armor", &"backpack", &"helm"]
 const ATTACK_ROW := 6
 
 var speed_scale: float = 1.0
@@ -43,10 +44,14 @@ var _sprites: Dictionary = {}
 var _sheets: Dictionary[StringName, Texture2D] = {}
 var _attack_strips: Dictionary[StringName, Texture2D] = {}
 var weapon_type: StringName = &""
+## Equipped weapon item id (&"" = draw the type's own sheet).
+var weapon_id: StringName = &""
 ## Equipped armor and helm item ids (&"" = none) and whether they show
 ## (the wardrobe's "Mostrar armadura"; off = only the outfit).
 var armor_id: StringName = &""
 var helm_id: StringName = &""
+## Equipped backpack; it always shows (it is not armor).
+var backpack_id: StringName = Equipment.STARTER_BACKPACK
 var show_armor: bool = true
 var _row: int = 0
 var _frame: int = 0
@@ -66,14 +71,20 @@ func _ready() -> void:
 	play(&"idle", Vector2.DOWN)
 
 
-## Layer swap (docs/assets.md): weapon from weapons/<type>.png (else the
-## default weapon.png); hair and outfit from outfits/<id>/<layer>.png (else
-## the default sheets). The weapon type's own attack rows (8x3 strips) come
-## from outfits/<id>/attacks/<type>_<layer>.png for hair and outfit, else
-## attacks/<type>_<layer>.png; the sword has none and keeps rows 6-8.
-## Armor and helm come from gear/<item id>.png, their attack rows from
-## gear/attacks/<type>_<item id>.png (art-src/build_gear.py).
-static func weapon_sheet_path(type: StringName) -> String:
+## Layer swap (docs/assets.md): weapon from weapons/<item id>.png (the
+## item's own colours and shape, art-src/build_weapon_items.py), else
+## weapons/<type>.png, else the default weapon.png; hair and outfit from
+## outfits/<id>/<layer>.png (else the default sheets). The weapon type's own
+## attack rows (8x3 strips) come from outfits/<id>/attacks/<type>_<layer>.png
+## for hair and outfit, else attacks/<type>_<layer>.png; the sword has none
+## and keeps rows 6-8. Armor, backpack and helm come from gear/<item id>.png,
+## their attack rows from gear/attacks/<type>_<item id>.png
+## (art-src/build_gear.py, art-src/build_backpacks.py).
+static func weapon_sheet_path(type: StringName, id: StringName = &"") -> String:
+	if id != &"":
+		var own := "%sweapons/%s.png" % [CLIMBER_DIR, id]
+		if ResourceLoader.exists(own):
+			return own
 	var path := "%sweapons/%s.png" % [CLIMBER_DIR, type]
 	return path if ResourceLoader.exists(path) else "%sweapon.png" % CLIMBER_DIR
 
@@ -113,8 +124,18 @@ static func attack_strip_path(type: StringName, layer: StringName, outfit_dir: S
 var outfit_dir: String = ""
 
 
-func set_weapon(type: StringName) -> void:
+## Weapon type (attack poses) and item id (its own sheet; &"" = the type's).
+func set_weapon(type: StringName, id: StringName = &"") -> void:
 	weapon_type = type
+	weapon_id = id
+	_reload()
+
+
+## Backpack item id; reloads only when it changed.
+func set_backpack(id: StringName) -> void:
+	if id == backpack_id:
+		return
+	backpack_id = id
 	_reload()
 
 
@@ -135,18 +156,23 @@ func set_gear(armor: StringName, helm: StringName, show: bool = true) -> void:
 	_reload()
 
 
-## Dresses the sprite as `e` is worn: weapon type, outfit, armor and helm.
+## Dresses the sprite as `e` is worn: weapon, outfit, armor, helm and backpack.
 func dress(e: Equipment) -> void:
 	weapon_type = ItemDB.weapon_type(e.weapon)
+	weapon_id = e.weapon
 	outfit_dir = String(e.outfit).trim_prefix("outfit_")
 	armor_id = e.armor
 	helm_id = e.helm
+	backpack_id = e.backpack
 	show_armor = e.show_armor
 	_reload()
 
 
-## Item id drawn on a gear layer now (&"" when empty or hidden).
+## Item id drawn on a gear layer now (&"" when empty or hidden). The
+## backpack ignores "Mostrar armadura".
 func shown_gear(layer: StringName) -> StringName:
+	if layer == &"backpack":
+		return backpack_id
 	if not show_armor:
 		return &""
 	return armor_id if layer == &"armor" else helm_id if layer == &"helm" else &""
@@ -156,7 +182,7 @@ func _reload() -> void:
 	for layer in LAYERS:
 		var path := ""
 		if layer == &"weapon":
-			path = weapon_sheet_path(weapon_type)
+			path = weapon_sheet_path(weapon_type, weapon_id)
 		elif layer in GEAR_LAYERS:
 			path = gear_sheet_path(shown_gear(layer))
 		else:
