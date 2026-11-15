@@ -87,7 +87,15 @@ Comum (branco), Rara (azul), Épica (roxo). A raridade aumenta os números, e as
 - 4 capuzes/elmos
 - 3 mochilas: 8, 14 e 20 espaços
 - 8 relíquias (as atuais)
-- 5 roupas visuais (a inicial e mais 4)
+- 7 roupas visuais, cada uma com a sua silhueta (o ícone mostra o mesmo recorte):
+  - Roupa de Escalador (inicial): capuz verde, jaqueta de couro;
+  - Casaco Longo Escuro (loja): casaco preto até os pés, fechado com costura;
+  - Armadura Leve de Cavaleiro (chefe do andar 1): coifa de malha, peito prateado, tabardo carmim até os joelhos, ombreiras;
+  - Túnica de Ferreiro (loja): túnica até o meio da coxa e avental de couro até os joelhos;
+  - Manto de Mago (baús): manto violeta até o chão, mangas largas;
+  - Sobretudo da Meia-Noite (chefe do andar 2, épica): sobretudo de couro negro abaixo dos joelhos, aberto na frente, cauda partida que balança no passo e no rolamento, friso prateado;
+  - Traje do Espadachim Sombrio (chefe do andar 3, épica): jaqueta negra justa de gola alta, capa curta num ombro com um fio vermelho, calça grafite, cabelo curto espetado.
+  Cada chefe dá a sua roupa na primeira vitória (toast de saque como os outros itens).
 - 10 materiais (3 por andar, mais 1 raro de chefe)
 
 ## 6. Mochila, saque e loja (novo, proposta)

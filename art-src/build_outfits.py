@@ -1,23 +1,19 @@
-"""Build the visual outfits (hair and outfit layers) of the climber.
+"""Copy the starter outfit and hold the recolour helpers of the visual
+outfits (hair and outfit layers) of the climber.
 
 python3 -I art-src/build_outfits.py <repo_root> [--force]
 
 Inputs: game/assets/characters/climber/{body,hair,outfit}.png and the attack
 overrides climber/attacks/<type>_{body,hair,outfit}.png (build_weapons.py).
-Outputs, per outfit id:
-  climber/outfits/<id>/hair.png, outfit.png        8x13 grid of 32x32
-  climber/outfits/<id>/attacks/<type>_hair.png, <type>_outfit.png
-    8x3 (attack_down, attack_up, attack_side), one pair per attack override
-
-Every outfit is the shipped starter layers repainted pixel by pixel, so it
-lines up with body.png and every weapon in every frame by construction:
+Outputs: climber/outfits/starter/ (plain copies of the starter layers and
+their attack overrides). The other outfits come from build_outfit_shapes.py,
+which starts every cell from repaint() here:
   - each colour group of the starter (green hood, olive scarf, leather
     jacket/gloves/backpack, khaki trousers and buckles, brown hair) is
     remapped by brightness rank onto the outfit's own ramp;
-  - shape edits on the standing rows (idle, walk, attack): coat tails or a
-    robe over the legs (the gap between the legs is filled and closed with
-    the outline), and a leather apron down the front for the smith.
-Skin and the dark outline are never touched. Starter = plain copies.
+  - the torso of the front views takes the `apron` ramp when the outfit
+    has one (the smith).
+Skin and the dark outline are never touched.
 """
 import os
 import shutil
@@ -28,65 +24,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from PIL import Image  # noqa: E402
 
 import build_climber as bc  # noqa: E402
-from artlib import OUTLINE, is_green, save_guarded  # noqa: E402
+from artlib import OUTLINE, is_green  # noqa: E402
 
 F = 32
 COLS = 8
 ROWS = bc.ROW_NAMES
 ATTACK_ROWS = ["attack_down", "attack_up", "attack_side"]
 
-# Ramps dark -> light. Keys: hood (green in hair.png), hair (warm in
-# hair.png), scarf (green in outfit.png), leather (jacket, gloves, backpack),
-# trim (khaki above the legs: belt, buckles, straps), legs (trousers), and
-# skirt (what covers the upper legs: coat tails, robe, apron; None = legs).
-# legs_cover: fraction of the leg length the skirt covers (0 = none).
-OUTFITS = {
-    # SAO-like long dark coat with a high collar, dark hair under a black hood
-    "casaco_longo": {
-        "hood": [(36, 35, 50), (52, 51, 70), (70, 69, 94), (94, 93, 122)],
-        "hair": [(30, 28, 38), (44, 42, 56), (60, 58, 76)],
-        "scarf": [(48, 48, 64), (82, 84, 106), (130, 134, 156)],
-        "leather": [(32, 31, 44), (44, 43, 60), (58, 57, 80), (78, 77, 104), (104, 103, 134)],
-        "trim": [(96, 98, 118), (146, 148, 166), (196, 198, 210)],
-        "legs": [(40, 40, 50), (56, 56, 70), (74, 74, 92)],
-        "skirt": "leather",
-        "legs_cover": 0.6,
-    },
-    # light knight: chainmail coif, white-silver plate, muted crimson
-    "cavaleiro_leve": {
-        "hood": [(62, 66, 80), (98, 104, 120), (138, 144, 160), (178, 184, 198)],
-        "hair": None,
-        "scarf": [(70, 24, 32), (102, 36, 44), (134, 54, 60)],
-        "leather": [(92, 94, 110), (134, 138, 154), (178, 182, 194), (214, 216, 224), (240, 240, 244)],
-        "trim": [(96, 34, 42), (132, 52, 58), (162, 74, 76)],
-        "legs": [(52, 22, 30), (78, 32, 40), (104, 44, 50)],
-        "skirt": "scarf",
-        "legs_cover": 0.35,
-    },
-    # smith: red bandana, linen tunic, leather apron, dark trousers
-    "tunica_ferreiro": {
-        "hood": [(72, 28, 26), (102, 42, 34), (132, 60, 44), (156, 82, 60)],
-        "hair": None,
-        "scarf": [(50, 33, 22), (74, 49, 30), (98, 67, 40)],
-        "leather": [(108, 94, 78), (146, 131, 106), (182, 167, 136), (210, 197, 164), (230, 218, 188)],
-        "trim": [(58, 39, 24), (88, 59, 34), (118, 82, 48)],
-        "legs": [(44, 33, 28), (64, 49, 40), (86, 67, 54)],
-        "apron": [(56, 37, 24), (82, 55, 32), (108, 75, 44)],
-        "skirt": None,
-        "legs_cover": 0.0,
-    },
-    # mage: deep violet hood and floor-length robe, pale teal trim
-    "manto_mago": {
-        "hood": [(30, 22, 52), (45, 33, 77), (62, 47, 102), (82, 65, 128)],
-        "hair": None,
-        "scarf": [(56, 92, 100), (92, 136, 142), (146, 186, 186)],
-        "leather": [(31, 23, 53), (46, 35, 78), (64, 49, 104), (86, 69, 132), (110, 93, 158)],
-        "trim": [(56, 92, 100), (92, 136, 142), (146, 186, 186)],
-        "legs": [(31, 23, 53), (46, 35, 78), (64, 49, 104)],
-        "skirt": "leather",
-        "legs_cover": 0.86,
-    },
-}
+# The other outfits (their ramps and their own silhouettes) are built by
+# build_outfit_shapes.py on top of repaint() below.
 
 
 def lum(c):
@@ -319,18 +265,6 @@ def main():
             if force or not os.path.exists(dst):
                 shutil.copyfile(os.path.join(att_dir, "%s_%s.png" % (t, k)), dst)
                 print("wrote", dst)
-    for oid, spec in OUTFITS.items():
-        odir = os.path.join(climber, "outfits", oid)
-        os.makedirs(os.path.join(odir, "attacks"), exist_ok=True)
-        h, o = repaint_sheet(ROWS, base["body"], base["hair"], base["outfit"], base["weapon"], spec, ramps)
-        save_guarded(h, os.path.join(odir, "hair.png"), force)
-        save_guarded(o, os.path.join(odir, "outfit.png"), force)
-        for t in kinds:
-            a = attacks[t]
-            wa = load(os.path.join(climber, "weapons", t + ".png")).crop((0, 6 * F, COLS * F, 9 * F))
-            h, o = repaint_sheet(ATTACK_ROWS, a["body"], a["hair"], a["outfit"], wa, spec, ramps)
-            save_guarded(h, os.path.join(odir, "attacks", "%s_hair.png" % t), force)
-            save_guarded(o, os.path.join(odir, "attacks", "%s_outfit.png" % t), force)
 
 
 if __name__ == "__main__":

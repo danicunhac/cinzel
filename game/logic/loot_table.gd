@@ -7,7 +7,7 @@ extends RefCounted
 ##   horn (and embers on floor 3).
 ##   Chests: one piece of gear or a relic (rarely a chest outfit).
 ##   Bosses: gear of rare or better, 3 floor materials, maybe the tower
-##   crystal, and the first boss gives an outfit.
+##   crystal, and each boss gives its outfit on the first kill.
 ## Rarity is weighted by floor and run clock level.
 ## Drops are LootDrop (id, qty).
 
@@ -37,7 +37,10 @@ const BOSS_MATERIALS := 3
 const BOSS_CRYSTAL := &"mat_tower_crystal"
 ## Chance of the tower crystal per boss floor.
 const BOSS_CRYSTAL_CHANCE: Dictionary[int, float] = {1: 0.35, 2: 0.6, 3: 1.0}
-const BOSS_OUTFITS: Dictionary[int, StringName] = {1: &"outfit_cavaleiro_leve"}
+## Outfit each floor's boss gives (once: unlocked outfits are excluded).
+const BOSS_OUTFITS: Dictionary[int, StringName] = {
+	1: &"outfit_cavaleiro_leve", 2: &"outfit_sobretudo_noite", 3: &"outfit_traje_sombra",
+}
 const RARITIES: Array[StringName] = [&"common", &"rare", &"epic"]
 
 

@@ -19,7 +19,7 @@ from preview import CLIMBER_ROWS, gif, on_floor, sheet_rows  # noqa: E402
 
 F = 32
 TYPES = ["sword", "longsword", "axe", "spear", "dagger", "bow"]
-OUTFITS = ["starter", "casaco_longo", "cavaleiro_leve", "tunica_ferreiro", "manto_mago"]
+OUTFITS = ["starter", "casaco_longo", "cavaleiro_leve", "tunica_ferreiro", "manto_mago", "sobretudo_noite", "traje_sombra"]
 ATTACK_ROW0 = 6
 
 

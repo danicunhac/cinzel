@@ -45,7 +45,7 @@ SHEETS = [
         "mat_iron_ore", "mat_old_leather", "mat_ash_wood",
         "mat_chitin", "mat_silver_ore", "mat_coal"]),
 ]
-OUTFITS = ["starter", "casaco_longo", "cavaleiro_leve", "tunica_ferreiro", "manto_mago"]
+OUTFITS = ["starter", "casaco_longo", "cavaleiro_leve", "tunica_ferreiro", "manto_mago", "sobretudo_noite", "traje_sombra"]
 COLORS = 16
 BRIGHTEN = {"armor_shadow": 1.6, "mat_obsidian": 1.5}
 # Rarity ring colours: (outer dark edge, main, highlight on the top-left).

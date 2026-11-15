@@ -140,3 +140,41 @@ func test_floor_three_boss_always_gives_crystal() -> void:
 			if d.id == &"mat_tower_crystal":
 				has = true
 		T.ok(has, "crystal on floor 3 boss")
+
+
+
+func _outfits_in(drops: Array[LootDrop]) -> Array[StringName]:
+	var out: Array[StringName] = []
+	for d: LootDrop in drops:
+		if ItemDB.kind(d.id) == &"outfit":
+			out.append(d.id)
+	return out
+
+
+func test_each_boss_gives_its_outfit_once() -> void:
+	var want: Dictionary[int, StringName] = {
+		1: &"outfit_cavaleiro_leve", 2: &"outfit_sobretudo_noite", 3: &"outfit_traje_sombra",
+	}
+	for floor_num: int in want:
+		var id := want[floor_num]
+		T.eq(ItemCatalog.ITEMS[id]["unlock"], &"boss", String(id))
+		T.eq(_outfits_in(LootTable.roll_boss(floor_num, 0, _rng(3))), [id] as Array[StringName],
+				"first kill of floor %d" % floor_num)
+		var owned: Array[StringName] = [id]
+		T.eq(_outfits_in(LootTable.roll_boss(floor_num, 0, _rng(3), owned)).size(), 0,
+				"not again once unlocked (floor %d)" % floor_num)
+	T.eq(ItemDB.rarity(&"outfit_sobretudo_noite"), &"epic")
+	T.eq(ItemDB.rarity(&"outfit_traje_sombra"), &"epic")
+
+
+func test_boss_outfit_pickup_unlocks_with_a_toast() -> void:
+	var run := RunState.new()
+	var toasts: Array[StringName] = []
+	run.looted.connect(func(id: StringName, _qty: int) -> void: toasts.append(id))
+	for d: LootDrop in LootTable.roll_boss(2, 0, _rng(5), run.unlocked_outfits):
+		run.take_loot(d.id, d.qty)
+	T.ok(run.unlocked_outfits.has(&"outfit_sobretudo_noite"), "floor 2 boss unlocks the greatcoat")
+	T.ok(toasts.has(&"outfit_sobretudo_noite"), "loot toast for the outfit")
+	for d: LootDrop in LootTable.roll_boss(3, 0, _rng(6), run.unlocked_outfits):
+		run.take_loot(d.id, d.qty)
+	T.ok(run.unlocked_outfits.has(&"outfit_traje_sombra"), "floor 3 boss unlocks the swordsman suit")

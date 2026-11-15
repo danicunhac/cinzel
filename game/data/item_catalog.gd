@@ -246,7 +246,7 @@ const ITEMS: Dictionary[StringName, Dictionary] = {
 	},
 	&"outfit_cavaleiro_leve": {
 		"kind": &"outfit", "rarity": &"rare", "unlock": &"boss",
-		"name": "Armadura Leve de Cavaleiro", "desc": "Prata e azul. Prêmio do primeiro chefe.", "base_price": 80, "mods": {},
+		"name": "Armadura Leve de Cavaleiro", "desc": "Prata com tabardo carmim e ombreiras. Prêmio do chefe do andar 1.", "base_price": 80, "mods": {},
 	},
 	&"outfit_tunica_ferreiro": {
 		"kind": &"outfit", "rarity": &"common", "unlock": &"market",
@@ -255,5 +255,15 @@ const ITEMS: Dictionary[StringName, Dictionary] = {
 	&"outfit_manto_mago": {
 		"kind": &"outfit", "rarity": &"epic", "unlock": &"chest",
 		"name": "Manto de Mago", "desc": "Manto com estrelas bordadas. Achado em baús.", "base_price": 50, "mods": {},
+	},
+	&"outfit_sobretudo_noite": {
+		"kind": &"outfit", "rarity": &"epic", "unlock": &"boss",
+		"name": "Sobretudo da Meia-Noite", "desc": "Couro negro, cauda partida e friso prata. Prêmio do chefe do andar 2.",
+		"base_price": 120, "mods": {},
+	},
+	&"outfit_traje_sombra": {
+		"kind": &"outfit", "rarity": &"epic", "unlock": &"boss",
+		"name": "Traje do Espadachim Sombrio", "desc": "Gola alta, capa curta num ombro e um fio vermelho. Prêmio do chefe do andar 3.",
+		"base_price": 120, "mods": {},
 	},
 }
