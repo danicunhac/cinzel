@@ -116,15 +116,15 @@ static func roll_boss(floor_num: int, clock_level: int, rng: RandomNumberGenerat
 
 
 ## A random item of `kind` and `rarity`; falls back to a lower rarity when the
-## kind has none of that rarity.
+## kind has none of that rarity. Items with no source never drop.
 static func _gear(kind: StringName, rarity: StringName, rng: RandomNumberGenerator) -> StringName:
-	var pool := ItemDB.ids_by(kind, rarity)
+	var pool := ItemDB.sourced_by(kind, rarity)
 	var i := RARITIES.find(rarity)
 	while pool.is_empty() and i > 0:
 		i -= 1
-		pool = ItemDB.ids_by(kind, RARITIES[i])
+		pool = ItemDB.sourced_by(kind, RARITIES[i])
 	if pool.is_empty():
-		pool = ItemDB.ids(kind)
+		pool = ItemDB.sourced_by(kind)
 	return pool[rng.randi_range(0, pool.size() - 1)]
 
 

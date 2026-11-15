@@ -8,6 +8,7 @@ Inputs (see docs/assets.md), all on magenta:
   art-src/gen/icons-armor-sheet.png      6 armors, 3x2
   art-src/gen/icons-helms-packs-sheet.png  4 helms + 2 backpacks, 3x2
   art-src/gen/icons-backpack-large.png   1 backpack
+  art-src/gen/r2/icon-sword-midnight-2.png  1 weapon (sword_midnight)
   art-src/gen/icons-materials-sheet.png  10 materials, 5x2 (only 4 still used)
   art-src/gen/icons-materials2-sheet.png 6 materials, 3x2
   game/assets/characters/climber/{body.png, outfits/<id>/{hair,outfit}.png}
@@ -38,6 +39,7 @@ SHEETS = [
         "helm_hood", "helm_iron", "helm_horned",
         "helm_circlet", "backpack_small", "backpack_medium"]),
     ("icons-backpack-large.png", ["backpack_large"]),
+    ("r2/icon-sword-midnight-2.png", ["sword_midnight"]),
     ("icons-materials-sheet.png", [
         None, None, None, None, None,
         "mat_beetle_horn", "mat_obsidian", None, "mat_specter_cloth", "mat_tower_crystal"]),
@@ -46,8 +48,13 @@ SHEETS = [
         "mat_chitin", "mat_silver_ore", "mat_coal"]),
 ]
 OUTFITS = ["starter", "casaco_longo", "cavaleiro_leve", "tunica_ferreiro", "manto_mago"]
+# Thin weapon sheets: drawn crisp (see icon()).
+CRISP = ("icons-weapons-sheet.png", "r2/icon-sword-midnight-2.png")
 COLORS = 16
-BRIGHTEN = {"armor_shadow": 1.6, "mat_obsidian": 1.5}
+BRIGHTEN = {"armor_shadow": 1.6, "mat_obsidian": 1.5, "sword_midnight": 1.4}
+# Thin blades that would shrink to 1 px: stretched across the blade (x k)
+# before the downscale, so the black blade keeps its silver edges.
+WIDEN = {"sword_midnight": 2.0}
 # Rarity ring colours: (outer dark edge, main, highlight on the top-left).
 RARITY = {
     "common": ((60, 56, 60), (214, 210, 200), (250, 248, 240)),
@@ -111,6 +118,15 @@ def boxes(img):
     return out
 
 
+def widen(img, k):
+    """Stretch a diagonal (bottom-left to top-right) weapon across its
+    length by k."""
+    r = img.rotate(45, expand=True, resample=Image.NEAREST)
+    r = r.crop(r.getbbox())
+    r = r.resize((round(r.width * k), r.height), Image.NEAREST).rotate(-45, expand=True, resample=Image.NEAREST)
+    return r.crop(r.getbbox())
+
+
 def ring(colors):
     """2 px ring: bright outer line (lit on the top-left), dark inner line,
     clipped corners."""
@@ -159,9 +175,11 @@ def main():
             if name is None:  # retired material, cell kept for the box count
                 continue
             src = img.crop(box)
+            if name in WIDEN:
+                src = widen(src, WIDEN[name])
             if name in BRIGHTEN:
                 src = brighten(src, BRIGHTEN[name])
-            save_guarded(icon(src, fn == SHEETS[0][0]), os.path.join(out, name + ".png"), force)
+            save_guarded(icon(src, fn in CRISP), os.path.join(out, name + ".png"), force)
     for oid in OUTFITS:
         if os.path.exists(os.path.join(root, "game/assets/characters/climber/outfits", oid, "outfit.png")):
             save_guarded(quantize(bust(root, oid), 24), os.path.join(out, "outfit_%s.png" % oid), force)

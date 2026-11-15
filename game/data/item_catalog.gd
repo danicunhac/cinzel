@@ -19,12 +19,14 @@ extends RefCounted
 ##                          armor: defense, max_hp, weight (0..4)
 ##                          helm: crit, defense
 ##   slots: int             backpack only
+##   no_source: bool        optional: in the catalog, but no loot table,
+##                          market stock or forge recipe hands it out
 ##   floor: int             material only: tower floor, 0 = boss material
 ##   unlock: StringName     outfit only: start, market, chest, boss
 ## The icon path is not stored: it is always res://assets/items/<id>.png.
 
 const ITEMS: Dictionary[StringName, Dictionary] = {
-	# Weapons: 2 per type.
+	# Weapons: 2 per type (the sword has a third, sword_midnight, with no source).
 	&"sword_iron": {
 		"kind": &"weapon", "rarity": &"common", "weapon_type": &"sword",
 		"name": "Espada de Ferro", "desc": "Equilibrada. Combo de 3 golpes.",
@@ -34,6 +36,12 @@ const ITEMS: Dictionary[StringName, Dictionary] = {
 		"kind": &"weapon", "rarity": &"rare", "weapon_type": &"sword",
 		"name": "Espada do Cavaleiro", "desc": "Uma espada bem forjada, mais forte e precisa.",
 		"base_price": 60, "stats": {"damage": 13, "attack_speed": 1.05, "range": 22.0, "crit": 0.08}, "mods": {},
+	},
+	&"sword_midnight": {
+		"kind": &"weapon", "rarity": &"epic", "weapon_type": &"sword",
+		"name": "Lâmina da Meia-Noite", "desc": "Lâmina negra de fio prateado. Leve e certeira.",
+		"base_price": 110, "stats": {"damage": 16, "attack_speed": 1.1, "range": 23.0, "crit": 0.12}, "mods": {},
+		"fx_color": Color(0.46, 0.42, 0.72), "no_source": true,
 	},
 	&"longsword_steel": {
 		"kind": &"weapon", "rarity": &"common", "weapon_type": &"longsword",
