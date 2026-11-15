@@ -22,8 +22,11 @@ const FLASH_CRIT := Color(3.0, 2.4, 0.8)
 const FLASH_HURT := Color(2.6, 0.55, 0.5)
 const FLASH_TIME := 0.08
 const HURT_FLASH_TIME := 0.1
-const NUMBER_LIFE := 0.55
-const NUMBER_RISE := 12.0
+## Damage numbers: font size (pixel font, multiple of 8), time on screen
+## and how far they rise. Big enough to read over a 24 px enemy.
+const NUMBER_SIZE := 16
+const NUMBER_LIFE := 0.9
+const NUMBER_RISE := 16.0
 const COIN_TEX := preload("res://assets/ui/hud/coin.png")
 const COIN_FRAME := Vector2(9, 9)
 const COIN_FLY_TIME := 0.4
@@ -206,15 +209,15 @@ func number(pos: Vector2, value: int, color: Color = Color(1, 1, 1), crit: bool 
 		return null
 	var l := Label.new()
 	l.text = ("%d!" % value) if crit else str(value)
-	l.add_theme_font_size_override(&"font_size", 8)
+	l.add_theme_font_size_override(&"font_size", NUMBER_SIZE)
 	l.add_theme_color_override(&"font_color", color)
 	l.add_theme_color_override(&"font_outline_color", Color(0.05, 0.03, 0.05))
 	l.add_theme_constant_override(&"outline_size", 3)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.size = Vector2(40, 12)
-	l.pivot_offset = Vector2(20, 6)
+	l.size = Vector2(48, 18)
+	l.pivot_offset = Vector2(24, 9)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	l.position = (pos - Vector2(20, 6) + Vector2(randf_range(-3, 3), 0)).round()
+	l.position = (pos - Vector2(24, 12) + Vector2(randf_range(-5, 5), randf_range(-3, 0))).round()
 	_world.add_child(l)
 	var tw := l.create_tween()
 	tw.set_ignore_time_scale(true)

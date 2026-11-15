@@ -1,13 +1,18 @@
 extends Node
 ## Autoload. Inactive unless user args contain --screenshot=<res path>.
 ## godot --path game -- --screenshot=res://x.tscn --out=/abs/file.png --frames=60
+## `--hit=<dmg>` (optional): HIT_LEAD frames before the capture the first
+## enemy takes a player hit of <dmg> (checks damage numbers and flashes).
+
+const HIT_LEAD := 8
 
 
 func _ready() -> void:
 	var args := _parse_args()
 	if not args.has("screenshot"):
 		return
-	_capture(args["screenshot"], args.get("out", "/tmp/cinzel.png"), int(args.get("frames", "60")))
+	_capture(args["screenshot"], args.get("out", "/tmp/cinzel.png"), int(args.get("frames", "60")),
+			int(args.get("hit", "0")))
 
 
 func _parse_args() -> Dictionary:
@@ -20,7 +25,7 @@ func _parse_args() -> Dictionary:
 	return result
 
 
-func _capture(scene_path: String, out_path: String, frames: int) -> void:
+func _capture(scene_path: String, out_path: String, frames: int, hit: int = 0) -> void:
 	var packed := load(scene_path) as PackedScene
 	if packed == null:
 		push_error("screenshot: cannot load %s" % scene_path)
@@ -32,6 +37,8 @@ func _capture(scene_path: String, out_path: String, frames: int) -> void:
 	var scene := packed.instantiate()
 	get_tree().root.add_child.call_deferred(scene)
 	for i in frames:
+		if hit > 0 and i == maxi(frames - HIT_LEAD, 0):
+			_hit_first_enemy(hit)
 		await get_tree().process_frame
 	var img := get_viewport().get_texture().get_image()
 	DirAccess.make_dir_recursive_absolute(out_path.get_base_dir())
@@ -39,3 +46,18 @@ func _capture(scene_path: String, out_path: String, frames: int) -> void:
 	if err != OK:
 		push_error("screenshot: save failed %d" % err)
 	Sfx.quit_clean(0 if err == OK else 1)
+
+
+func _hit_first_enemy(dmg: int) -> void:
+	var enemies := get_tree().get_nodes_in_group(&"enemy")
+	if enemies.is_empty():
+		push_warning("screenshot: --hit found no enemy")
+		return
+	var e := enemies[0] as EnemyBase
+	var h := Hitbox.new()
+	h.damage = dmg
+	h.team = &"player"
+	add_child(h)
+	h.global_position = e.global_position
+	e._on_hit(h)
+	h.queue_free()
