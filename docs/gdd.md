@@ -36,7 +36,7 @@ Vitória: vencer o chefe do andar 3.
 - **Cidade sem armas:** na cidade o ataque não funciona. Apertar o botão mostra o aviso "Sem armas na cidade".
 - **Entrada da torre:** para entrar é preciso subir a escada da torre, no fim do caminho norte, e passar pela porta. Com só o andar 1 liberado, entra direto; com mais andares, abre a lista de andares. Quem volta a pé pela escada do andar 1 chega por essa entrada; quem sai por teleporte chega no cristal.
 - **Morte:** perde tudo e volta ao andar 1 com o relógio zerado.
-- **Andares:** 3 andares. Cada um tem um tutorial (só no andar 1), de 4 a 5 salas sorteadas e um chefe. Vencer o chefe libera o próximo andar na entrada da torre.
+- **Andares:** 3 andares. Cada um tem um tutorial (só no andar 1 e só na primeira vez que o jogador entra na torre, mesmo depois de morrer), de 4 a 5 salas sorteadas e um chefe. Vencer o chefe libera o próximo andar na entrada da torre.
 - **Inimigos:**
   - Slime: persegue.
   - Sentinela de pedra: atira de longe.

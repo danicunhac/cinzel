@@ -100,3 +100,4 @@ func test_death_resets_run_and_goes_to_game_over() -> void:
 	if cur != null:
 		cur.free()
 	_game().new_run()
+

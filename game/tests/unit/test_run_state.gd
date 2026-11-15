@@ -69,7 +69,7 @@ func test_die_loses_everything() -> void:
 	r.tutorial_done = true
 	r.die()
 	T.eq(r.gold, 0)
-	T.eq(r.tutorial_done, false, "tutorial comes back")
+	T.eq(r.tutorial_done, true, "tutorial only once, even after death")
 	T.ok(r.items.is_empty(), "items empty")
 	T.eq(r.unlocked_floors, 1)
 	T.eq(r.floors_beaten, 0)
