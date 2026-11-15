@@ -24,14 +24,14 @@ Estilos: espada, espada longa, machado, lança, adaga, arco, rolamento e cura (8
   - armas: dano causado com aquele tipo de arma.
   - rolamento: golpes inimigos evitados rolando (o golpe pegaria, a invencibilidade salvou) e, menos, rolamentos feitos.
   - cura: vida recuperada parado.
-- Curva: cada nível pede ~1,6× o anterior. Nível 3 em ~2 andares de uso, nível 10 só para quem joga muito com aquele estilo.
+- Curva (rápida, porque zera na morte): nível 3 por volta do fim do andar 1 usando um estilo só, nível 6 durante o andar 2, nível 10 só para quem fecha a torre no mesmo estilo. Ajustar com o robô de teste.
 - Bônus por nível:
   - armas: +3% de dano e +1% de velocidade de ataque com aquele tipo.
   - rolamento: +2% de distância e, nos níveis 5 e 10, +0,05 s de invencibilidade.
   - cura: +4% de cura por segundo e −0,05 s na espera para começar.
 - Ao subir de nível: aviso curto ("Lança 4") com o efeito de "unlock" (luz radial) e um som.
 - Tela: aba "Maestria" na mochila, com os 8 estilos, nível, barra de progresso e o bônus atual.
-- **[proposta] A maestria fica na morte**, como as roupas e o tutorial. É a habilidade do personagem, não o que ele carrega. A morte continua levando equipamento, mochila, ouro e andares.
+- **Decidido pelo Daniel (15/11): a morte zera tudo, inclusive a maestria.** Cada subida começa com todos os estilos no nível 1.
 
 ## 2. Golpes liberados pela maestria
 
@@ -93,7 +93,7 @@ Um quadro perto da loja com 3 missões, que mudam a cada volta à cidade.
 - Recompensa: ouro e, às vezes, uma relíquia ou um material raro.
 - Aceitar é automático: as 3 contam ao mesmo tempo.
 - Entregar é no quadro, com E.
-- **[proposta]** O progresso das missões some na morte, junto com o resto do que é da subida.
+- O progresso das missões some na morte (a morte zera tudo).
 
 ## 6. Bestiário e títulos
 
@@ -108,7 +108,7 @@ Um quadro perto da loja com 3 missões, que mudam a cada volta à cidade.
   - vencer a torre.
 
   Um título escolhido aparece na tela de pausa e no topo da mochila. Só visual.
-- **[proposta]** Bestiário e títulos ficam na morte.
+- **Minha leitura de "zera tudo":** bestiário e títulos também zeram na morte. As roupas desbloqueadas continuam ficando, como decidido em 14/11. O Daniel pode corrigir.
 
 ## 7. Refino no ferreiro
 
