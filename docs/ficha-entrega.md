@@ -79,7 +79,7 @@ Detalhe arquivo por arquivo em `docs/assets.md`.
 
 ## Ferramenta colaborativa e link aberto
 
-GitHub Projects (quadro de tarefas): `[link aberto do quadro]`
+GitHub Projects (quadro de tarefas): https://github.com/users/danicunhac/projects/3
 
 ## Link do repositório aberto
 
