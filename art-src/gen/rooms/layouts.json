@@ -1,6 +1,7 @@
 {
 	"boss_f1": {
 		"boss": true,
+		"detail": false,
 		"floor": 1,
 		"rows": [
 			"##############################",
@@ -43,6 +44,7 @@
 	},
 	"boss_f2": {
 		"boss": true,
+		"detail": false,
 		"floor": 2,
 		"rows": [
 			"##############################",
@@ -85,6 +87,7 @@
 	},
 	"boss_f3": {
 		"boss": true,
+		"detail": false,
 		"floor": 3,
 		"rows": [
 			"##############################",
@@ -127,6 +130,7 @@
 	},
 	"f1_anel": {
 		"boss": false,
+		"detail": false,
 		"floor": 1,
 		"rows": [
 			"##############################",
@@ -169,6 +173,7 @@
 	},
 	"f1_antessala": {
 		"boss": false,
+		"detail": false,
 		"floor": 1,
 		"rows": [
 			"##############################",
@@ -211,6 +216,7 @@
 	},
 	"f1_arena": {
 		"boss": false,
+		"detail": true,
 		"floor": 1,
 		"rows": [
 			"##############################",
@@ -253,6 +259,7 @@
 	},
 	"f1_colunas": {
 		"boss": false,
+		"detail": false,
 		"floor": 1,
 		"rows": [
 			"##############################",
@@ -295,6 +302,7 @@
 	},
 	"f1_cruz": {
 		"boss": false,
+		"detail": false,
 		"floor": 1,
 		"rows": [
 			"##############################",
@@ -337,6 +345,7 @@
 	},
 	"f1_galeria": {
 		"boss": false,
+		"detail": false,
 		"floor": 1,
 		"rows": [
 			"##########################X###",
@@ -379,6 +388,7 @@
 	},
 	"f2_corredor": {
 		"boss": false,
+		"detail": false,
 		"floor": 2,
 		"rows": [
 			"##############################",
@@ -421,6 +431,7 @@
 	},
 	"f2_cripta": {
 		"boss": false,
+		"detail": false,
 		"floor": 2,
 		"rows": [
 			"##############################",
@@ -463,6 +474,7 @@
 	},
 	"f2_fosso": {
 		"boss": false,
+		"detail": false,
 		"floor": 2,
 		"rows": [
 			"##############################",
@@ -505,6 +517,7 @@
 	},
 	"f2_mirante": {
 		"boss": false,
+		"detail": false,
 		"floor": 2,
 		"rows": [
 			"##############################",
@@ -547,6 +560,7 @@
 	},
 	"f2_nave": {
 		"boss": false,
+		"detail": false,
 		"floor": 2,
 		"rows": [
 			"##############################",
@@ -589,6 +603,7 @@
 	},
 	"f2_salao": {
 		"boss": false,
+		"detail": false,
 		"floor": 2,
 		"rows": [
 			"######################X#######",
@@ -631,6 +646,7 @@
 	},
 	"f3_camaras": {
 		"boss": false,
+		"detail": false,
 		"floor": 3,
 		"rows": [
 			"##############################",
@@ -673,6 +689,7 @@
 	},
 	"f3_claustro": {
 		"boss": false,
+		"detail": false,
 		"floor": 3,
 		"rows": [
 			"##############################",
@@ -715,6 +732,7 @@
 	},
 	"f3_forja": {
 		"boss": false,
+		"detail": false,
 		"floor": 3,
 		"rows": [
 			"##############################",
@@ -757,6 +775,7 @@
 	},
 	"f3_obsidiana": {
 		"boss": false,
+		"detail": false,
 		"floor": 3,
 		"rows": [
 			"##############################",
@@ -799,6 +818,7 @@
 	},
 	"f3_ponte": {
 		"boss": false,
+		"detail": false,
 		"floor": 3,
 		"rows": [
 			"##############################",
@@ -841,6 +861,7 @@
 	},
 	"f3_serpente": {
 		"boss": false,
+		"detail": false,
 		"floor": 3,
 		"rows": [
 			"##############################",
@@ -883,6 +904,7 @@
 	},
 	"t1_move_attack": {
 		"boss": false,
+		"detail": false,
 		"floor": 1,
 		"rows": [
 			"##############################",
@@ -930,6 +952,7 @@
 	},
 	"t2_dodge": {
 		"boss": false,
+		"detail": false,
 		"floor": 1,
 		"rows": [
 			"##############################",
@@ -977,6 +1000,7 @@
 	},
 	"t3_heal": {
 		"boss": false,
+		"detail": false,
 		"floor": 1,
 		"rows": [
 			"##############################",

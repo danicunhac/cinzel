@@ -36,6 +36,11 @@ const HAND := Vector2(0, -6)
 ## leans LEAN px toward the move.
 const STEP_TIME := 1.0 / 3.0
 const LEAN := 1.0
+## Turning sharply (more than about 100 deg) while walking kicks a small dust
+## puff at the feet, at most once per TURN_COOLDOWN s.
+const TURN_DOT := -0.2
+const TURN_COOLDOWN := 0.25
+const TURN_STILL := 0.15
 const SPRITE_HOME := Vector2(0, -8)
 const HEAVY_WEAPONS: Array[StringName] = [&"axe", &"longsword"]
 ## Seconds between heal sparkles while healing.
@@ -114,6 +119,10 @@ var _special_dir: Vector2 = Vector2.DOWN
 var _special_step: int = 0
 var _step_time: float = 0.0
 var _steps: int = 0
+## Last walking direction and real seconds since the last turn puff.
+var _move_dir: Vector2 = Vector2.ZERO
+var _turn_cool: float = 0.0
+var _still: float = 0.0
 var _was_charged: bool = false
 var _heal_spark: float = 0.0
 ## The swing now is the off-hand's (Lâminas Gêmeas).
@@ -215,6 +224,10 @@ func _process_free(delta: float, input_dir: Vector2) -> void:
 	else:
 		sprite.play(&"idle", facing)
 		_step_time = 0.0
+		# A tap back the other way still counts as a turn; a real stop does not.
+		_still += delta
+		if _still > TURN_STILL:
+			_move_dir = Vector2.ZERO
 		sprite.position = SPRITE_HOME
 	if _just_pressed(&"roll") and _roll_cooldown <= 0.0:
 		_start_roll(input_dir if input_dir != Vector2.ZERO else facing)
@@ -225,6 +238,13 @@ func _process_free(delta: float, input_dir: Vector2) -> void:
 ## Footsteps and dust while walking, and the 1 px lean.
 func _walk_feel(delta: float, dir: Vector2) -> void:
 	sprite.position = SPRITE_HOME + Vector2(signf(roundf(dir.x)) * LEAN, 0)
+	_turn_cool = maxf(_turn_cool - delta, 0.0)
+	var n := dir.normalized()
+	if _move_dir != Vector2.ZERO and n.dot(_move_dir) < TURN_DOT and _turn_cool <= 0.0:
+		_turn_cool = TURN_COOLDOWN
+		Fx.burst(&"turn_dust", global_position + Vector2(0, 5) - n * 3.0)
+	_move_dir = n
+	_still = 0.0
 	_step_time += delta
 	if _step_time < STEP_TIME:
 		return
@@ -359,7 +379,7 @@ func _fire_arrow(charged: bool) -> void:
 	a.heavy = charged
 	Sfx.play(&"bow_shot", 0.08 if not charged else 0.02)
 	a.global_position = global_position + HAND + a.direction * 8.0
-	a.landed.connect(func(_h: Hurtbox) -> void: _lifesteal(a.damage))
+	a.landed.connect(func(h: Hurtbox) -> void: _lifesteal(a.damage, h))
 	_room().add_child(a)
 
 
@@ -408,7 +428,7 @@ func _start_special() -> void:
 			b.radius = RAIN_RADIUS
 			b.global_position = global_position + _special_dir * RAIN_DIST
 			b.damage_roll = _blast_roll.bind(b, weapon.special_mult)
-			b.landed.connect(func(_h: Hurtbox) -> void: _lifesteal(b.damage))
+			b.landed.connect(func(h: Hurtbox) -> void: _lifesteal(b.damage, h))
 			_room().add_child(b)
 			_fx.line(hand, b.global_position + Vector2(0, -24), _fx.skill_color(), 0.3, 2.0)
 
@@ -479,7 +499,7 @@ func _slam() -> void:
 	w.stun = WAVE_STUN
 	w.global_position = at
 	w.damage_roll = _blast_roll.bind(w, WAVE_MULT)
-	w.landed.connect(func(_h: Hurtbox) -> void: _lifesteal(w.damage))
+	w.landed.connect(func(h: Hurtbox) -> void: _lifesteal(w.damage, h))
 	_room().add_child(w)
 	_fx.ring(at + HAND, SLAM_RADIUS, _fx.skill_color(), 0.35, 5.0)
 
@@ -761,11 +781,14 @@ func _on_damaged(_n: int) -> void:
 	_exit_was_channeling = false
 
 
-func _on_hitbox_landed(_target: Hurtbox) -> void:
-	_lifesteal(hitbox.damage)
+func _on_hitbox_landed(target: Hurtbox) -> void:
+	_lifesteal(hitbox.damage, target)
 
 
-func _lifesteal(dmg: int) -> void:
+## Heals a share of `dmg` dealt to `target` (pots and crates feed nothing).
+func _lifesteal(dmg: int, target: Hurtbox) -> void:
+	if target is PropHurtbox:
+		return
 	if _stats.lifesteal > 0.0:
 		health.heal(dmg * _stats.lifesteal)
 
