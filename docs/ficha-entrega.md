@@ -8,7 +8,7 @@ Cinzel
 
 ## Equipe
 
-Daniel Cunha Costa, solo (apresentação e entrega individuais, com OK do professor: [confirmar por escrito]).
+Daniel Cunha Costa, solo (apresentação e entrega individuais, com OK do professor).
 
 ## Engine
 

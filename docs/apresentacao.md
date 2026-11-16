@@ -2,7 +2,7 @@
 
 Apresentação técnica em 21/11. Formato: 6 a 10 min, alvo de 8 min. Obrigatório: mostrar o jogo rodando ou o projeto aberto no Godot.
 
-Nota para confirmar: o formato pede pelo menos 2 apresentadores. Daniel apresenta sozinho com OK do professor. Confirmar por escrito antes do dia 21 e guardar a resposta.
+O formato pede pelo menos 2 apresentadores. Daniel apresenta sozinho, confirmado com o professor.
 
 O roteiro está escrito para uma pessoa falando. Frases curtas. O texto em itálico é a fala. O resto é indicação de tela.
 
