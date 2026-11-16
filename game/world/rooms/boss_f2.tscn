@@ -1,0 +1,449 @@
+[gd_scene format=4]
+
+[ext_resource type="Script" path="res://world/room.gd" id="1_vyppt"]
+[ext_resource type="Texture2D" path="res://assets/rooms/boss_f2.png" id="2_1dovp"]
+[ext_resource type="TileSet" path="res://world/tiles_floor2.tres" id="3_yxpbx"]
+[ext_resource type="Script" path="res://world/room_door.gd" id="4_t1d8w"]
+[ext_resource type="Texture2D" path="res://assets/rooms/doors.png" id="5_vyj08"]
+[ext_resource type="Texture2D" path="res://assets/rooms/decor.png" id="6_labxe"]
+[ext_resource type="Script" path="res://world/ground_shadow.gd" id="7_5fvvy"]
+
+[sub_resource type="Gradient" id="Gradient_pmh3s"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_m0avj"]
+gradient = SubResource("Gradient_pmh3s")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ihccx"]
+size = Vector2(448, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_oc6om"]
+size = Vector2(4, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_v0gep"]
+size = Vector2(4, 96)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_b4m68"]
+size = Vector2(4, 224)
+
+[sub_resource type="Image" id="Image_62cjx"]
+data = {
+"data": PackedByteArray("AAAAAAAAAAAAAAAAFAwYURQMGFEUDBhRFAwYURQMGFEUDBhRFAwYURQMGFEUDBhRFAwYUQAAAAAAAAAAAAAAABQMGFEUDBhRFAwYURQMGIwUDBiMFAwYjBQMGIwUDBiMFAwYjBQMGIwUDBiMFAwYjBQMGIwUDBhRFAwYURQMGFEUDBhRFAwYURQMGFEUDBiMFAwYjBQMGIwUDBiMFAwYjBQMGIwUDBiMFAwYjBQMGIwUDBiMFAwYURQMGFEUDBhRAAAAAAAAAAAAAAAAFAwYURQMGFEUDBhRFAwYURQMGFEUDBhRFAwYURQMGFEUDBhRFAwYUQAAAAAAAAAAAAAAAA=="),
+"format": "RGBA8",
+"height": 4,
+"mipmaps": false,
+"width": 16
+}
+
+[sub_resource type="ImageTexture" id="ImageTexture_8irfr"]
+image = SubResource("Image_62cjx")
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xg33t"]
+size = Vector2(14, 8)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7v0aq"]
+size = Vector2(14, 8)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ldiji"]
+size = Vector2(14, 8)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_26dqv"]
+size = Vector2(14, 8)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kpv1j"]
+size = Vector2(14, 8)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_w8t5u"]
+size = Vector2(14, 8)
+
+[sub_resource type="Image" id="Image_q2njb"]
+data = {
+"data": PackedByteArray("AAAAAAAAAAAUDBhRFAwYURQMGFEUDBhRFAwYURQMGFEUDBhRAAAAAAAAAAAUDBhRFAwYURQMGIwUDBiMFAwYjBQMGIwUDBiMFAwYjBQMGIwUDBhRFAwYURQMGFEUDBhRFAwYjBQMGIwUDBiMFAwYjBQMGIwUDBiMFAwYjBQMGFEUDBhRAAAAAAAAAAAUDBhRFAwYURQMGFEUDBhRFAwYURQMGFEUDBhRAAAAAAAAAAA="),
+"format": "RGBA8",
+"height": 4,
+"mipmaps": false,
+"width": 11
+}
+
+[sub_resource type="ImageTexture" id="ImageTexture_r30el"]
+image = SubResource("Image_q2njb")
+
+[node name="BossF2" type="Node2D" unique_id=1225060439]
+y_sort_enabled = true
+script = ExtResource("1_vyppt")
+is_boss = true
+
+[node name="Background" type="Sprite2D" parent="." unique_id=1382572969]
+z_index = -5
+texture = ExtResource("2_1dovp")
+centered = false
+
+[node name="Ambient" type="CanvasModulate" parent="." unique_id=1355281103]
+color = Color(0.88, 0.92, 0.98, 1)
+
+[node name="Torches" type="Node2D" parent="." unique_id=1251976679]
+
+[node name="Torch1" type="PointLight2D" parent="Torches" unique_id=909753427]
+position = Vector2(120, 8)
+color = Color(1, 0.8, 0.6, 1)
+energy = 0.18
+texture = SubResource("GradientTexture2D_m0avj")
+texture_scale = 1.2
+
+[node name="Torch2" type="PointLight2D" parent="Torches" unique_id=982157345]
+position = Vector2(360, 8)
+color = Color(1, 0.8, 0.6, 1)
+energy = 0.18
+texture = SubResource("GradientTexture2D_m0avj")
+texture_scale = 1.2
+
+[node name="Torch3" type="PointLight2D" parent="Torches" unique_id=2063088055]
+position = Vector2(120, 248)
+color = Color(1, 0.8, 0.6, 1)
+energy = 0.18
+texture = SubResource("GradientTexture2D_m0avj")
+texture_scale = 1.2
+
+[node name="Torch4" type="PointLight2D" parent="Torches" unique_id=703773929]
+position = Vector2(360, 248)
+color = Color(1, 0.8, 0.6, 1)
+energy = 0.18
+texture = SubResource("GradientTexture2D_m0avj")
+texture_scale = 1.2
+
+[node name="Walls" type="TileMapLayer" parent="." unique_id=1472419995]
+visible = false
+tile_map_data = PackedByteArray("AAAAAAAAAAAFAAAAAAABAAAAAAAEAAAAAAACAAAAAAAEAAAAAAADAAAAAAAEAAAAAAAEAAAAAAAEAAAAAAAFAAAAAAAEAAAAAAAGAAAAAAAEAAAAAAAHAAAAAAAFAAEAAAAIAAAAAAAEAAAAAAAJAAAAAAAEAAAAAAAKAAAAAAAEAAAAAAALAAAAAAAEAAAAAAAMAAAAAAAEAAAAAAANAAAAAAAEAAAAAAAOAAAAAAAEAAAAAAAPAAAAAAAEAAAAAAAQAAAAAAAEAAAAAAARAAAAAAAEAAAAAAASAAAAAAAEAAAAAAATAAAAAAAEAAAAAAAUAAAAAAAEAAAAAAAVAAAAAAAEAAAAAAAWAAAAAAAFAAEAAAAXAAAAAAAEAAAAAAAYAAAAAAAEAAAAAAAZAAAAAAAEAAAAAAAaAAAAAAAEAAAAAAAbAAAAAAAEAAAAAAAcAAAAAAAEAAAAAAAdAAAAAAAFAAAAAAAAAAEAAAAFAAAAAAAdAAEAAAAFAAAAAAAAAAIAAAAFAAAAAAAdAAIAAAAFAAAAAAAAAAMAAAAFAAAAAAAdAAMAAAAFAAAAAAAAAAQAAAAFAAAAAAAJAAQAAAAGAAAAAAAUAAQAAAAGAAAAAAAdAAQAAAAFAAAAAAAAAAUAAAAFAAAAAAAdAAUAAAAFAAAAAAAAAAYAAAAFAAAAAAAdAAYAAAAFAAAAAAAAAAcAAAACAAEAAEAdAAcAAAAFAAAAAAAAAAgAAAAFAAAAAAAdAAgAAAAFAAAAAAAAAAkAAAAFAAAAAAAdAAkAAAAFAAAAAAAAAAoAAAAFAAAAAAAJAAoAAAAGAAAAAAAUAAoAAAAGAAAAAAAdAAoAAAAFAAAAAAAAAAsAAAAFAAAAAAAdAAsAAAAFAAAAAAAAAAwAAAAFAAAAAAAdAAwAAAAFAAAAAAAAAA0AAAAFAAAAAAAdAA0AAAAFAAAAAAAAAA4AAAAFAAAAAAAdAA4AAAAFAAAAAAAAAA8AAAAFAAAAAAABAA8AAAAFAAAAAAACAA8AAAAFAAAAAAADAA8AAAAFAAAAAAAEAA8AAAAFAAAAAAAFAA8AAAAFAAAAAAAGAA8AAAAFAAAAAAAHAA8AAAAFAAAAAAAIAA8AAAAFAAAAAAAJAA8AAAAFAAAAAAAKAA8AAAAFAAAAAAALAA8AAAAFAAAAAAAMAA8AAAAFAAAAAAANAA8AAAAFAAAAAAAOAA8AAAAFAAAAAAAPAA8AAAAFAAAAAAAQAA8AAAAFAAAAAAARAA8AAAAFAAAAAAASAA8AAAAFAAAAAAATAA8AAAAFAAAAAAAUAA8AAAAFAAAAAAAVAA8AAAAFAAAAAAAWAA8AAAAFAAAAAAAXAA8AAAAFAAAAAAAYAA8AAAAFAAAAAAAZAA8AAAAFAAAAAAAaAA8AAAAFAAAAAAAbAA8AAAAFAAAAAAAcAA8AAAAFAAAAAAAdAA8AAAAFAAAAAAA=")
+tile_set = ExtResource("3_yxpbx")
+
+[node name="Spawns" type="Node2D" parent="." unique_id=2101823961]
+
+[node name="Boss Big1" type="Marker2D" parent="Spawns" unique_id=525858153]
+position = Vector2(360, 120)
+metadata/enemy = "boss_big"
+metadata/base = "charger"
+
+[node name="WallFaceBlockers" type="StaticBody2D" parent="." unique_id=1514529445]
+
+[node name="@CollisionShape2D@211" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=38237063]
+position = Vector2(240, 24)
+shape = SubResource("RectangleShape2D_ihccx")
+
+[node name="@CollisionShape2D@212" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=64565878]
+position = Vector2(18, 56)
+shape = SubResource("RectangleShape2D_oc6om")
+
+[node name="@CollisionShape2D@213" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=1025538892]
+position = Vector2(18, 192)
+shape = SubResource("RectangleShape2D_v0gep")
+
+[node name="@CollisionShape2D@214" type="CollisionShape2D" parent="WallFaceBlockers" unique_id=1379446466]
+position = Vector2(462, 128)
+shape = SubResource("RectangleShape2D_b4m68")
+
+[node name="Entry" type="Marker2D" parent="." unique_id=1186391515]
+position = Vector2(24, 120)
+
+[node name="Back" type="Node2D" parent="." unique_id=1503928700]
+position = Vector2(8, 120)
+script = ExtResource("4_t1d8w")
+starts_shut = true
+
+[node name="Sprite" type="Sprite2D" parent="Back" unique_id=1534725907]
+z_index = -4
+position = Vector2(-4, 0)
+texture = ExtResource("5_vyj08")
+offset = Vector2(0, -8)
+hframes = 3
+vframes = 2
+frame = 3
+
+[node name="Decor" type="Node2D" parent="." unique_id=482925894]
+y_sort_enabled = true
+
+[node name="Rack1" type="Sprite2D" parent="Decor" unique_id=1975020122]
+position = Vector2(456, 46)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+frame = 10
+metadata/decor_kind = &"rack"
+metadata/decor_wall = false
+metadata/decor_solid = true
+
+[node name="@Sprite2D@215" type="Sprite2D" parent="Decor/Rack1" unique_id=574994257]
+show_behind_parent = true
+position = Vector2(0, -1)
+texture = SubResource("ImageTexture_8irfr")
+script = ExtResource("7_5fvvy")
+
+[node name="Body" type="StaticBody2D" parent="Decor/Rack1" unique_id=1135671096]
+
+[node name="@CollisionShape2D@216" type="CollisionShape2D" parent="Decor/Rack1/Body" unique_id=1161148628]
+position = Vector2(0, -4)
+shape = SubResource("RectangleShape2D_xg33t")
+
+[node name="Crate1" type="Sprite2D" parent="Decor" unique_id=578448191]
+position = Vector2(24, 238)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+frame = 1
+metadata/decor_kind = &"crate"
+metadata/decor_wall = false
+metadata/decor_solid = true
+
+[node name="@Sprite2D@217" type="Sprite2D" parent="Decor/Crate1" unique_id=1835187504]
+show_behind_parent = true
+position = Vector2(0, -1)
+texture = SubResource("ImageTexture_8irfr")
+script = ExtResource("7_5fvvy")
+
+[node name="Body" type="StaticBody2D" parent="Decor/Crate1" unique_id=968156873]
+
+[node name="@CollisionShape2D@218" type="CollisionShape2D" parent="Decor/Crate1/Body" unique_id=431248522]
+position = Vector2(0, -4)
+shape = SubResource("RectangleShape2D_7v0aq")
+
+[node name="Barrel1" type="Sprite2D" parent="Decor" unique_id=940890199]
+position = Vector2(40, 238)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+metadata/decor_kind = &"barrel"
+metadata/decor_wall = false
+metadata/decor_solid = true
+
+[node name="@Sprite2D@219" type="Sprite2D" parent="Decor/Barrel1" unique_id=1784855348]
+show_behind_parent = true
+position = Vector2(0, -1)
+texture = SubResource("ImageTexture_8irfr")
+script = ExtResource("7_5fvvy")
+
+[node name="Body" type="StaticBody2D" parent="Decor/Barrel1" unique_id=226978229]
+
+[node name="@CollisionShape2D@220" type="CollisionShape2D" parent="Decor/Barrel1/Body" unique_id=1093538366]
+position = Vector2(0, -4)
+shape = SubResource("RectangleShape2D_ldiji")
+
+[node name="Rack2" type="Sprite2D" parent="Decor" unique_id=1815103597]
+position = Vector2(456, 238)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+frame = 10
+metadata/decor_kind = &"rack"
+metadata/decor_wall = false
+metadata/decor_solid = true
+
+[node name="@Sprite2D@221" type="Sprite2D" parent="Decor/Rack2" unique_id=252775250]
+show_behind_parent = true
+position = Vector2(0, -1)
+texture = SubResource("ImageTexture_8irfr")
+script = ExtResource("7_5fvvy")
+
+[node name="Body" type="StaticBody2D" parent="Decor/Rack2" unique_id=582041844]
+
+[node name="@CollisionShape2D@222" type="CollisionShape2D" parent="Decor/Rack2/Body" unique_id=676038737]
+position = Vector2(0, -4)
+shape = SubResource("RectangleShape2D_26dqv")
+
+[node name="Crate2" type="Sprite2D" parent="Decor" unique_id=1951481934]
+position = Vector2(24, 46)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+frame = 1
+metadata/decor_kind = &"crate"
+metadata/decor_wall = false
+metadata/decor_solid = true
+
+[node name="@Sprite2D@223" type="Sprite2D" parent="Decor/Crate2" unique_id=333306775]
+show_behind_parent = true
+position = Vector2(0, -1)
+texture = SubResource("ImageTexture_8irfr")
+script = ExtResource("7_5fvvy")
+
+[node name="Body" type="StaticBody2D" parent="Decor/Crate2" unique_id=199400337]
+
+[node name="@CollisionShape2D@224" type="CollisionShape2D" parent="Decor/Crate2/Body" unique_id=410377912]
+position = Vector2(0, -4)
+shape = SubResource("RectangleShape2D_kpv1j")
+
+[node name="Barrel2" type="Sprite2D" parent="Decor" unique_id=188771533]
+position = Vector2(40, 46)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+metadata/decor_kind = &"barrel"
+metadata/decor_wall = false
+metadata/decor_solid = true
+
+[node name="@Sprite2D@225" type="Sprite2D" parent="Decor/Barrel2" unique_id=979575788]
+show_behind_parent = true
+position = Vector2(0, -1)
+texture = SubResource("ImageTexture_8irfr")
+script = ExtResource("7_5fvvy")
+
+[node name="Body" type="StaticBody2D" parent="Decor/Barrel2" unique_id=2043520896]
+
+[node name="@CollisionShape2D@226" type="CollisionShape2D" parent="Decor/Barrel2/Body" unique_id=424623766]
+position = Vector2(0, -4)
+shape = SubResource("RectangleShape2D_w8t5u")
+
+[node name="Skulls1" type="Sprite2D" parent="Decor" unique_id=907722489]
+position = Vector2(24, 190)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+frame = 3
+metadata/decor_kind = &"skulls"
+metadata/decor_wall = false
+metadata/decor_solid = false
+
+[node name="@Sprite2D@227" type="Sprite2D" parent="Decor/Skulls1" unique_id=1046613187]
+show_behind_parent = true
+position = Vector2(0, -1)
+texture = SubResource("ImageTexture_r30el")
+script = ExtResource("7_5fvvy")
+
+[node name="Bones1" type="Sprite2D" parent="Decor" unique_id=629452248]
+position = Vector2(408, 238)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+flip_h = true
+hframes = 12
+frame = 2
+metadata/decor_kind = &"bones"
+metadata/decor_wall = false
+metadata/decor_solid = false
+
+[node name="Pot1" type="Sprite2D" parent="Decor" unique_id=834397845]
+position = Vector2(184, 46)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+frame = 4
+metadata/decor_kind = &"pot"
+metadata/decor_wall = false
+metadata/decor_solid = false
+
+[node name="@Sprite2D@228" type="Sprite2D" parent="Decor/Pot1" unique_id=1821993025]
+show_behind_parent = true
+position = Vector2(0, -1)
+texture = SubResource("ImageTexture_r30el")
+script = ExtResource("7_5fvvy")
+
+[node name="Candles1" type="Sprite2D" parent="Decor" unique_id=1295524260]
+position = Vector2(376, 46)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+frame = 5
+metadata/decor_kind = &"candles"
+metadata/decor_wall = false
+metadata/decor_solid = false
+
+[node name="@Sprite2D@229" type="Sprite2D" parent="Decor/Candles1" unique_id=2135799695]
+show_behind_parent = true
+position = Vector2(0, -1)
+texture = SubResource("ImageTexture_r30el")
+script = ExtResource("7_5fvvy")
+
+[node name="Bones2" type="Sprite2D" parent="Decor" unique_id=995424157]
+position = Vector2(312, 46)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+frame = 2
+metadata/decor_kind = &"bones"
+metadata/decor_wall = false
+metadata/decor_solid = false
+
+[node name="Bones3" type="Sprite2D" parent="Decor" unique_id=1584078541]
+position = Vector2(88, 46)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+flip_h = true
+hframes = 12
+frame = 2
+metadata/decor_kind = &"bones"
+metadata/decor_wall = false
+metadata/decor_solid = false
+
+[node name="Candles2" type="Sprite2D" parent="Decor" unique_id=1582686041]
+position = Vector2(136, 238)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+flip_h = true
+hframes = 12
+frame = 5
+metadata/decor_kind = &"candles"
+metadata/decor_wall = false
+metadata/decor_solid = false
+
+[node name="@Sprite2D@230" type="Sprite2D" parent="Decor/Candles2" unique_id=45245986]
+show_behind_parent = true
+position = Vector2(0, -1)
+texture = SubResource("ImageTexture_r30el")
+script = ExtResource("7_5fvvy")
+
+[node name="Moss1" type="Sprite2D" parent="Decor" unique_id=1128852057]
+position = Vector2(296, 238)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+frame = 8
+metadata/decor_kind = &"moss"
+metadata/decor_wall = false
+metadata/decor_solid = false
+
+[node name="Cobweb1" type="Sprite2D" parent="Decor" unique_id=334172144]
+z_index = -3
+position = Vector2(28, 33)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+flip_h = true
+hframes = 12
+frame = 11
+metadata/decor_kind = &"cobweb"
+metadata/decor_wall = true
+metadata/decor_solid = false
+
+[node name="Cobweb2" type="Sprite2D" parent="Decor" unique_id=1727576783]
+z_index = -3
+position = Vector2(452, 33)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+frame = 11
+metadata/decor_kind = &"cobweb"
+metadata/decor_wall = true
+metadata/decor_solid = false
+
+[node name="Banner1" type="Sprite2D" parent="Decor" unique_id=421925210]
+z_index = -3
+position = Vector2(232, 30)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+frame = 9
+metadata/decor_kind = &"banner"
+metadata/decor_wall = true
+metadata/decor_solid = false
+
+[node name="Chains1" type="Sprite2D" parent="Decor" unique_id=1736930409]
+z_index = -3
+position = Vector2(264, 30)
+texture = ExtResource("6_labxe")
+offset = Vector2(0, -16)
+hframes = 12
+frame = 6
+metadata/decor_kind = &"chains"
+metadata/decor_wall = true
+metadata/decor_solid = false

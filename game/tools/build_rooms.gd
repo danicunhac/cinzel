@@ -1,0 +1,1402 @@
+extends SceneTree
+## Generates world/tiles_floor{1,2,3}.tres and the room scenes from the ASCII
+## layouts below, after checking each layout (reachability, safe spawns).
+## godot --headless --path game -s res://tools/build_rooms.gd
+##
+## Legend (30 x 16 cells of 16 px, 480 x 256):
+##   #  wall (front face when the cell below is open, top otherwise)
+##   .  floor        ,  cracked floor    ~  mossy floor
+##   o  pillar       x  crate (both block movement and shots)
+##   E  entry door (shut; the player starts on the inner neighbour)
+##   X  exit door (locked until the room is cleared)
+##   c  crawler      s  shooter          h  charger
+##   B  big crawler boss (floor 1)       H  big charger boss (floor 2)
+##   F  final boss (floor 3)             C  chest spot
+##   i  ice patch (floor 2: walkable, slows the player, IcePatch)
+##   v  ember vent (floor 3: walkable, burns on a cycle, EmberVent)
+## Every non-boss room also gets a StairsSpot marker (see _stairs_spot) and
+## the entry door a "Back" RoomDoor, for walking back down the tower.
+## A room's optional "floor" key (default 1) picks the tileset.
+## A painted room's optional "detail" key (pilot: f1_arena) adds the richer
+## look: cool ambient and shadows, warm torch pools, a RoomAtmosphere
+## (vignette, dust motes), small floor and wall decals (Details) and
+## breakable pots and crates (Breakables), all placed by DecorLayout; the
+## painting gets a contact-shade pass (build_rooms_art.py, layouts.json).
+##
+## Painted rooms: when res://assets/rooms/<room id>.png exists (480 x 270, made
+## by art-src/build_rooms_art.py from the layout dumped to LAYOUTS_JSON), the
+## room shows it as a Background sprite, the Walls layer stays for collision
+## only (hidden), doors get overlay sprites and the torches get lights. Rooms
+## without a painting keep the tile visuals, so new templates work at once.
+
+const W := 30
+const H := 16
+const TILESET_PATH := "res://world/tiles_floor%d.tres"
+const TEXTURE_PATH := "res://assets/tiles/floor%d.png"
+const FLOORS := 3
+const ROOM_SCRIPT := "res://world/room.gd"
+const DOOR_SCRIPT := "res://world/room_door.gd"
+const PAINT_PATH := "res://assets/rooms/%s.png"
+## Door overlays: 3 columns (shut, locked, open) x 2 rows (front, side), 24x32.
+const DOORS_PATH := "res://assets/rooms/doors.png"
+const DOOR_FRAME := Vector2i(24, 32)
+## Decor props (art-src/build_decor.py), placed by DecorLayout.
+const DECOR_PATH := "res://assets/rooms/decor.png"
+const DECOR_FRAME := 32
+## Painted rooms draw a thin top wall's brick face over the first floor row,
+## so an extra body blocks that row (gaps under top-wall doors), and the side
+## walls look this much thicker than their cells.
+const TOP_FACE_BAND := 16
+const SIDE_WALL_PAD := 4
+## Layouts for the art pipeline (blockouts, alignment check).
+const LAYOUTS_JSON := "res://../art-src/gen/rooms/layouts.json"
+## Light tint per floor, close to the town's (town.tscn Tint) so the rooms
+## read as bright as the town; the torch lights only lift the actors.
+const AMBIENT: Array[Color] = [
+	Color(0.94, 0.90, 0.84), Color(0.88, 0.92, 0.98), Color(0.94, 0.86, 0.82)]
+const TORCH_COLOR: Array[Color] = [
+	Color(1.0, 0.72, 0.42), Color(1.0, 0.8, 0.6), Color(1.0, 0.55, 0.32)]
+## Detailed rooms: the ambient leans cool and a little darker, so the warm
+## torch pools (stronger, wider) give the floor depth.
+const AMBIENT_DETAIL: Array[Color] = [
+	Color(0.9, 0.86, 0.8), Color(0.84, 0.88, 0.95), Color(0.9, 0.82, 0.78)]
+const TORCH_DETAIL_ENERGY := 0.5
+const TORCH_DETAIL_SCALE := 1.6
+const TORCH_DETAIL_COLOR: Array[Color] = [
+	Color(1.0, 0.64, 0.32), Color(1.0, 0.76, 0.52), Color(1.0, 0.5, 0.26)]
+const BREAKABLE_SCENE := "res://world/breakable.tscn"
+const ATMOSPHERE_SCRIPT := "res://world/room_atmosphere.gd"
+## Small decals of the detailed rooms (art-src/build_room_details.py).
+const DETAILS_PATH := "res://assets/rooms/details.png"
+const DETAIL_FRAME := 24
+## No enemy starts closer than this to the player's entry point.
+const MIN_SPAWN_DIST := 144.0
+## No ember vent this close to the player's entry point.
+const MIN_VENT_DIST := 64.0
+const WALKABLE := ".,~cshBHFCiv"
+const ICE_SCRIPT := "res://world/ice_patch.gd"
+const VENT_SCRIPT := "res://world/ember_vent.gd"
+## Same as EmberVent.STAGGER / RADIUS (not named here: the tool runs without the Game autoload).
+const VENT_STAGGER := 0.9
+const VENT_RADIUS := 9.0
+const ENEMY_KINDS := {
+	"c": "crawler", "s": "shooter", "h": "charger",
+	"B": "boss_big", "H": "boss_big", "F": "boss_final",
+}
+## Look of the big boss (Room meta `base`).
+const BOSS_BASE := {"B": "crawler", "H": "charger"}
+
+## Thick top wall of the tutorial rooms; the sign sits on it under the HUD.
+const TUTORIAL_TOP := [
+	"##############################",
+	"##############################",
+	"##############################",
+	"##############################",
+]
+## Columns of the torches on the wall face of the top wall.
+const TORCH_COLS: Array[int] = [7, 22]
+## Torch columns on a thick top wall, clear of the tutorial sign (x 60-420).
+const TORCH_COLS_SIGN: Array[int] = [2, 27]
+## Tutorial sign rectangle (also a blank plaque in the painting).
+const SIGN_RECT := Rect2(60, 26, 360, 36)
+
+var ROOMS: Array[Dictionary] = [
+	{
+		"path": "res://world/rooms/tutorial/t1_move_attack.tscn",
+		"tutorial": true,
+		"sign": "MOVER E ATACAR\nMover: WASD ou setas.  Atacar: J ou clique.\n3 golpes seguidos fazem um combo.\nVença o inimigo para destrancar a porta.",
+		"rows": TUTORIAL_TOP + [
+			"#............................#",
+			"#..............,.............#",
+			"#............................#",
+			"#............................#",
+			"#............................#",
+			"E.......................c....X",
+			"#.....,......................#",
+			"#............................#",
+			"#...................~........#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		"path": "res://world/rooms/tutorial/t2_dodge.tscn",
+		"tutorial": true,
+		"sign": "ESQUIVAR\nRolar: Espaço. Ao rolar, nada te acerta.\nRole através dos tiros vermelhos.\nVença o atirador para seguir.",
+		"rows": TUTORIAL_TOP + [
+			"#x..........................x#",
+			"#............................#",
+			"#................,...........#",
+			"#............................#",
+			"#............................#",
+			"E.......................s....X",
+			"#............................#",
+			"#............................#",
+			"#.......~....................#",
+			"#............................#",
+			"#x..........................x#",
+			"##############################",
+		],
+	},
+	{
+		"path": "res://world/rooms/tutorial/t3_heal.tscn",
+		"tutorial": true,
+		"heal": true,
+		"sign": "CURAR\nFique parado, sem atacar: após 1,5 s a vida volta.\nCurar gasta tempo, e o tempo fortalece a torre.\nCure-se por completo para abrir a porta.",
+		"rows": TUTORIAL_TOP + [
+			"#~..........................~#",
+			"#............................#",
+			"#............................#",
+			"#.........o........o.........#",
+			"#............................#",
+			"E............................X",
+			"#............................#",
+			"#.........o........o.........#",
+			"#............................#",
+			"#............................#",
+			"#~............,.............~#",
+			"##############################",
+		],
+	},
+	{
+		# Pillar hall: two rows of pillars give cover from the shooter.
+		"path": "res://world/rooms/f1/f1_colunas.tscn",
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#............................#",
+			"#...o.....o.......o.....o....#",
+			"#............................#",
+			"#..............c.............#",
+			"#............................#",
+			"E.....................s......X",
+			"#......,.....................#",
+			"#............................#",
+			"#..............c.........C...#",
+			"#............................#",
+			"#...o.....o.......o.....o....#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Gallery: crate lines make three lanes; shooters cover the side lanes.
+		"path": "res://world/rooms/f1/f1_galeria.tscn",
+		"rows": [
+			"##########################X###",
+			"#............................#",
+			"#...................s........#",
+			"#............................#",
+			"#...xxxxxxxx.....xxxxxxxxx...#",
+			"#............................#",
+			"#............................#",
+			"E.................c..........#",
+			"#............................#",
+			"#............................#",
+			"#...xxxxxxxxx.....xxxxxxxx...#",
+			"#............................#",
+			"#............................#",
+			"#....................s......C#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Cross: a central block hides the charger's dash line from the door.
+		"path": "res://world/rooms/f1/f1_cruz.tscn",
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#............................#",
+			"#.............##.............#",
+			"#.............##.......c.....#",
+			"#.............##.............#",
+			"#.........##########.........#",
+			"E.........##########.....h...#",
+			"#.........##########.........#",
+			"#.............##.............#",
+			"#....C........##.............#",
+			"#.............##.......c.....#",
+			"#.............##.............#",
+			"#............................#",
+			"#............................#",
+			"######################X#######",
+		],
+	},
+	{
+		# Open arena: room to dodge the charger, pillars only in the corners.
+		"path": "res://world/rooms/f1/f1_arena.tscn",
+		"detail": true,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#............................#",
+			"#...o.........C..........o...#",
+			"#............................#",
+			"#............................#",
+			"#..................c.........#",
+			"E.........,.............h....#",
+			"#..................c.........#",
+			"#............................#",
+			"#............................#",
+			"#............................X",
+			"#...o....................o...#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Antechamber: a wall splits the room; the way in is the low gap.
+		"path": "res://world/rooms/f1/f1_antessala.tscn",
+		"rows": [
+			"##############################",
+			"#.........#..................#",
+			"#.........#.......s..........#",
+			"#.........#..................#",
+			"#.........#..................X",
+			"#.........#........x.........#",
+			"#.........#........x....c....#",
+			"E.........#........x.........#",
+			"#.........#........x.........#",
+			"#.........#..................#",
+			"#............................#",
+			"#............................#",
+			"#.................c.......C..#",
+			"#.........#..................#",
+			"#.........#..................#",
+			"##############################",
+		],
+	},
+	{
+		# Ring: enemies circle a central block; four of them, the hardest one.
+		"path": "res://world/rooms/f1/f1_anel.tscn",
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#.................s..........#",
+			"#..............C.............#",
+			"#.......o............o.......#",
+			"#............................#",
+			"#...........######...........#",
+			"E...........######.......h...#",
+			"#...........######...........#",
+			"#............................#",
+			"#.......o............o.......#",
+			"#............................#",
+			"#............................#",
+			"#..................c.....c...#",
+			"#............................#",
+			"#########################X####",
+		],
+	},
+	{
+		# Sentinel hall: offset pillar rows; three sentinels shoot across the
+		# ice patches, a slime holds the middle.
+		"path": "res://world/rooms/f2/f2_salao.tscn",
+		"floor": 2,
+		"rows": [
+			"######################X#######",
+			"#............................#",
+			"#............s...........s...#",
+			"#...o.....o.......o.....o....#",
+			"#............................#",
+			"#.........iii................#",
+			"#.........iii......c.........#",
+			"E............................#",
+			"#..................iii.......#",
+			"#..................iii.......#",
+			"#............................#",
+			"#.......o.....o.......o......#",
+			"#..........C.............s...#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Frozen lane: two long walls make three lanes; the middle one is ice,
+		# sentinels cover the side lanes, a beetle waits at the far end.
+		"path": "res://world/rooms/f2/f2_corredor.tscn",
+		"floor": 2,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#..........s.........s.......#",
+			"#............................#",
+			"#....##########..#########...#",
+			"#....##########..#########...#",
+			"#............................#",
+			"E.......iiiiiiiiiiii.....h...X",
+			"#............................#",
+			"#....#########..##########...#",
+			"#....#########..##########...#",
+			"#............................#",
+			"#........C....c......s.......#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Overlook: the way in is from below; sentinels shoot from behind a
+		# crate line at the top, ice on both flanks.
+		"path": "res://world/rooms/f2/f2_mirante.tscn",
+		"floor": 2,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#.....s........s.........s...#",
+			"#............................#",
+			"#....xxxx....xxxx....xxxx....#",
+			"#............................#",
+			"#...................c........#",
+			"#..ii...................ii...X",
+			"#..ii...................ii...#",
+			"#............................#",
+			"#.........o........o.........#",
+			"#............................#",
+			"#..C.........................#",
+			"#............................#",
+			"#............................#",
+			"##############E###############",
+		],
+	},
+	{
+		# Crypt: two inner walls cut the room in three, open in the middle;
+		# a sentinel guards each far chamber.
+		"path": "res://world/rooms/f2/f2_cripta.tscn",
+		"floor": 2,
+		"rows": [
+			"##############################",
+			"#.........#........#.........#",
+			"#.........#...s....#.....s...#",
+			"#.........#........#.........#",
+			"#....o....#........#....o....#",
+			"#............................#",
+			"#............................#",
+			"E.............iii.......h....#",
+			"#.............iii............#",
+			"#............................#",
+			"#....o....#........#....o....#",
+			"#.........#........#.........#",
+			"#..C......#....s...#.........#",
+			"#.........#........#.........X",
+			"#.........#........#.........#",
+			"##############################",
+		],
+	},
+	{
+		# Nave: a diagonal line of pillars to hide behind on the way down to
+		# the exit; sentinels on both sides of it.
+		"path": "res://world/rooms/f2/f2_nave.tscn",
+		"floor": 2,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#............................#",
+			"#...o...........s............#",
+			"#.......o...............s....#",
+			"#...........o................#",
+			"#...............o............#",
+			"E...................o........#",
+			"#.......................o....#",
+			"#............................#",
+			"#..........ii.....h......c...#",
+			"#..........ii................#",
+			"#...........s.............C..#",
+			"#............................#",
+			"#............................#",
+			"#######X######################",
+		],
+	},
+	{
+		# Frozen pond: a crate ring around an ice pond, open on the lane;
+		# sentinels at the top and bottom of the ring.
+		"path": "res://world/rooms/f2/f2_fosso.tscn",
+		"floor": 2,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#..........s.......s.........#",
+			"#............................#",
+			"#.......xxxx......xxxx.......#",
+			"#.......x............x.......#",
+			"#.......x..iiiiiiii..x.......#",
+			"E..........iiiiiiii......c...#",
+			"#.......x..iiiiiiii..x.......X",
+			"#.......x............x.......#",
+			"#.......xxxx......xxxx.......#",
+			"#............................#",
+			"#..C.......s.......c.........#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Chambers: two inner walls with two gaps each; ember vents near the
+		# gaps, enemies of every kind spread over the chambers.
+		"path": "res://world/rooms/f3/f3_camaras.tscn",
+		"floor": 3,
+		"rows": [
+			"##############################",
+			"#........#..........#........#",
+			"#........#...s......#........#",
+			"#........#..........#....s...#",
+			"#........#..........#........#",
+			"#.........................v..#",
+			"#............................#",
+			"E........#....c.....#........#",
+			"#........#..........#........#",
+			"#........#.....v....#........#",
+			"#........#..........#...h....#",
+			"#............................#",
+			"#............................#",
+			"#..C.....#....c.....#........#",
+			"#........#..........#........X",
+			"##############################",
+		],
+	},
+	{
+		# Serpent: two thick walls fold the room into an S-shaped corridor.
+		"path": "res://world/rooms/f3/f3_serpente.tscn",
+		"floor": 3,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#..........................s.#",
+			"#.....###################....#",
+			"#.....###################....#",
+			"#............................#",
+			"#............................#",
+			"E.........v.......c..........#",
+			"#............................#",
+			"#....###################.....#",
+			"#....###################.....#",
+			"#............................#",
+			"#...........h.......s.....C..#",
+			"#............................#",
+			"#......v.....................#",
+			"###############X##############",
+		],
+	},
+	{
+		# Forge: an open hall with a ring of ember vents; keep moving between
+		# the bursts.
+		"path": "res://world/rooms/f3/f3_forja.tscn",
+		"floor": 3,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#............................#",
+			"#....o.....v......v.....o....#",
+			"#............................#",
+			"#.........s.........s........#",
+			"#............................#",
+			"E.......v.....h......v.......X",
+			"#............................#",
+			"#.....................c......#",
+			"#............................#",
+			"#..........v......v..........#",
+			"#....o........C.........o....#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Crossroads: four wall blocks leave a cross of corridors; sentinels
+		# watch them from the far side.
+		"path": "res://world/rooms/f3/f3_ponte.tscn",
+		"floor": 3,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#............................#",
+			"#....#####........######.....#",
+			"#....#####...s....######..s..#",
+			"#....#####........######.....#",
+			"#............................#",
+			"E..........c......v..........#",
+			"#............................#",
+			"#....#####........######.....#",
+			"#....#####....h...######.....#",
+			"#....#####........######.....#",
+			"#..C.....................c...#",
+			"#..................v.........#",
+			"#............................#",
+			"##############X###############",
+		],
+	},
+	{
+		# Obsidian yard: crate pairs and pillars in staggered rows, vents in
+		# the lanes between them.
+		"path": "res://world/rooms/f3/f3_obsidiana.tscn",
+		"floor": 3,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#.......o.......o.......o....#",
+			"#............................#",
+			"#...xx.......xx.......xx.....#",
+			"#...xx.....s.xx...c...xx.....#",
+			"#............................#",
+			"E.......................h....#",
+			"#............................#",
+			"#........xx.......xx......s..#",
+			"#........xx...v...xx.........#",
+			"#............................#",
+			"#....o.......o.......o.....C.#",
+			"#...............c.....v......#",
+			"#............................#",
+			"###########X##################",
+		],
+	},
+	{
+		# Cloister: four L-shaped walls around a vent in the middle; the way
+		# through is the gaps.
+		"path": "res://world/rooms/f3/f3_claustro.tscn",
+		"floor": 3,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#............................#",
+			"#.......#####....#####.......#",
+			"#.......#............#...s...#",
+			"#.......#....s.......#.......#",
+			"#............................#",
+			"E.............v..............X",
+			"#............................#",
+			"#.......#.......c....#.......#",
+			"#.......#............#.......#",
+			"#.......#####....#####.......#",
+			"#..C.....................h...#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Floor 1 boss: the big crawler. Corner pillars only, room to dodge the ring.
+		"path": "res://world/rooms/boss_f1.tscn",
+		"boss": true,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#............................#",
+			"#....o..................o....#",
+			"#............................#",
+			"#............................#",
+			"#............................#",
+			"E...................B........#",
+			"#............................#",
+			"#............................#",
+			"#............................#",
+			"#............................#",
+			"#....o..................o....#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Floor 2 boss: the big charger. Two pillar pairs stop its dashes.
+		"path": "res://world/rooms/boss_f2.tscn",
+		"boss": true,
+		"floor": 2,
+		"rows": [
+			"##############################",
+			"#............................#",
+			"#............................#",
+			"#............................#",
+			"#........o..........o........#",
+			"#............................#",
+			"#............................#",
+			"E.....................H......#",
+			"#............................#",
+			"#............................#",
+			"#........o..........o........#",
+			"#............................#",
+			"#............................#",
+			"#............................#",
+			"#............................#",
+			"##############################",
+		],
+	},
+	{
+		# Floor 3 boss: open hall for the dashes, fans and summoned crawlers.
+		"path": "res://world/rooms/boss_f3.tscn",
+		"boss": true,
+		"floor": 3,
+		"rows": [
+			"##############################",
+			"#~..........................~#",
+			"#............................#",
+			"#...o....................o...#",
+			"#............................#",
+			"#............................#",
+			"#............................#",
+			"E...................F........#",
+			"#............................#",
+			"#............................#",
+			"#............................#",
+			"#............................#",
+			"#...o....................o...#",
+			"#............................#",
+			"#~..........................~#",
+			"##############################",
+		],
+	},
+
+]
+
+
+func _initialize() -> void:
+	var errors: Array[String] = []
+	for def in ROOMS:
+		errors.append_array(_validate(def))
+	if not errors.is_empty():
+		for e in errors:
+			printerr(e)
+		quit(1)
+		return
+	_dump_layouts()
+	var tile_sets: Array[TileSet] = []
+	for f in FLOORS:
+		tile_sets.append(_build_tileset(f + 1))
+	for def in ROOMS:
+		var err: Error = await _save_room(def, tile_sets[int(def.get("floor", 1)) - 1])
+		if err != OK:
+			printerr("save failed %s: %d" % [def["path"], err])
+			quit(1)
+			return
+		print("wrote %s" % def["path"])
+	quit(0)
+
+
+func _rows(def: Dictionary) -> Array[String]:
+	var out: Array[String] = []
+	out.assign(def["rows"])
+	return out
+
+
+func _ch(rows: Array[String], c: Vector2i) -> String:
+	if c.x < 0 or c.y < 0 or c.x >= W or c.y >= H:
+		return "#"
+	return rows[c.y][c.x]
+
+
+func _find(rows: Array[String], ch: String) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	for y in H:
+		for x in W:
+			if rows[y][x] == ch:
+				out.append(Vector2i(x, y))
+	return out
+
+
+## Direction from a door on the outer wall into the room.
+func _inward(c: Vector2i) -> Vector2i:
+	if c.x == 0:
+		return Vector2i.RIGHT
+	if c.x == W - 1:
+		return Vector2i.LEFT
+	if c.y == 0:
+		return Vector2i.DOWN
+	return Vector2i.UP
+
+
+func _center(c: Vector2i) -> Vector2:
+	return Vector2(c * RoomTiles.SIZE) + Vector2(8, 8)
+
+
+func _validate(def: Dictionary) -> Array[String]:
+	var errs: Array[String] = []
+	var path: String = def["path"]
+	var rows := _rows(def)
+	if rows.size() != H:
+		return ["%s: %d rows, expected %d" % [path, rows.size(), H]]
+	for y in H:
+		if rows[y].length() != W:
+			errs.append("%s: row %d has %d cells" % [path, y, rows[y].length()])
+	if not errs.is_empty():
+		return errs
+	var entries := _find(rows, "E")
+	var exits := _find(rows, "X")
+	if entries.size() != 1:
+		return ["%s: needs exactly one E" % path]
+	if exits.size() > 1 or (exits.is_empty() and not def.get("boss", false)):
+		errs.append("%s: needs one X (boss rooms none)" % path)
+	var start := entries[0] + _inward(entries[0])
+	if not WALKABLE.contains(_ch(rows, start)):
+		errs.append("%s: cell inside the entry is blocked" % path)
+		return errs
+	# Flood fill from the entry.
+	var seen := {start: true}
+	var queue: Array[Vector2i] = [start]
+	while not queue.is_empty():
+		var c: Vector2i = queue.pop_back()
+		for d: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var n := c + d
+			if not seen.has(n) and WALKABLE.contains(_ch(rows, n)):
+				seen[n] = true
+				queue.append(n)
+	for y in H:
+		for x in W:
+			var c := Vector2i(x, y)
+			if WALKABLE.contains(rows[y][x]) and not seen.has(c):
+				errs.append("%s: cell %s unreachable" % [path, c])
+	for x in exits:
+		if not seen.has(x + _inward(x)):
+			errs.append("%s: exit %s unreachable" % [path, x])
+	var enemies := 0
+	for k: String in ENEMY_KINDS:
+		for c in _find(rows, k):
+			enemies += 1
+			var dist := _center(c).distance_to(_center(start))
+			if dist < MIN_SPAWN_DIST:
+				errs.append("%s: %s spawn %s only %.0f px from entry" % [path, k, c, dist])
+	for c in _find(rows, "v"):
+		var dist := _center(c).distance_to(_center(start))
+		if dist < MIN_VENT_DIST:
+			errs.append("%s: vent %s only %.0f px from entry" % [path, c, dist])
+		for x in exits:
+			if _center(c).distance_to(_center(x + _inward(x))) < MIN_VENT_DIST:
+				errs.append("%s: vent %s next to the exit" % [path, c])
+	if enemies == 0 and not def.get("heal", false):
+		errs.append("%s: no enemies" % path)
+	if _top_rows(rows) == 1:
+		for x in W:
+			var ch := rows[1][x]
+			if ENEMY_KINDS.has(ch) or ch == "C":
+				errs.append("%s: '%s' at %s sits under the top wall face (row 1)" % [path, ch, Vector2i(x, 1)])
+	var chests := _find(rows, "C")
+	if not def.get("tutorial", false) and not def.get("boss", false) and chests.size() != 1:
+		errs.append("%s: needs one chest spot" % path)
+	if not def.get("boss", false) and _stairs_spot(rows) == Vector2.ZERO:
+		errs.append("%s: no 2x2 floor spot for the stairs near the entry" % path)
+	return errs
+
+
+## Centre of the 2x2 block of plain floor where a floor's first room shows its
+## stairs down: near the entry but off the doorway line (2+ cells aside), with
+## a ring of open cells around it (no wall, pillar, crate, door, spawn or
+## chest), out of the top-wall face band and away from the chest spot.
+## Vector2.ZERO when the layout has no such block.
+func _stairs_spot(rows: Array[String]) -> Vector2:
+	var e := _find(rows, "E")[0]
+	var d := _inward(e)
+	var start := e + d
+	var top := _top_rows(rows)
+	var chests := _find(rows, "C")
+	var best := Vector2.ZERO
+	var best_dist := INF
+	for y in range(top + (1 if top == 1 else 0), H - 1):
+		for x in range(1, W - 1):
+			var c := Vector2i(x, y)
+			var ok := true
+			for dy in range(-1, 3):
+				for dx in range(-1, 3):
+					var n := c + Vector2i(dx, dy)
+					var inner := dx >= 0 and dx <= 1 and dy >= 0 and dy <= 1
+					var ch := _ch(rows, n)
+					if inner and not ".,~".contains(ch):
+						ok = false
+					elif not inner and (not WALKABLE.contains(ch) or ch == "v"):
+						ok = false
+					if inner and top == 1 and n.y <= 1:
+						ok = false
+					# Keep the doorway line clear.
+					var rel := n - start
+					var aside := absi(rel.y) if d.x != 0 else absi(rel.x)
+					if inner and aside < 2:
+						ok = false
+			if not ok:
+				continue
+			var center := Vector2(c * RoomTiles.SIZE) + Vector2(16, 16)
+			var dist := center.distance_to(_center(start))
+			if dist < 40.0:
+				continue
+			for ch in chests:
+				if center.distance_to(_center(ch)) < 48.0:
+					ok = false
+			if ok and dist < best_dist:
+				best_dist = dist
+				best = center
+	return best
+
+
+func _build_tileset(floor_num: int) -> TileSet:
+	var ts := TileSet.new()
+	ts.tile_size = Vector2i(RoomTiles.SIZE, RoomTiles.SIZE)
+	ts.add_physics_layer()
+	var src := TileSetAtlasSource.new()
+	src.texture = load(TEXTURE_PATH % floor_num) as Texture2D
+	src.texture_region_size = Vector2i(RoomTiles.SIZE, RoomTiles.SIZE)
+	ts.add_source(src, RoomTiles.SOURCE)
+	var full := PackedVector2Array([Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8)])
+	var pillar := PackedVector2Array([
+		Vector2(-3, -7), Vector2(3, -7), Vector2(6, -4), Vector2(6, 4),
+		Vector2(3, 7), Vector2(-3, 7), Vector2(-6, 4), Vector2(-6, -4)])
+	var crate := PackedVector2Array([Vector2(-7, -7), Vector2(6, -7), Vector2(6, 6), Vector2(-7, 6)])
+	for coords in RoomTiles.ALL:
+		src.create_tile(coords)
+		if coords in RoomTiles.SOLID:
+			var td := src.get_tile_data(coords, 0)
+			td.add_collision_polygon(0)
+			var pts := full
+			if coords == RoomTiles.PILLAR:
+				pts = pillar
+			elif coords == RoomTiles.CRATE:
+				pts = crate
+			td.set_collision_polygon_points(0, 0, pts)
+	var path := TILESET_PATH % floor_num
+	ResourceSaver.save(ts, path)
+	return load(path) as TileSet
+
+
+## Transform flags so a door drawn for the top wall faces into the room.
+func _door_alt(c: Vector2i) -> int:
+	if c.x == 0:
+		return TileSetAtlasSource.TRANSFORM_TRANSPOSE
+	if c.x == W - 1:
+		return TileSetAtlasSource.TRANSFORM_TRANSPOSE | TileSetAtlasSource.TRANSFORM_FLIP_H
+	if c.y == H - 1:
+		return TileSetAtlasSource.TRANSFORM_FLIP_V
+	return 0
+
+
+func _wall_tile(rows: Array[String], c: Vector2i) -> Vector2i:
+	var below := c + Vector2i.DOWN
+	if c.y + 1 >= H or "#EX".contains(_ch(rows, below)):
+		return RoomTiles.WALL_TOP
+	if c.y <= 3 and c.x in TORCH_COLS:
+		return RoomTiles.WALL_TORCH
+	return RoomTiles.WALL_FACE
+
+
+## Coroutine (awaits a frame for the sign); callers must await it.
+func _save_room(def: Dictionary, tile_set: TileSet) -> Error:
+	var path: String = def["path"]
+	var rows := _rows(def)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(path)
+
+	var room := Node2D.new()
+	room.name = path.get_file().get_basename().to_pascal_case()
+	room.y_sort_enabled = true
+	room.set_script(load(ROOM_SCRIPT))
+	room.set("is_boss", def.get("boss", false))
+	room.set("is_tutorial", def.get("tutorial", false))
+	if def.get("heal", false):
+		room.set("start_hp_ratio", 0.5)
+		room.set("heal_to_clear", true)
+
+	var floor_num := int(def.get("floor", 1))
+	var paint_path := PAINT_PATH % _room_id(def)
+	var painted := ResourceLoader.exists(paint_path)
+	var detail: bool = painted and def.get("detail", false)
+	var floor_layer: TileMapLayer = null
+	if painted:
+		var bg := Sprite2D.new()
+		bg.name = "Background"
+		bg.texture = load(paint_path) as Texture2D
+		bg.centered = false
+		bg.z_index = -5
+		_add(room, bg)
+		var ambient := CanvasModulate.new()
+		ambient.name = "Ambient"
+		ambient.color = (AMBIENT_DETAIL if detail else AMBIENT)[floor_num - 1]
+		_add(room, ambient)
+		var lights := Node2D.new()
+		lights.name = "Torches"
+		_add(room, lights)
+		var light_tex := _light_texture()
+		for t in _torches(rows):
+			var torch := _make_torch(_center(t), floor_num, light_tex, detail)
+			torch.name = "Torch%d" % (lights.get_child_count() + 1)
+			lights.add_child(torch)
+			torch.owner = room
+	else:
+		floor_layer = TileMapLayer.new()
+		floor_layer.name = "Floor"
+		floor_layer.tile_set = tile_set
+		floor_layer.z_index = -1
+		floor_layer.collision_enabled = false
+		_add(room, floor_layer)
+
+	var walls := TileMapLayer.new()
+	walls.name = "Walls"
+	walls.tile_set = tile_set
+	# Painted rooms: collision only.
+	walls.visible = not painted
+	_add(room, walls)
+
+	var spawns := Node2D.new()
+	spawns.name = "Spawns"
+	_add(room, spawns)
+
+	if painted:
+		var blockers := _make_face_blockers(rows)
+		_add(room, blockers)
+		for shape in blockers.get_children():
+			shape.owner = room
+
+	for y in H:
+		for x in W:
+			var c := Vector2i(x, y)
+			var ch := rows[y][x]
+			if ch == "#":
+				walls.set_cell(c, RoomTiles.SOURCE, _wall_tile(rows, c))
+				continue
+			var ground := RoomTiles.FLOOR_B if rng.randf() < 0.25 else RoomTiles.FLOOR_A
+			if ch == ",":
+				ground = RoomTiles.FLOOR_CRACK
+			elif ch == "~":
+				ground = RoomTiles.FLOOR_MOSS
+			if floor_layer != null:
+				floor_layer.set_cell(c, RoomTiles.SOURCE, ground)
+			match ch:
+				"o":
+					walls.set_cell(c, RoomTiles.SOURCE, RoomTiles.PILLAR)
+				"x":
+					walls.set_cell(c, RoomTiles.SOURCE, RoomTiles.CRATE)
+				"E":
+					walls.set_cell(c, RoomTiles.SOURCE, RoomTiles.DOOR_SHUT, _door_alt(c))
+					var entry := Marker2D.new()
+					entry.name = "Entry"
+					entry.position = _center(c + _inward(c))
+					_add(room, entry)
+					# Way back to the previous room: shut in a floor's first
+					# room, locked/open like the exit otherwise (room.gd).
+					var back := Node2D.new()
+					back.name = "Back"
+					back.position = _center(c)
+					back.set_script(load(DOOR_SCRIPT))
+					back.set("starts_shut", true)
+					_add(room, back)
+					if painted:
+						var shut := _make_door_sprite(c, 0)
+						shut.name = "Sprite"
+						back.add_child(shut)
+						shut.owner = room
+				"X":
+					walls.set_cell(c, RoomTiles.SOURCE, RoomTiles.DOOR_LOCKED, _door_alt(c))
+					var door := Node2D.new()
+					door.name = "Exit"
+					door.position = _center(c)
+					door.set_script(load(DOOR_SCRIPT))
+					_add(room, door)
+					if painted:
+						var overlay := _make_door_sprite(c, 1)
+						overlay.name = "Sprite"
+						door.add_child(overlay)
+						overlay.owner = room
+				"C":
+					var spot := Marker2D.new()
+					spot.name = "ChestSpot"
+					spot.position = _center(c)
+					_add(room, spot)
+				_:
+					if ENEMY_KINDS.has(ch):
+						var m := Marker2D.new()
+						m.name = "%s%d" % [String(ENEMY_KINDS[ch]).capitalize(), spawns.get_child_count() + 1]
+						m.position = _center(c)
+						m.set_meta(&"enemy", ENEMY_KINDS[ch])
+						if BOSS_BASE.has(ch):
+							m.set_meta(&"base", BOSS_BASE[ch])
+						spawns.add_child(m)
+						m.owner = room
+
+	if not def.get("boss", false):
+		var stairs := Marker2D.new()
+		stairs.name = "StairsSpot"
+		stairs.position = _stairs_spot(rows)
+		_add(room, stairs)
+
+	var hazards := _make_hazards(rows)
+	if hazards.get_child_count() > 0:
+		_add(room, hazards)
+		for n in hazards.find_children("*", "", true, false):
+			n.owner = room
+	else:
+		hazards.free()
+
+	var decor_spots: Array[Dictionary] = []
+	if painted and ResourceLoader.exists(DECOR_PATH):
+		var decor := _make_decor(rows, def, decor_spots)
+		_add(room, decor)
+		for n in decor.find_children("*", "", true, false):
+			n.owner = room
+
+	if detail:
+		var rng_d := RandomNumberGenerator.new()
+		rng_d.seed = hash(path + "#detail")
+		var keep := _keep_clear(rows, def)
+		var props := DecorLayout.breakable_spots(rows, keep, decor_spots, rng_d)
+		var breakables := _make_breakables(props)
+		_add(room, breakables)
+		for n in breakables.get_children():
+			n.owner = room
+		var taken: Array[Dictionary] = decor_spots.duplicate()
+		taken.append_array(props)
+		var details := _make_details(DecorLayout.detail_spots(rows, keep, taken, rng_d))
+		_add(room, details)
+		for n in details.get_children():
+			n.owner = room
+		var atmosphere := Node2D.new()
+		atmosphere.name = "Atmosphere"
+		atmosphere.set_script(load(ATMOSPHERE_SCRIPT))
+		_add(room, atmosphere)
+
+	if def.has("sign"):
+		# In the tree, so the label measures itself with its 8 px font.
+		get_root().add_child(room)
+		var sign := _make_sign(def["sign"])
+		_add(room, sign)
+		await process_frame
+		sign.size = SIGN_RECT.size
+		get_root().remove_child(room)
+
+	var packed := PackedScene.new()
+	var err := packed.pack(room)
+	if err != OK:
+		return err
+	err = ResourceSaver.save(packed, path)
+	room.free()
+	return err
+
+
+## Points no decor may come near: door cells, the entry spot, the stairs
+## spot, the chest spots and the enemy spawns.
+func _keep_clear(rows: Array[String], def: Dictionary) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	for ch in ["E", "X", "C", "v"]:
+		for c in _find(rows, ch):
+			out.append(_center(c))
+	var e := _find(rows, "E")[0]
+	out.append(_center(e + _inward(e)))
+	for k: String in ENEMY_KINDS:
+		for c in _find(rows, k):
+			out.append(_center(c))
+	if not def.get("boss", false):
+		out.append(_stairs_spot(rows))
+	return out
+
+
+## Decor props of a painted room (Y-sorted with the actors): solid ones get a
+## small static body at their feet, wall pieces draw just over the painting.
+## `placed` (out): the spots, for the detail pass.
+func _make_decor(rows: Array[String], def: Dictionary, placed: Array[Dictionary]) -> Node2D:
+	var root := Node2D.new()
+	root.name = "Decor"
+	root.y_sort_enabled = true
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(String(def["path"]) + "#decor")
+	var tex := load(DECOR_PATH) as Texture2D
+	var count := {}
+	var shadow := GroundShadow.COOL if def.get("detail", false) else GroundShadow.COLOR
+	for spot in DecorLayout.spots(rows, _keep_clear(rows, def), rng, def.get("tutorial", false)):
+		placed.append(spot)
+		var kind: StringName = spot["kind"]
+		count[kind] = int(count.get(kind, 0)) + 1
+		var s := Sprite2D.new()
+		s.name = "%s%d" % [String(kind).capitalize(), count[kind]]
+		s.texture = tex
+		s.hframes = DecorLayout.FRAMES.size()
+		s.frame = DecorLayout.FRAMES.find(kind)
+		s.offset = Vector2(0, -DECOR_FRAME / 2.0)
+		s.position = spot["pos"]
+		s.flip_h = spot["flip"]
+		s.set_meta(&"decor_kind", kind)
+		s.set_meta(&"decor_wall", spot["wall"])
+		s.set_meta(&"decor_solid", spot["solid"])
+		if spot["wall"]:
+			# On the wall: over the painting and the doors, under every actor.
+			s.z_index = -3
+		root.add_child(s)
+		if kind in DecorLayout.SHADOWED:
+			var w := 16 if kind in DecorLayout.SOLID else 11
+			s.add_child(GroundShadow.make(Vector2i(w, 4), Vector2(0, -1), shadow))
+		if spot["solid"]:
+			var body := StaticBody2D.new()
+			body.name = "Body"
+			var shape := CollisionShape2D.new()
+			var rect := RectangleShape2D.new()
+			rect.size = Vector2(14, 8)
+			shape.shape = rect
+			shape.position = Vector2(0, -4)
+			body.add_child(shape)
+			s.add_child(body)
+	return root
+
+
+## Floor hazards: one IcePatch whose shapes are the horizontal runs of "i"
+## cells, and one EmberVent per "v" cell (bursts staggered by VENT_STAGGER).
+func _make_hazards(rows: Array[String]) -> Node2D:
+	var root := Node2D.new()
+	root.name = "Hazards"
+	var ice := Area2D.new()
+	ice.name = "Ice"
+	ice.set_script(load(ICE_SCRIPT))
+	var t := RoomTiles.SIZE
+	for y in H:
+		var x0 := -1
+		for x in W + 1:
+			var on := x < W and rows[y][x] == "i"
+			if on and x0 < 0:
+				x0 = x
+			elif not on and x0 >= 0:
+				var shape := CollisionShape2D.new()
+				shape.name = "Run%d" % (ice.get_child_count() + 1)
+				var rect := RectangleShape2D.new()
+				rect.size = Vector2((x - x0) * t, t)
+				shape.shape = rect
+				shape.position = Vector2(x0 * t + (x - x0) * t / 2.0, y * t + t / 2.0)
+				ice.add_child(shape)
+				x0 = -1
+	if ice.get_child_count() > 0:
+		root.add_child(ice)
+	else:
+		ice.free()
+	var vents := _find(rows, "v")
+	for i in vents.size():
+		var v := Area2D.new()
+		v.name = "Vent%d" % (i + 1)
+		v.set_script(load(VENT_SCRIPT))
+		v.position = _center(vents[i])
+		v.set("phase", float(i) * VENT_STAGGER)
+		var shape := CollisionShape2D.new()
+		shape.name = "Shape"
+		var circle := CircleShape2D.new()
+		circle.radius = VENT_RADIUS
+		shape.shape = circle
+		shape.disabled = true
+		v.add_child(shape)
+		root.add_child(v)
+	return root
+
+
+## Wall rows at the top (1 for normal rooms, 4 for the tutorial's thick wall).
+func _top_rows(rows: Array[String]) -> int:
+	var top := 0
+	while top < H and _ch(rows, Vector2i(1, top)) == "#":
+		top += 1
+	return top
+
+
+## Static rectangles on the walls' collision layer: the first floor row under
+## a thin top wall (not under a top-wall door), and a SIDE_WALL_PAD strip
+## along the left and right walls (not within a cell of a side door).
+func _make_face_blockers(rows: Array[String]) -> StaticBody2D:
+	var body := StaticBody2D.new()
+	body.name = "WallFaceBlockers"
+	var rects: Array[Rect2] = []
+	var t := RoomTiles.SIZE
+	if _top_rows(rows) == 1:
+		var start := -1
+		for x in range(1, W):
+			var open := x < W - 1 and _ch(rows, Vector2i(x, 0)) == "#"
+			if open and start < 0:
+				start = x
+			elif not open and start >= 0:
+				rects.append(Rect2(start * t, t, (x - start) * t, TOP_FACE_BAND))
+				start = -1
+	for side: int in [0, W - 1]:
+		var y0 := -1
+		for y in range(1, H):
+			# Keep a cell of slack around a side door so the entry spot is clear.
+			var wall := y < H - 1 and _ch(rows, Vector2i(side, y)) == "#" \
+					and not "EX".contains(_ch(rows, Vector2i(side, y - 1))) \
+					and not "EX".contains(_ch(rows, Vector2i(side, y + 1)))
+			if wall and y0 < 0:
+				y0 = y
+			elif not wall and y0 >= 0:
+				var x: int = t if side == 0 else side * t - SIDE_WALL_PAD
+				rects.append(Rect2(x, y0 * t, SIDE_WALL_PAD, (y - y0) * t))
+				y0 = -1
+	for r in rects:
+		var shape := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = r.size
+		shape.shape = rect
+		shape.position = r.get_center()
+		body.add_child(shape)
+	return body
+
+
+func _room_id(def: Dictionary) -> String:
+	return String(def["path"]).get_file().get_basename()
+
+
+## Torch cells: on the top wall face and the bottom wall, at TORCH_COLS
+## (moved aside if a door is there). Shared with the blockouts.
+func _torches(rows: Array[String]) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	var top := 0
+	while top + 1 < H and _ch(rows, Vector2i(1, top + 1)) == "#":
+		top += 1
+	for y in [top, H - 1]:
+		# The tutorial sign covers the middle of the thick top wall.
+		var cols: Array[int] = TORCH_COLS_SIGN if y == top and top > 0 else TORCH_COLS
+		for col in cols:
+			for dx in [0, 2, -2, 4, -4]:
+				var c := Vector2i(col + dx, y)
+				if _ch(rows, c) == "#" and _ch(rows, c + Vector2i.LEFT) == "#" and _ch(rows, c + Vector2i.RIGHT) == "#":
+					out.append(c)
+					break
+	return out
+
+
+## Soft round light shared by a room's torches.
+func _light_texture() -> GradientTexture2D:
+	var grad := Gradient.new()
+	grad.set_color(0, Color(1, 1, 1, 1))
+	grad.set_color(1, Color(1, 1, 1, 0))
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	tex.width = 128
+	tex.height = 128
+	return tex
+
+
+func _make_torch(pos: Vector2, floor_num: int, tex: Texture2D, detail: bool = false) -> PointLight2D:
+	var light := PointLight2D.new()
+	light.position = pos
+	light.texture = tex
+	light.texture_scale = 1.2
+	light.color = TORCH_COLOR[floor_num - 1]
+	# The painting already has its light pools; this only lifts the actors.
+	light.energy = 0.18
+	if detail:
+		# A warm pool on the floor under the cool ambient.
+		light.texture_scale = TORCH_DETAIL_SCALE
+		light.color = TORCH_DETAIL_COLOR[floor_num - 1]
+		light.energy = TORCH_DETAIL_ENERGY
+	return light
+
+
+## Breakable pots and crates (Y-sorted with the actors).
+func _make_breakables(spots: Array[Dictionary]) -> Node2D:
+	var root := Node2D.new()
+	root.name = "Breakables"
+	root.y_sort_enabled = true
+	var scene := load(BREAKABLE_SCENE) as PackedScene
+	var count := {}
+	for spot in spots:
+		var kind: StringName = spot["kind"]
+		count[kind] = int(count.get(kind, 0)) + 1
+		var b := scene.instantiate()
+		b.name = "%s%d" % [String(kind).capitalize(), count[kind]]
+		b.set("kind", kind)
+		b.position = spot["pos"]
+		root.add_child(b)
+	return root
+
+
+## Small decals over the painting, under every prop and actor.
+func _make_details(spots: Array[Dictionary]) -> Node2D:
+	var root := Node2D.new()
+	root.name = "Details"
+	root.z_index = -4
+	var tex := load(DETAILS_PATH) as Texture2D
+	var count := {}
+	for spot in spots:
+		var kind: StringName = spot["kind"]
+		count[kind] = int(count.get(kind, 0)) + 1
+		var s := Sprite2D.new()
+		s.name = "%s%d" % [String(kind).to_pascal_case(), count[kind]]
+		s.texture = tex
+		s.hframes = DecorLayout.DETAILS.size()
+		s.frame = DecorLayout.DETAILS.find(kind)
+		s.position = spot["pos"]
+		if spot["wall"]:
+			s.offset = Vector2(0, -DETAIL_FRAME / 2.0)
+		s.flip_h = spot["flip"]
+		s.modulate = DecorLayout.DETAIL_TINT.get(kind, Color.WHITE)
+		s.set_meta(&"detail_kind", kind)
+		s.set_meta(&"detail_wall", spot["wall"])
+		root.add_child(s)
+	return root
+
+
+## Overlay for a door cell: column 0 shut, 1 locked, 2 open; row 0 for doors
+## on the top or bottom wall, row 1 (side view) for the left and right walls.
+## The 24x32 frame grows into the wall away from the floor.
+func _make_door_sprite(c: Vector2i, state: int) -> Sprite2D:
+	var s := Sprite2D.new()
+	s.texture = load(DOORS_PATH) as Texture2D
+	s.hframes = 3
+	s.vframes = 2
+	var side := c.x == 0 or c.x == W - 1
+	s.frame = state + (3 if side else 0)
+	s.flip_h = c.x == W - 1
+	s.z_index = -4
+	var grow := float(DOOR_FRAME.y - RoomTiles.SIZE) / 2.0
+	var wide := float(DOOR_FRAME.x - RoomTiles.SIZE) / 2.0
+	# Top and side doors grow up; the bottom door grows down off the room;
+	# side doors widen outwards, off the floor.
+	var out_x := 0.0
+	if c.x == 0:
+		out_x = -wide
+	elif c.x == W - 1:
+		out_x = wide
+	s.position = Vector2(out_x, 0)
+	s.offset = Vector2(0, grow if c.y == H - 1 else -grow)
+	return s
+
+
+func _dump_layouts() -> void:
+	var out := {}
+	for def in ROOMS:
+		var rows := _rows(def)
+		var torches: Array = []
+		for t in _torches(rows):
+			torches.append([t.x, t.y])
+		out[_room_id(def)] = {
+			"floor": int(def.get("floor", 1)),
+			"tutorial": def.get("tutorial", false),
+			"boss": def.get("boss", false),
+			"detail": def.get("detail", false),
+			"rows": rows,
+			"torches": torches,
+			"sign": [SIGN_RECT.position.x, SIGN_RECT.position.y, SIGN_RECT.size.x, SIGN_RECT.size.y] if def.has("sign") else [],
+		}
+	var path := ProjectSettings.globalize_path(LAYOUTS_JSON)
+	DirAccess.make_dir_recursive_absolute(path.get_base_dir())
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(out, "\t") + "\n")
+	f.close()
+	print("wrote %s" % path)
+
+
+## Plaque on the thick top wall of tutorial rooms.
+func _make_sign(text: String) -> Label:
+	var label := Label.new()
+	label.name = "Sign"
+	label.text = text
+	label.z_index = 2
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override(&"font_size", 8)
+	label.add_theme_constant_override(&"line_spacing", -2)
+	label.add_theme_color_override(&"font_color", Color(0.96, 0.9, 0.78))
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(0.2, 0.13, 0.09)
+	box.border_color = Color(0.45, 0.3, 0.17)
+	box.set_border_width_all(1)
+	box.set_content_margin_all(2)
+	label.add_theme_stylebox_override(&"normal", box)
+	label.position = SIGN_RECT.position
+	return label
+
+
+func _add(room: Node, child: Node) -> void:
+	room.add_child(child)
+	child.owner = room
