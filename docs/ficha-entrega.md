@@ -83,4 +83,4 @@ GitHub Projects (quadro de tarefas): `[link aberto do quadro]`
 
 ## Link do repositório aberto
 
-`[link do repositório no GitHub, público]` (ramo `feat/mvp`, depois `main`)
+https://github.com/danicunhac/cinzel (ramo `feat/mvp`, depois `main`)
