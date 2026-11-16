@@ -45,7 +45,7 @@ Vitória: vencer o chefe do andar 3.
 
 ## Observações para rodar
 
-- Build Windows: arquivo zip em `[link do zip, gerar antes de 28/11]`.
+- Build Windows: https://github.com/danicunhac/cinzel/releases/latest (arquivo `Cinzel-windows.zip`, testado no Windows em 16/11).
 - Sem instalação. Extrair o zip e abrir `Cinzel.exe`.
 - Janela de 1440x810 (viewport de 480x270 com escala inteira).
 - Teclado e mouse. Sem controle.
@@ -83,4 +83,4 @@ GitHub Projects (quadro de tarefas): https://github.com/users/danicunhac/project
 
 ## Link do repositório aberto
 
-https://github.com/danicunhac/cinzel (ramo `feat/mvp`, depois `main`)
+https://github.com/danicunhac/cinzel (ramo `main`)
